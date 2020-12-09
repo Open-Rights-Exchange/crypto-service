@@ -1,0 +1,10 @@
+# dotenv environment variables file
+.env
+.env.prod*
+.env.staging*
+.env.dev*
+.env.migration*
+
+build
+dist
+src/node_modules

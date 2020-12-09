@@ -1,0 +1,33 @@
+{
+  "javascript.implicitProjectConfig.experimentalDecorators": true,
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#3e90c7",
+    "titleBar.inactiveBackground": "#3e90c7",
+    "titleBar.activeBackground": "#3e90c7"
+  },
+  "eslint.alwaysShowStatus": true,
+  "debug.node.autoAttach": "on",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "diffEditor.ignoreTrimWhitespace": false,
+  "eslint.validate": [
+      "javascript",
+      "typescript",
+  ],
+  "eslint.nodePath": "./node_modules/standard/node_modules/eslint/",
+  "prettier.ignorePath": "../src/.prettierignore",
+  "eslint.workingDirectories": [
+      { "mode": "auto" }
+  ],
+  "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+      "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+  },
+  "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

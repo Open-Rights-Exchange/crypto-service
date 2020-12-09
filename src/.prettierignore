@@ -1,0 +1,4 @@
+backend/services/mongo/models/**
+backend/libraries/**
+backend/services/auth0/auth0-rule-add-account-to-user.js
+backend/services/auth0/authorize-user-client-credential-and-add-additional-claims.js

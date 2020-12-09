@@ -1,0 +1,101 @@
+{
+  "extends": [
+    "airbnb-typescript/base",
+    "plugin:@typescript-eslint/recommended", // Uses the recommended rules from the @typescript-eslint/eslint-plugin
+    "plugin:jest/recommended",
+    "prettier",
+    "prettier/@typescript-eslint",
+    "plugin:prettier/recommended", // Enables eslint-plugin-prettier and eslint-config-prettier. This will display prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
+    "eslint-config-prettier" // disables all eslint rules that conflict with prettier
+  ],
+  "plugins": [    
+    "@typescript-eslint",
+    "jest"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "tsconfig.json",
+    "ecmaVersion": 2018, // Allows for the parsing of modern ECMAScript features
+    "sourceType": "module" // Allows for the use of imports
+  },
+  "rules": {
+    "@typescript-eslint/no-var-requires": "off",
+    "import/prefer-default-export": 0,
+    "prefer-destructuring": 1,
+    "no-await-in-loop": 0,
+    "consistent-return": 1,
+    "semi": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "no-console": 0,
+    "class-methods-use-this": 0,
+    "generator-star-spacing": 0,
+    "object-curly-newline": "off",
+    "operator-linebreak": 0,
+    "no-lonely-if":0,
+    "implicit-arrow-linebreak":"off",
+    "no-extra-semi": "off",
+    "prettier/prettier": "error",
+    "import/no-mutable-exports": 0,
+    "import/no-cycle": 0,
+    "import/no-extraneous-dependencies": 0,
+    "no-unused-vars": 0,
+    "no-undef": 0,
+    "no-param-reassign": 0,
+    "no-underscore-dangle": 0,
+    "@typescript-eslint/no-unused-vars": 0,
+    "@typescript-eslint/no-use-before-define": 0,
+    "@typescript-eslint/no-extra-semi": 0,
+    "lines-between-class-members": 0,
+    "jest/no-export": 0,
+    "sx-a11y/alt-text": 0,
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+   ]
+    // The rules below were disabled to prevent conflicts with Prettier
+    // ... to see conflicts, run ->  npx eslint --print-config path/to/main.js | npx eslint-config-prettier-check
+    // "indent": "off", // apply indent settings to @typescript-eslint/indent - it overrides this eslint base rule
+    // "@typescript-eslint/indent": ["error", 2, { "SwitchCase": 1 }],
+    // "arrow-parens": 0,
+    // "arrow-parens": ["error", "as-needed"],
+    // "@typescript-eslint/semi": [2, "never"],
+    // "max-len": [
+    //   2,
+    //   {
+    //     "code": 600
+    //   }
+    // ],
+    // "quotes": [
+    //   "error",
+    //   "single",
+    //   { "avoidEscape": true }
+    // ],
+    // "nonblock-statement-body-position": ["error", "beside"],
+    // "brace-style": [2, "1tbs", { "allowSingleLine": true }],
+    // "no-multi-spaces": "error",
+    // "jsx-quotes": [
+    //   "error",
+    //   "prefer-double"
+    // ],
+    // "comma-dangle": ["error", "always-multiline"],
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    },
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"],
+        "paths": ["web"],
+        "moduleDirectory": ["web", "node_modules"]
+      }
+    }
+  }
+}
