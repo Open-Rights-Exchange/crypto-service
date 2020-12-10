@@ -13,7 +13,7 @@ async function wellknown(filename: string, req: Request, res: Response, next: Ne
     case 'some-welknown-endpoint':
       return res.send(someWelknownFile)
     default:
-      return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { message: 'Not a valid endpoint' }, null)
+      return returnResponse(req, res, null, HttpStatusCode.NOT_FOUND_404, { message: 'Not a valid endpoint' }, null)
   }
 }
 

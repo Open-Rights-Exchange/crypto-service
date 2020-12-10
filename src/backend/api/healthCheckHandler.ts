@@ -44,7 +44,6 @@ export async function healthCheckHandler(req: Request, res: Response, next: Next
   } catch (error) {
     logger.error('error while running healthCheck', error)
   }
-  
+  res.status(200).json(response)
   logger.trace('healthCheck endpoint called', response)
-  return returnResponse(req, res, HttpStatusCode.OK_200, response, null)
 }

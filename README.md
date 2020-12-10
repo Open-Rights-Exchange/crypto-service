@@ -1,12 +1,7 @@
-[![CircleCI](https://circleci.com/gh/API-market/oreid-service/tree/dev.svg?style=svg&circle-token=db48eb16543fe8c6e6b96b063b95a18d8bad930f)](https://circleci.com/gh/API-market/oreid-service/tree/dev)
 
 ## Crypto Service API
 
-The app is a NextJS based app using [Mobx](https://github.com/mobxjs/mobx) and runs an Express(Node) server.
-
-### API
-
-This service provides a traditional Restful HTTP API that serves GET and POST requests via the /api path
+The app is an Express(Node) server that provides a traditional Restful HTTP API that serves GET and POST requests via the /api path
 
 It provides basic crypto and blockchain-related functions including:
 
@@ -14,7 +9,7 @@ It provides basic crypto and blockchain-related functions including:
 * signing transactions
 * encrypting / decrypting payloads - supporting both symmetric and asymmetric encryption
 
-This service is stateless - it holds no keys
+This service is stateless - it holds no user data or keys
 
 ## Running on local machine
 
@@ -28,13 +23,12 @@ This service is stateless - it holds no keys
 
 ### `npm run dev`
 
-Runs the app in the development mode - served by NextJS dev server.<br>
+Runs the app in the development mode<br>
 Open [http://localhost:8080](http://localhost:8080) to view it in the browser.
 
 ### `npm run build`
 
-Builds the app for production into the `.next` folder.<br>
-The NextJS build engine uses the webpack config in the next.config.js file and precompiles pages where it can - we disable static precompilation for most pages (by adding a getInitialProps() function in those pages
+Builds the app for production into the `dist folder.<br>
 
 ### `npm run start`
 

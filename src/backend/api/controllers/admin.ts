@@ -17,15 +17,14 @@ async function v1Admin(req: Request, res: Response, next: NextFunction) {
       case 'refresh':
         // reload settings and flush caches
         return await handleAdminRefresh(req, res, next)
-      case 'admin-access-token':
-        return await getAdminAccessToken(req, res)
       default:
-        return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { message: 'Not a valid endpoint' }, null)
+        return returnResponse(req, res, null, HttpStatusCode.NOT_FOUND_404, { message: 'Not a valid endpoint' }, null)
     }
   } catch (error) {
     return returnResponse(
       req,
       res,
+      null, 
       HttpStatusCode.NOT_FOUND_404,
       { message: 'Problem handling /admin request', error: error.toString() },
       null,
@@ -33,18 +32,12 @@ async function v1Admin(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-async function getAdminAccessToken(req: Request, res: Response) {
-  const { context, appId } = await getAppIdAndContext(req)
-  const token = 'missing-token'
-  return returnResponse(req, res, HttpStatusCode.OK_200, { adminAccessToken: token }, context)
-}
-
 // Reload settings and flush cache(s)
 async function handleAdminRefresh(req: Request, res: Response, next: NextFunction) {
-  const { context } = await getAppIdAndContext(req)
+  const { appId, context } = await getAppIdAndContext(req)
   // clearAllCaches()
   // await loadDatabaseSettings(context)
-  return returnResponse(req, res, HttpStatusCode.OK_200, { messsage: 'Settings and cache reloaded.' }, null)
+  return returnResponse(req, res, appId, HttpStatusCode.OK_200, { messsage: 'Settings and cache reloaded.' }, null)
 }
 
 export { v1Admin }

@@ -11,8 +11,6 @@ const rollbarConfig = {
   },
 }
 
-console.log('ROLLBAR_POST_WRITE_SERVER_KEY:', ROLLBAR_POST_WRITE_SERVER_KEY)
-
 export const rollbar = new Rollbar(rollbarConfig)
 
 export default {}

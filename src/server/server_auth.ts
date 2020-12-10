@@ -36,7 +36,6 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
 }
 
 export function logger(req: Request, res: Response, next: NextFunction) {
-  console.log('server.ts logger: req.headers ', req.headers)
   next()
 }
 
