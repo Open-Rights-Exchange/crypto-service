@@ -4,8 +4,8 @@ import { generateProcessId, Logger, isNullOrEmpty, isAString } from 'aikon-js'
 import dotenv from 'dotenv'
 import { analyticsEvent } from '../services/segment/resolvers'
 import { rollbar } from '../services/rollbar/connectors'
-
 import { HttpStatusCode, Context, AnalyticsEvent, AppId } from '../models'
+import { getAppIdFromApiKey } from '../resolvers/appRegistration'
 
 dotenv.config()
 
@@ -29,21 +29,15 @@ export function createContext(req: Request, appId?: AppId): Context {
   return context
 }
 
-/** Create context object with 'api' as user */
-function createContextForApi(req: Request) {
-  const appId = 'appId-missing'
-  return createContext(req, appId)
-}
-
 /** use request headers to determine appId, serviceID, and processId
  * also creates a context object from these values */
 export async function getAppIdAndContext(req: Request) {
   // this context can be passed to mutations that update the database
-  const context = createContextForApi(req)
+  const context = createContext(req)
   const { logger } = context
 
   // appId
-  const appId = 'missing-app-id' // TODO: await getAppIdFromApiKey(req.headers['api-key'] as string, context)
+  const appId = await getAppIdFromApiKey(req.headers['api-key'] as string, context)
   if (isNullOrEmpty(appId)) {
     throw new Error('Missing required header parameter: api-key')
   }
@@ -97,13 +91,13 @@ export function analyticsForApi(req: Request, data: any, context: Context) {
   const path = req.baseUrl
   // TODO: Replace depricated api (url.parse)
   const { query } = url.parse(req.url) // eslint-disable-line 
-  console.log('analyticsForApi', { path, query, ...data })
   analyticsEvent('api', AnalyticsEvent.ApiCalled, { path, query, ...data }, context)
 }
 
 export function returnResponse(
   req: Request,
   res: Response,
+  appId: AppId,
   httpStatusCode: number,
   responseToReturn: any,
   context: Context,
@@ -114,9 +108,9 @@ export function returnResponse(
   }
   // if no context provided, create one (in part, to get processId from request header)
   if (!context) {
-    context = createContextForApi(req)
+    context = createContext(req)
   }
-  analyticsForApi(req, { httpStatusCode, errorResponse }, context)
+  analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
   return res.status(httpStatusCode).json({ processId: context?.processId, ...responseToReturn })
 }
 
