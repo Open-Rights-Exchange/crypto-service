@@ -11,17 +11,3 @@ export type TimestampSchema = {
   updatedBy: string
   __v: number
 }
-
-export type AppAccessToken = {
-  _id: string
-  appId: string
-  expiresOn: Date
-  metadata?: {
-    newAccountPassword?: string
-    currentAccountPassword?: string
-    secrets?: {
-      // type: AppTokenSecretType
-      value: string
-    }[]
-  }
-} & TimestampSchema

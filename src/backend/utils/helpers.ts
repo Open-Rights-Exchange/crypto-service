@@ -78,3 +78,14 @@ export async function asyncForEach(array: any[], callback: (item: any, index: nu
     await callback(array[index], index, array)
   }
 }
+
+export function throwNewError(message: string, code?: string, parentError?: Error) {
+  let messageToReturn = message
+  if (parentError) {
+    // add parentError to message
+    messageToReturn = `${message} - Parent Error: ${parentError?.message} ${JSON.stringify(parentError)}`
+  }
+  const error = new Error(messageToReturn)
+  error.name = code
+  throw error
+}

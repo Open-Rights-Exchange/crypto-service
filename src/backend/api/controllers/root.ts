@@ -1,9 +1,11 @@
 import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
 import { logger as globalLogger } from '../../utils/helpers'
-import { returnResponse, getAppIdAndContext, checkForRequiredHeaderValues } from '../helpers'
+import { returnResponse, getAppIdAndContext, checkForRequiredHeaderValues, checkForRequiredBodyValues } from '../helpers'
 import { HttpStatusCode } from '../../models'
+import { assertValidChainType } from '../../models/helpers'
 import { BASE_PUBLIC_KEY } from '../../constants'
+import { generateKeysResolver } from '../../resolvers/crypto'
 
 dotenv.config()
 
@@ -22,20 +24,32 @@ async function v1Root(req: Request, res: Response, next: NextFunction) {
 }
 
 // localhost:8080/api/generate-keys
-/** Generates one or more public/private key pairs for a specific blockchain */
+/** Calls resolver to generate one or more public/private key pairs for a specific blockchain */
 async function handleGenerateKeys(req: Request, res: Response, next: NextFunction) {
   let appId, context
   try {
     globalLogger.trace('called handleGenerateKeys')
     checkForRequiredHeaderValues(req, ['api-key'])
+    checkForRequiredBodyValues(req, ['chainType', 'authToken'])
+    const {
+      authToken,
+      asymmetricOptions,
+      chainType,
+      keyCount,
+      symmetricOptions,
+    } = req.body
+
+    // validate params
+    if(!symmetricOptions && !asymmetricOptions) {
+      throw new Error(`Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricOptions, symmetricOptions`)
+    }
     ;({ context, appId } = await getAppIdAndContext(req))
 
-    // TODO: chains.generateKeys
-    const response = {}
+    const response = await generateKeysResolver({chainType, keyCount, asymmetricOptions, symmetricOptions, authToken}, context, appId)
 
-    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response , context)
+    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /generate-keyS request', error: error.toString() }
+    const errResponse = { message: 'Problem handling /generate-keys request', error: error.toString() }
     return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
   }
 }
