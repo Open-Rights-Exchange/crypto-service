@@ -1,4 +1,5 @@
 import { Logger } from 'aikon-js'
+import { AsymEncryptedDataString, EncryptedDataString, ModelsCryptoAsymmetric } from '../models/chainjs'
 
 export interface Lookup {
   [key: string]: any
@@ -16,8 +17,9 @@ export type Context = {
 export type Hash = string
 export type PublicKey = string
 export type SaltName = string
-export type SymmetricEncryptedItem = string
-export type AsymmetricEncryptedItem = string
+export type SymmetricEncryptedItem = EncryptedDataString
+export type AsymmetricEncryptedItem = AsymEncryptedDataString
+export type AsymmetricEncryptionOptions = ModelsCryptoAsymmetric.EciesOptions
 export type SymmetricPassword = string
 
 /** Flavor of chain network */
@@ -35,12 +37,12 @@ export enum ChainType {
 }
 
 /** Athorization token sent (encrypted) by caller
- *  Ensures that the request is coming from an authorized called 
- *  and the request is only executed/authorized once 
+ *  Ensures that the request is coming from an authorized called
+ *  and the request is only executed/authorized once
  *  Optionally includes symmetric password for encryption/decryption */
 export type AuthToken = {
   paramsHash: Hash
-  password?: SymmetricPassword,
+  password?: SymmetricPassword
   validFrom: Date
   expiresOn: Date
 }

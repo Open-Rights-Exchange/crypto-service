@@ -5,7 +5,7 @@ import { returnResponse, getAppIdAndContext, checkForRequiredHeaderValues, check
 import { HttpStatusCode } from '../../models'
 import { assertValidChainType } from '../../models/helpers'
 import { BASE_PUBLIC_KEY } from '../../constants'
-import { generateKeysResolver } from '../../resolvers/crypto'
+import { encryptResolver, generateKeysResolver } from '../../resolvers/crypto'
 
 dotenv.config()
 
@@ -14,6 +14,8 @@ dotenv.config()
 async function v1Root(req: Request, res: Response, next: NextFunction) {
   const { action } = req.params
   switch (action) {
+    case 'encrypt':
+      return handleEncrypt(req, res, next)
     case 'generate-keys':
       return handleGenerateKeys(req, res, next)
     case 'public-key':
@@ -23,7 +25,38 @@ async function v1Root(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// localhost:8080/api/generate-keys
+// /api/encrypt
+/** Calls resolver to encrypt the payload using  one or more public/private key pairs for a specific blockchain */
+async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
+  let appId, context
+  try {
+    globalLogger.trace('called handleEncrypt')
+    checkForRequiredHeaderValues(req, ['api-key'])
+    checkForRequiredBodyValues(req, ['authToken', 'chainType', 'payload'])
+    const {
+      authToken,
+      asymmetricOptions,
+      chainType,
+      payload,
+      symmetricOptions,
+    } = req.body
+
+    // validate params
+    if(!symmetricOptions && !asymmetricOptions) {
+      throw new Error(`Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricOptions, symmetricOptions`)
+    }
+    ;({ context, appId } = await getAppIdAndContext(req))
+
+    const response = await encryptResolver({chainType, asymmetricOptions, symmetricOptions, authToken, payload}, context, appId)
+
+    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
+  } catch (error) {
+    const errResponse = { message: 'Problem handling /generate-keys request', error: error.toString() }
+    return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
+  }
+}
+
+// /api/generate-keys
 /** Calls resolver to generate one or more public/private key pairs for a specific blockchain */
 async function handleGenerateKeys(req: Request, res: Response, next: NextFunction) {
   let appId, context
@@ -54,7 +87,7 @@ async function handleGenerateKeys(req: Request, res: Response, next: NextFunctio
   }
 }
 
-// localhost:8080/api/public-key
+// /api/public-key
 /** Returns the public key for which all incoming secrets should be asymmetrically encrypted */
 async function handlePublicKey(req: Request, res: Response, next: NextFunction) {
   let appId, context

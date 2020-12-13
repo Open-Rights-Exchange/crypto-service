@@ -11,6 +11,17 @@ import {
 } from '../models'
 import { ModelsCryptoAsymmetric, ModelsCryptoEcc, ModelsCryptoEd25519 } from '../models/chainjs'
 
+export type EncryptParams = {
+  /** chain/curve to use to encrypt */
+  chainType: ChainType
+  /** value to encrypt */
+  payload: string,
+  asymmetricOptions?: AsymmetricOptions,
+  symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options,
+  /** encrypted auth token */
+  authToken: AuthToken
+}
+
 export type GenerateKeysParams = {
   /** chain to use to generate keys */
   chainType: ChainType
