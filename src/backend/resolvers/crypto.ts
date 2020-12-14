@@ -7,6 +7,8 @@ import {
   AsymmetricEncryptionOptions,
   AsymmetricOptions,
   Context,
+  DecryptSymmetricallyParams,
+  DecryptWithPasswordParams,
   EncryptAsymmetricallyParams,
   EncryptParams,
   EncryptSymmetricallyParams,
@@ -19,9 +21,9 @@ import { ChainConnection, getChain } from '../chains/chainConnection'
 import { assertValidChainType } from '../models/helpers'
 
 export type GenerateKeyResult = {
-    publicKey: PublicKeyCredential
-    symmetricEncryptedItem: SymmetricEncryptedItem
-    asymmetricEncryptedItem: AsymmetricEncryptedItem
+  publicKey: PublicKeyCredential
+  symmetricEncryptedItem: SymmetricEncryptedItem
+  asymmetricEncryptedItem: AsymmetricEncryptedItem
 }
 
 /**
@@ -33,7 +35,7 @@ export async function generateKeysResolver(
   context: Context,
   appId: AppId,
 ): Promise<GenerateKeyResult[]> {
-  let results: GenerateKeyResult[] = []
+  const results: GenerateKeyResult[] = []
 
   assertValidChainType(params?.chainType)
   const chainConnect = await getChain(params?.chainType, context, appId)
@@ -41,22 +43,22 @@ export async function generateKeysResolver(
   const count = params?.keyCount ? Math.round(params?.keyCount) : 1
 
   // key n set of public/priuvate keys - enbcrypting the private keys
-  for (let index = 0; index < count ; index++) {
+  for (let index = 0; index < count; index += 1) {
     const keys = await chain.generateKeyPair()
-    const encryptParams: EncryptParams = { 
+    const encryptParams: EncryptParams = {
       chainType: params?.chainType,
       asymmetricOptions: params?.asymmetricOptions,
       symmetricOptions: params?.symmetricOptions,
       authToken: params?.authToken,
-      payload: keys?.privateKey
+      payload: keys?.privateKey,
     }
     // encrypt and add to array for results
     const { asymmetricEncryptedItem, symmetricEncryptedItem } = await encryptResolver(encryptParams, context, appId)
     const resultItem: Partial<GenerateKeyResult> = {
-      publicKey: keys?.publicKey
+      publicKey: keys?.publicKey,
     }
-    if(symmetricEncryptedItem) resultItem.symmetricEncryptedItem = symmetricEncryptedItem
-    if(asymmetricEncryptedItem) resultItem.asymmetricEncryptedItem = asymmetricEncryptedItem
+    if (symmetricEncryptedItem) resultItem.symmetricEncryptedItem = symmetricEncryptedItem
+    if (asymmetricEncryptedItem) resultItem.asymmetricEncryptedItem = asymmetricEncryptedItem
     results.push(resultItem as GenerateKeyResult)
   }
   console.log('results:', results)
@@ -84,7 +86,7 @@ export async function encryptResolver(
 
   try {
     const keys = await chain.generateKeyPair()
-    const { symmetricEccOptions, symmetricEd25519Options}  = mapSymmetricOptionsParam(params?.symmetricOptions)
+    const { symmetricEccOptions, symmetricEd25519Options } = mapSymmetricOptionsParam(params?.symmetricOptions)
 
     // TODO: handle authToken to extract password
     const password = 'mypassword'
@@ -120,10 +122,65 @@ export async function encryptResolver(
   return { asymmetricEncryptedItem, symmetricEncryptedItem }
 }
 
+/**
+ *  Decrypts a symmetrically encrypted payload using a password (in the authToken)
+ *  If returnAsymmetricOptions is specified, the decrypted item is encrypted with this public key before being returned
+ *  Returns: the decrypted string OR an asymmetrically re-encrypted payload (using returnAsymmetricOptions)
+ */
+export async function decryptWithPasswordResolver(
+  params: DecryptWithPasswordParams,
+  context: Context,
+  appId: AppId,
+): Promise<{
+  decryptedResult?: string
+  encryptedResult?: AsymmetricEncryptedItem
+}> {
+  assertValidChainType(params?.chainType)
+  const { returnAsymmetricOptions, chainType, encryptedPayload, symmetricOptions } = params
+  const chainConnect = await getChain(chainType, context, appId)
+  const { chain } = chainConnect
+  const { logger } = context
+  let decryptedResult: string
+  let encryptedResult: AsymmetricEncryptedItem
+
+  try {
+    const keys = await chain.generateKeyPair()
+    const { symmetricEccOptions, symmetricEd25519Options } = mapSymmetricOptionsParam(symmetricOptions)
+
+    // TODO: handle authToken to extract password
+    const password = 'mypassword'
+
+    // Decrypt symetrically with password
+    decryptedResult = await decryptSymmetrically(chainConnect, {
+      encrypted: encryptedPayload,
+      password,
+      options: symmetricEccOptions || symmetricEd25519Options,
+    })
+
+    // Optionally, re-encrypt result asymmetrically before returning it
+    const shouldEncryptAsymResult = !isNullOrEmpty(returnAsymmetricOptions?.publicKeys)
+    if (shouldEncryptAsymResult) {
+      const options = mapAsymmetricOptionsParam(returnAsymmetricOptions)
+      encryptedResult = await encryptAsymmetrically(chainConnect, {
+        unencrypted: decryptedResult,
+        publicKeys: returnAsymmetricOptions?.publicKeys,
+        ...options,
+      })
+      // dont return result in the clear if we have an encryptedResult
+      decryptedResult = null
+    }
+  } catch (error) {
+    const errorMessage = 'Problem encrypting key (or string)'
+    logger.logAndThrowError(errorMessage, error)
+  }
+
+  return { decryptedResult, encryptedResult }
+}
+
 /** lookup the salt secret string using a well-known (pre-registered) name */
 export function mapSaltNameToSalt(saltName: string) {
   // TODO: handle get salt from params?.symmetricOptions?.saltName
-  if(!saltName) {
+  if (!saltName) {
     return ''
   }
   return 'todo-lookup-salt'
@@ -132,7 +189,7 @@ export function mapSaltNameToSalt(saltName: string) {
 /** Map incoming params to ModelsCryptoAsymmetric.EciesOptions */
 export function mapAsymmetricOptionsParam(asymmetricOptionsFromParams: AsymmetricOptions) {
   const { iv, s1, s2 } = asymmetricOptionsFromParams
-  let options: AsymmetricEncryptionOptions = {}
+  const options: AsymmetricEncryptionOptions = {}
   if (iv) options.iv = iv
   if (s1) options.s1 = s1
   if (s2) options.s2 = s2
@@ -141,36 +198,38 @@ export function mapAsymmetricOptionsParam(asymmetricOptionsFromParams: Asymmetri
 
 /** Map incoming params to SymmetricEccOptions an/or SymmetricEd25519Options */
 export function mapSymmetricOptionsParam(symmetricOptionsFromParams: SymmetricEccOptions | SymmetricEd25519Options) {
-  let symmetricEccOptions: SymmetricEccOptions = {}
-  let symmetricEd25519Options: SymmetricEd25519Options = {}
-  // handle ECC 
+  const symmetricEccOptions: SymmetricEccOptions = {}
+  const symmetricEd25519Options: SymmetricEd25519Options = {}
+  // handle ECC
   {
     const { iter, saltName, salt } = symmetricOptionsFromParams as SymmetricEccOptions
     if (iter) symmetricEccOptions.iter = iter
     if (salt) {
-      symmetricEccOptions.salt = salt 
+      symmetricEccOptions.salt = salt
     } else if (saltName) {
       symmetricEccOptions.salt = mapSaltNameToSalt(saltName)
     }
   }
-  // handle Ed25519 
+  // handle Ed25519
   {
     const { N, saltName, salt } = symmetricOptionsFromParams as SymmetricEd25519Options
     if (N) symmetricEd25519Options.N = N
     if (salt) {
-      symmetricEd25519Options.salt = salt 
+      symmetricEd25519Options.salt = salt
     } else if (saltName) {
       symmetricEd25519Options.salt = mapSaltNameToSalt(saltName)
     }
   }
-  // return either Ecc or Ed25519 
-  if(!isNullOrEmpty(symmetricEccOptions)) {
+  // return either Ecc or Ed25519
+  if (!isNullOrEmpty(symmetricEccOptions)) {
     return { symmetricEccOptions, isEcc: true, isEd25519: false }
   }
-  if(!isNullOrEmpty(symmetricEd25519Options)) {
+  if (!isNullOrEmpty(symmetricEd25519Options)) {
     return { symmetricEd25519Options, isEcc: false, isEd25519: true }
   }
 
+  // we should not get here - nothing to return
+  return { symmetricEd25519Options: null, isEcc: false, isEd25519: false }
 }
 
 /** Encrypts a string asymmetrically - using one or more publicKeys */
@@ -189,6 +248,15 @@ export async function encryptSymmetrically(
 ): Promise<SymmetricEncryptedItem> {
   const { chain } = chainConnect
   return chain.encryptWithPassword(params?.unencrypted, params?.password, params?.options)
+}
+
+/** Decrypts a symmetrically encrypted payload - using a password and optional salt */
+export async function decryptSymmetrically(
+  chainConnect: ChainConnection,
+  params: DecryptSymmetricallyParams,
+): Promise<string> {
+  const { chain } = chainConnect
+  return chain.decryptWithPassword(params?.encrypted, params?.password, params?.options)
 }
 
 /**
