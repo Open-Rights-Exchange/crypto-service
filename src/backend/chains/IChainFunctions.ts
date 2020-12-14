@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/interface-name-prefix */
 import {
-  AsymmetricEncryptedItem,
+  AsymmetricEncryptedString,
   ChainType,
   Context,
   GenerateKeysParams,
   PublicKey,
-  SymmetricEncryptedItem,
+  SymmetricEncryptedString,
 } from '../models'
 import { Transaction } from '../models/chainjs'
 
@@ -15,8 +16,8 @@ export interface IChainFunctions {
   generateKeys(
     params: GenerateKeysParams,
   ): {
-    symmetricEncryptedItems: SymmetricEncryptedItem[]
-    asymmetricEncryptedItems: AsymmetricEncryptedItem[]
+    symmetricEncryptedStrings: SymmetricEncryptedString[]
+    asymmetricEncryptedStrings: AsymmetricEncryptedString[]
   }
 
   // TODO
