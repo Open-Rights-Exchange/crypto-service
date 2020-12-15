@@ -42,7 +42,7 @@ export type EncryptParams = {
   /** chain/curve to use to encrypt */
   chainType: ChainType
   /** value to encrypt */
-  payload: string
+  payloadToEncrypt: string
   asymmetricOptions?: AsymmetricOptions
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
   /** encrypted auth token */

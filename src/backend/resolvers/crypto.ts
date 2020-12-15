@@ -59,7 +59,7 @@ export async function generateKeysResolver(
       asymmetricOptions: params?.asymmetricOptions,
       symmetricOptions: params?.symmetricOptions,
       authToken: params?.authToken,
-      payload: keys?.privateKey,
+      payloadToEncrypt: keys?.privateKey,
     }
     // encrypt and add to array for results
     const { asymmetricEncryptedString, symmetricEncryptedString } = await encryptResolver(encryptParams, context, appId)
@@ -75,7 +75,7 @@ export async function generateKeysResolver(
 }
 
 /**
- *  Encrypts a string using
+ *  Encrypts a string using symmetric and/or asymmetric encryption
  *  Returns: an array of symmetrically and/or asymmetrically encrypted items
  */
 export async function encryptResolver(
@@ -106,7 +106,7 @@ export async function encryptResolver(
     // Encrypt symetrically with password
     if (shouldEncryptSym) {
       const encryptedPrivateKey = await encryptSymmetrically(chainConnect, {
-        unencrypted: params?.payload,
+        unencrypted: params?.payloadToEncrypt,
         password,
         options: symmetricEccOptions || symmetricEd25519Options,
       })
@@ -116,7 +116,7 @@ export async function encryptResolver(
     if (shouldEncryptAsym) {
       const options = mapAsymmetricOptionsParam(params?.asymmetricOptions)
       const encryptedPrivateKey = await encryptAsymmetrically(chainConnect, {
-        unencrypted: params?.payload,
+        unencrypted: params?.payloadToEncrypt,
         publicKeys,
         ...options,
       })
@@ -144,7 +144,7 @@ export async function decryptWithPasswordResolver(
   encryptedResult?: AsymmetricEncryptedString
 }> {
   assertValidChainType(params?.chainType)
-  const { returnAsymmetricOptions, chainType, encryptedPayload, symmetricOptions } = params
+  const { authToken, returnAsymmetricOptions, chainType, encryptedPayload, symmetricOptions } = params
   const chainConnect = await getChain(chainType, context, appId)
   const { chain } = chainConnect
   const { logger } = context
@@ -154,9 +154,7 @@ export async function decryptWithPasswordResolver(
   try {
     const keys = await chain.generateKeyPair()
     const { symmetricEccOptions, symmetricEd25519Options } = mapSymmetricOptionsParam(symmetricOptions)
-
-    // TODO: handle authToken to extract password
-    const password = 'mypassword'
+    const { password } = getInfoFromAuthToken(authToken)
 
     // Decrypt symetrically with password
     decryptedResult = await decryptSymmetrically(chainConnect, {
@@ -263,7 +261,7 @@ export async function signResolver(params: SignParams, context: Context, appId: 
 }
 
 /** Retrieve PrivateKeys needed to decrypt AsymmetricEncryptedString
- *  Keys must be available to the service or it will throw an error currently only works with BASE_PUBLIC_KEY
+ *  Keys must be available to the service or it will throw an error - currently only works with BASE_PUBLIC_KEY
  */
 export async function getPrivateKeysForAsymEncryptedPayload(
   encryptedKey: AsymmetricEncryptedString,

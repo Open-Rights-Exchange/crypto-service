@@ -73,8 +73,8 @@ async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
   try {
     globalLogger.trace('called handleEncrypt')
     checkForRequiredHeaderValues(req, ['api-key'])
-    checkForRequiredBodyValues(req, ['authToken', 'chainType', 'payload'])
-    const { authToken, asymmetricOptions, chainType, payload, symmetricOptions } = req.body
+    checkForRequiredBodyValues(req, ['authToken', 'chainType', 'payloadToEncrypt'])
+    const { authToken, asymmetricOptions, chainType, payloadToEncrypt, symmetricOptions } = req.body
 
     // validate params
     if (!symmetricOptions && !asymmetricOptions) {
@@ -85,7 +85,7 @@ async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
     ;({ context, appId } = await getAppIdAndContext(req))
 
     const response = await encryptResolver(
-      { chainType, asymmetricOptions, symmetricOptions, authToken, payload },
+      { chainType, asymmetricOptions, symmetricOptions, authToken, payloadToEncrypt },
       context,
       appId,
     )
