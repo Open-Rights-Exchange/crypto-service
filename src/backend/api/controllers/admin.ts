@@ -24,7 +24,7 @@ async function v1Admin(req: Request, res: Response, next: NextFunction) {
     return returnResponse(
       req,
       res,
-      null, 
+      null,
       HttpStatusCode.NOT_FOUND_404,
       { message: 'Problem handling /admin request', error: error.toString() },
       null,

@@ -57,9 +57,9 @@ export type AsymmetricOptions = {
   publicKeys: PublicKey[]
   /** optional initialization vector */
   iv?: string
-  /** any data or secret to be included in ecnrypted payload */
+  /** any data or secret to be included in encrypted result */
   s1?: string
-  /** any data or secret to be included in ecnrypted payload */
+  /** any data or secret to be included in encrypted result */
   s2?: string
 }
 
