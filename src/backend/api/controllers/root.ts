@@ -10,7 +10,12 @@ import {
 import { HttpStatusCode } from '../../models'
 import { assertValidChainType } from '../../models/helpers'
 import { BASE_PUBLIC_KEY } from '../../constants'
-import { decryptWithPasswordResolver, encryptResolver, generateKeysResolver } from '../../resolvers/crypto'
+import {
+  decryptWithPasswordResolver,
+  encryptResolver,
+  generateKeysResolver,
+  signResolver,
+} from '../../resolvers/crypto'
 
 dotenv.config()
 
@@ -27,6 +32,8 @@ async function v1Root(req: Request, res: Response, next: NextFunction) {
       return handleGenerateKeys(req, res, next)
     case 'public-key':
       return handlePublicKey(req, res, next)
+    case 'sign':
+      return handleSign(req, res, next)
     default:
       return returnResponse(req, res, null, HttpStatusCode.NOT_FOUND_404, { message: 'Not a valid endpoint' }, null)
   }
@@ -118,6 +125,61 @@ async function handleGenerateKeys(req: Request, res: Response, next: NextFunctio
     return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     const errResponse = { message: 'Problem handling /generate-keys request', error: error.toString() }
+    return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
+  }
+}
+
+// /api/sign
+/** Calls resolver to sign a transaction with one or more private key pairs for a specific blockchain */
+async function handleSign(req: Request, res: Response, next: NextFunction) {
+  let appId
+  let context
+  try {
+    globalLogger.trace('called handleSign')
+    checkForRequiredHeaderValues(req, ['api-key'])
+    checkForRequiredBodyValues(req, ['chainType', 'authToken', 'payloadToSign'])
+    const {
+      authToken,
+      asymmetricOptions,
+      chainType,
+      payloadToSign,
+      symmetricOptions,
+      asymmetricEncryptedPrivateKeys,
+      symmetricEncryptedPrivateKeys,
+    } = req.body
+
+    // validate params
+    if (!asymmetricEncryptedPrivateKeys && !symmetricEncryptedPrivateKeys) {
+      throw new Error(
+        `Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricEncryptedPrivateKeys, symmetricEncryptedPrivateKeys`,
+      )
+    }
+    if (
+      (asymmetricEncryptedPrivateKeys && !Array.isArray(asymmetricEncryptedPrivateKeys)) ||
+      (symmetricEncryptedPrivateKeys && !Array.isArray(symmetricEncryptedPrivateKeys))
+    ) {
+      throw new Error(
+        `Bad parameter(s) in request body. ...EncryptedPrivateKeys parameter(s) must be an array. If only have one value, enclose it in an array i.e. [ ].`,
+      )
+    }
+    ;({ context, appId } = await getAppIdAndContext(req))
+
+    const response = await signResolver(
+      {
+        authToken,
+        chainType,
+        payloadToSign,
+        symmetricOptions,
+        asymmetricEncryptedPrivateKeys,
+        symmetricEncryptedPrivateKeys,
+      },
+      context,
+      appId,
+    )
+
+    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
+  } catch (error) {
+    const errResponse = { message: 'Problem handling /sign request', error: error.toString() }
     return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
   }
 }

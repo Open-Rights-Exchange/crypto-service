@@ -194,18 +194,18 @@ export async function decryptWithPasswordResolver(
 export async function signResolver(params: SignParams, context: Context, appId: AppId): Promise<string[]> {
   assertValidChainType(params?.chainType)
   const {
-    asymmetricEncryptedPrivateKeys,
+    asymmetricEncryptedPrivateKeys = [],
     authToken,
     chainType,
     payloadToSign,
-    symmetricEncryptedPrivateKeys,
+    symmetricEncryptedPrivateKeys = [],
     symmetricOptions,
   } = params
   const chainConnect = await getChain(chainType, context, appId)
   const { chain } = chainConnect
   const { logger } = context
-  let privateKeys: PrivateKey[]
-  let signatures: string[]
+  let privateKeys: PrivateKey[] = []
+  const signatures: string[] = []
 
   const { symmetricEccOptions, symmetricEd25519Options } = mapSymmetricOptionsParam(symmetricOptions)
   // decrypt private keys (aaymmetrically encrypted) - must have access to private key(s)
@@ -214,12 +214,17 @@ export async function signResolver(params: SignParams, context: Context, appId: 
   try {
     // decrypt private keys (symmetrically encrypted)
     await Promise.all(
-      (symmetricEncryptedPrivateKeys || []).map(async encPrivKey => {
+      symmetricEncryptedPrivateKeys.map(async encPrivKey => {
         const privateKey = await decryptSymmetrically(chainConnect, {
           encrypted: encPrivKey,
           password,
           options: symmetricEccOptions || symmetricEd25519Options,
         })
+        if (!chain.isValidPrivateKey(privateKey)) {
+          throwNewError(
+            `A decrypted value provided in symmetricEncryptedPrivateKeys is not a valid private key for chain: ${chainType}. Encrypted value: ${encPrivKey}`,
+          )
+        }
         privateKeys.push(privateKey)
       }),
     )
@@ -227,12 +232,17 @@ export async function signResolver(params: SignParams, context: Context, appId: 
     // decrypt private keys (asymmetrically encrypted)
     // currently only works if all of asymmetricEncryptedPrivateKeys are only encrypted with BASE_PUBLIC_KEY
     await Promise.all(
-      (asymmetricEncryptedPrivateKeys || []).map(async encPrivKey => {
+      asymmetricEncryptedPrivateKeys.map(async encPrivKey => {
         privateKeys = await getPrivateKeysForAsymEncryptedPayload(encPrivKey)
         const privateKey = await decryptAsymmetrically(chainConnect, {
           encrypted: encPrivKey,
           privateKeys,
         })
+        if (!chain.isValidPrivateKey(privateKey)) {
+          throwNewError(
+            `A decrypted value provided in asymmetricEncryptedPrivateKeys is not a valid private key for chain: ${chainType}. Encrypted value: ${encPrivKey}`,
+          )
+        }
         privateKeys.push(privateKey)
       }),
     )
@@ -263,7 +273,7 @@ export async function getPrivateKeysForAsymEncryptedPayload(
   const encryptedObject = JSON.parse(encryptedKey)
   if (!Array.isArray(encryptedObject) || isNullOrEmpty(encryptedObject)) {
     throwNewError(
-      `encryptedKey must be an not array of type AsymmetricEncryptedString - got ${JSON.stringify(encryptedKey)}`,
+      `encryptedKey must be an array of type AsymmetricEncryptedString - got ${JSON.stringify(encryptedKey)}`,
     )
   }
 
@@ -351,6 +361,16 @@ export function mapSymmetricOptionsParam(symmetricOptionsFromParams: SymmetricEc
   return { symmetricEd25519Options: null, isEcc: false, isEd25519: false }
 }
 
+/** Throw if value is not a valid private key for the given chain */
+export function assertIsValidPrivateKey(chainConnect: ChainConnection, privateKey: PrivateKey) {
+  const { chain } = chainConnect
+  if (!chain.isValidPrivateKey(privateKey)) {
+    throwNewError(
+      `Invalid value provided as a private key. '${privateKey}' is not a valid private key for chain: ${chain.chainType}`,
+    )
+  }
+}
+
 /** Encrypts a string asymmetrically - using one or more publicKeys */
 export async function encryptAsymmetrically(
   chainConnect: ChainConnection,
@@ -386,163 +406,3 @@ export async function decryptAsymmetrically(
   const { chain } = chainConnect
   return chain.decryptWithPrivateKeys(params?.encrypted, params?.privateKeys)
 }
-
-/**
- *  Creates one or more new public/private key pairs using the curve specified
- *  Returns: an array of symmetrically and/or asymmetrically encrypted items
- */
-export async function encrypt(
-  params: GenerateKeysParams,
-  context: Context,
-  appId: AppId,
-): Promise<{
-  symmetricEncryptedStrings: SymmetricEncryptedString[]
-  asymmetricEncryptedStrings: AsymmetricEncryptedString[]
-}> {
-  const { chain } = await getChain(params?.chainType, context, appId)
-  const { logger } = context
-  let encryptedValue
-  try {
-    // encryptedValue = chain.encryptWithPassword(value, password, encryptionOptions)
-  } catch (error) {
-    encryptedValue = null
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
-  }
-
-  return encryptedValue
-}
-
-// type DecryptPasswordParams = {
-//   context: Context
-//   encryptedPassword: EncryptedDataString
-//   /** a string used as a seed to encrypt/decrypt encryptedPassword */
-//   passwordKey: string
-//   salt: string
-//   onFailAnalyticsData?: any
-// }
-
-// /** Decrypt credential password - using standard AesCrypto (not chain-specific) */
-// export function decryptPassword({
-//   context,
-//   encryptedPassword,
-//   passwordKey,
-//   salt,
-//   onFailAnalyticsData = {},
-// }: DecryptPasswordParams) {
-//   const { logger } = context
-//   const { userId = 'missing' } = onFailAnalyticsData
-//   const errorMessage = 'problem decrypting password'
-//   let privateKey
-
-//   try {
-//     // Use standard AesCrypto (not chain-specific)
-//     privateKey = Crypto.AesCrypto.decryptWithPassword(encryptedPassword, passwordKey, { salt })
-//   } catch (error) {
-//     privateKey = null
-//   }
-
-//   // If decrypt fails or key is empty, throw error
-//   if (isNullOrEmpty(privateKey)) {
-//     analyticsEvent(userId, AnalyticsEvent.DecryptingKeyFailedBadPassword, onFailAnalyticsData, context)
-//     logger.trace(errorMessage)
-//     throw new Error(errorMessage)
-//   }
-//   return privateKey
-// }
-
-// type EncryptPasswordParams = {
-//   context: Context
-//   unencryptedPassword: string
-//   /** a string used as a seed to encrypt unencryptedPassword */
-//   passwordKey: string
-//   salt: string
-// }
-
-// /** Encrypt credential password - using standard AesCrypto (not chain-specific) */
-// export function encryptPassword({ context, unencryptedPassword, passwordKey, salt }: EncryptPasswordParams) {
-//   const { logger } = context
-//   let password
-
-//   try {
-//     // Use standard AesCrypto (not chain-specific)
-//     password = Crypto.AesCrypto.encryptWithPassword(unencryptedPassword, passwordKey, { salt })
-//   } catch (error) {
-//     logger.logAndThrowError('Problem encrypting credential password', error)
-//   }
-
-//   return password
-// }
-
-// type DecryptForChainWithPasswordParams = {
-//   chainConnect: ChainConnection
-//   encryptedValue: EncryptedDataString
-//   password: string
-//   /** options depend on the chain-specific EncryptionOptions - may include: salt, iter etc. */
-//   encryptionOptions?: any
-//   onFailAnalyticsData?: any
-// }
-
-// export function decryptForChainWithPassword({
-//   chainConnect,
-//   encryptedValue,
-//   password,
-//   encryptionOptions,
-//   onFailAnalyticsData = {},
-// }: DecryptForChainWithPasswordParams) {
-//   const { chain, context } = chainConnect
-//   const { logger } = context
-//   const { userId = 'missing' } = onFailAnalyticsData
-//   const errorMessage = 'Problem decrypting key (or string) - Cause: likely bad password'
-//   let unencryptedValue
-
-//   if (isAnObject(encryptedValue)) {
-//     encryptedValue = Crypto.CryptoHelpers.toEncryptedDataString(JSON.stringify(encryptedValue))
-//   }
-
-//   try {
-//     unencryptedValue = chain.decryptWithPassword(encryptedValue, password, { ...encryptionOptions })
-//   } catch (error) {
-//     logger.trace(error)
-//     unencryptedValue = null
-//   }
-
-//   // If decrypt fails or key is empty, throw error
-//   if (isNullOrEmpty(unencryptedValue)) {
-//     analyticsEvent(userId, AnalyticsEvent.DecryptingKeyFailedBadPassword, onFailAnalyticsData, context)
-//     logger.trace(errorMessage)
-//     throw new Error(errorMessage)
-//   }
-//   return unencryptedValue
-// }
-
-// type EncryptForChainWithPasswordParams = {
-//   chainConnect: ChainConnection
-//   value: string
-//   password: string
-//   /** options depend on the chain-specific EncryptionOptions - may include: salt, iter etc. */
-//   encryptionOptions?: any
-// }
-
-// /** Encrypt a string (using chain-specifc crypto functions)
-//  *  Uses a password (and chain-specific encryptionOptions) and returns an EncryptedDataString object */
-// export function encryptForChainWithPassword({
-//   chainConnect,
-//   value,
-//   password,
-//   encryptionOptions,
-// }: EncryptForChainWithPasswordParams): EncryptedDataString {
-//   const { chain, context } = chainConnect
-//   const { logger } = context
-//   const errorMessage = 'Problem encrypting key (or string)'
-//   let encryptedValue
-
-//   try {
-//     encryptedValue = chain.encryptWithPassword(value, password, encryptionOptions)
-//   } catch (error) {
-//     encryptedValue = null
-//     logger.logAndThrowError(errorMessage, error)
-//   }
-
-//   return encryptedValue
-// }

@@ -29,3 +29,7 @@ export const HOURS_FOR_TIMEOUT_LOCK = 24
 // Misc
 export const RECAPTCHA_SERVER_KEY = settings.RECAPTCHA_SERVER_KEY
 export const APP_ACCESS_TOKEN_EXPIRATION_IN_SECONDS = 120
+
+if (!settings.BASE_PUBLIC_KEY || !settings.BASE_PRIVATE_KEY) {
+  throw new Error('Make sure you have environment settings in an .env file in the root directory of the app')
+}
