@@ -25,7 +25,6 @@ export const MINUTES_FOR_MORE_LOCK = 60
 export const HOURS_FOR_TIMEOUT_LOCK = 24
 
 // Misc
-export const RECAPTCHA_SERVER_KEY = settings.RECAPTCHA_SERVER_KEY
 export const APP_ACCESS_TOKEN_EXPIRATION_IN_SECONDS = 120
 
 if (!settings.BASE_PUBLIC_KEY || !settings.BASE_PRIVATE_KEY) {
