@@ -1,6 +1,7 @@
 import { Convert, createSchema, Definition, DefinitionField, ExtractData, ExtractDoc, Type, typedModel, ObjectId, timestampSchema } from './_helpers';
 
 // MongoDB Schema files
+import { AppConfigSchema } from './appConfig';
 import { AuthTokenSchema } from './authToken';
 import { AppRegistrationApiKeySchema, AppRegistrationSchema } from './appRegistration';
 
@@ -11,8 +12,9 @@ export { Convert, createSchema, Definition, DefinitionField, ExtractData, Extrac
 
 /** Mongoose objects of each data type */
 export const Mongo = {
-  AuthToken: typedModel('AuthToken', AuthTokenSchema, 'authTokens'),
   AppRegistration: typedModel('AppRegistration', AppRegistrationSchema, 'appRegistrations'),
+  AppConfig: typedModel('AppConfig', AppConfigSchema, 'appConfig'),
+  AuthToken: typedModel('AuthToken', AuthTokenSchema, 'authTokens'),
 };
 
 /** Given a Mongoose result, these types transform it into the just the data properties  
@@ -20,5 +22,6 @@ export const Mongo = {
  *  Ex: user = findOneMongo<UserData>() yields a typed response: user.email */
 export type AuthTokenData = ExtractData<typeof AuthTokenSchema>;
 export type AppRegistrationData = ExtractData<typeof AppRegistrationSchema>;
+export type AppConfigData = ExtractData<typeof AppConfigSchema>;
 // sub schemas
 export type AppRegistrationApiKeyData = ExtractData<typeof AppRegistrationApiKeySchema>;

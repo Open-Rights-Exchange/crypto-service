@@ -1,10 +1,11 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request } from 'express'
 import { isNullOrEmpty, isValidDate, tryBase64Decode } from 'aikon-js'
 import { convertStringifiedJsonOrObjectToObject, createSha256Hash } from '../utils/helpers'
-import { AnalyticsEvent, AppId, AuthToken, Context, ErrorCode, Mongo, ResultWithErrorCode } from '../models'
+import { AnalyticsEvent, AuthToken, Context, ErrorType, Mongo } from '../models'
 import { decryptWithBasePrivateKey } from './crypto'
 import { AuthTokenData } from '../services/mongo/models'
 import { findOneMongo, upsertMongo } from '../services/mongo/resolvers'
+import { ServiceError } from './errors'
 import { analyticsEvent } from '../services/segment/resolvers'
 
 /** Extract auth-token from header of request and verifies that it is valid
@@ -12,15 +13,13 @@ import { analyticsEvent } from '../services/segment/resolvers'
  *  hashOfPayload - the hash of the stringified JSON object of all params set to called function along with this authToken
  *  Returns data extracted from authToken
  */
-export async function assertValidAuthTokenAndExtractContents(
-  req: Request,
-  context: Context,
-  appId: AppId,
-): Promise<AuthToken> {
+export async function validateAuthTokenAndExtractContents(req: Request, context: Context): Promise<AuthToken> {
+  const { appId } = context
   const base64EncodedAuthToken = req.headers['auth-token'] as string
   const encryptedAuthToken = tryBase64Decode(base64EncodedAuthToken)
   if (isNullOrEmpty(encryptedAuthToken)) {
-    throw new Error(`Missing required parameter in request Header. Must provide auth-token.`)
+    const msg = `Missing required parameter in request Header. Must provide auth-token.`
+    throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
   // Example Auth Token
@@ -39,7 +38,8 @@ export async function assertValidAuthTokenAndExtractContents(
   // validate params
   const { payloadHash, validFrom, validTo, secrets } = decryptedAuthToken
   if (!payloadHash || !isValidDate(validFrom) || !isValidDate(validTo)) {
-    throw new Error(`Auth Token is malformed or missing a required value when decrypted.`)
+    const msg = `Auth Token is malformed or missing a required value when decrypted.`
+    throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
   // VERIFY: valid date/time
@@ -50,14 +50,16 @@ export async function assertValidAuthTokenAndExtractContents(
   const isValidNow = nowUtc >= validFromDate && nowUtc <= validToDate
   // TODO: confirm validToDate is not too far in future - i.e. <= AUTH_TOKEN_MAX_EXPIRATION_IN_SECONDS
   if (!isValidNow) {
-    throw new Error(`Auth Token has expired or is not valid at the current time: ${now}.`)
+    const msg = `Auth Token has expired or is not valid at the current time: ${now}.`
+    throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
   // VERIFY: payloadHash matches hash of request body
-  const bodyStringified = JSON.stringify(req.body || '')
-  const hashOfBody = createSha256Hash(bodyStringified)
+  const body = JSON.stringify(req.body || '')
+  const hashOfBody = createSha256Hash(body)
   if (hashOfBody !== payloadHash) {
-    throw new Error(`Auth Token payloadHash does not match Sha256Hash of request body.`)
+    const msg = `Auth Token payloadHash does not match Sha256Hash of request body.`
+    throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents: ${body}`)
   }
 
   // Return decoded token
@@ -69,16 +71,12 @@ export async function assertValidAuthTokenAndExtractContents(
   }
 
   // Save authToken to prevent replay
-  const result = await saveAuthToken({ appId, authToken, context, base64EncodedAuthToken })
-  if (!result.success) {
-    throw new Error(`${result?.errorCode}: ${result.errorMessage}`)
-  }
+  await saveAuthToken({ authToken, context, base64EncodedAuthToken })
 
   return authToken
 }
 
 type SaveAuthTokenParam = {
-  appId: AppId
   base64EncodedAuthToken: string
   authToken: AuthToken
   context: Context
@@ -87,42 +85,31 @@ type SaveAuthTokenParam = {
 /**
  * Save authToken until it expires - when it expires, it will be automatically deleted from the table
  */
-export async function saveAuthToken({
-  appId,
-  authToken,
-  context,
-  base64EncodedAuthToken,
-}: SaveAuthTokenParam): Promise<ResultWithErrorCode> {
-  const { logger } = context
+export async function saveAuthToken({ authToken, context, base64EncodedAuthToken }: SaveAuthTokenParam) {
+  const { appId, logger } = context
 
-  try {
-    // check if token is already saved - if, we cant use it again
-    const existingAuthToken = await findOneMongo<AuthTokenData>({
-      context,
-      mongoObject: Mongo.AuthToken,
-      filter: { token: base64EncodedAuthToken },
-    })
+  // check if token is already saved - if, we cant use it again
+  const existingAuthToken = await findOneMongo<AuthTokenData>({
+    context,
+    mongoObject: Mongo.AuthToken,
+    filter: { token: base64EncodedAuthToken },
+  })
 
-    if (existingAuthToken) {
-      return { success: false, errorCode: ErrorCode.AuthTokenValidation, errorMessage: 'Auth token has already been used.' }
-    }
-
-    // create a new authToken record
-    const newItem = {
-      appId,
-      expiresOn: authToken.validTo,
-      token: base64EncodedAuthToken,
-    }
-    await upsertMongo<AuthTokenData>({
-      context,
-      mongoObject: Mongo.AuthToken,
-      newItem,
-      skipUpdatedFields: true,
-    })
-    analyticsEvent('api', AnalyticsEvent.AuthTokenCreated, { appId }, context)
-  } catch (error) {
-    logger.error(`Problem saving authAccessToken for appId:${appId}`, error)
-    throw new Error(`Problem saving authAccessToken`)
+  if (existingAuthToken) {
+    throw new ServiceError('Auth token has already been used.', ErrorType.AuthTokenValidation, 'saveAuthToken')
   }
-  return { success: true }
+
+  // create a new authToken record
+  const newItem = {
+    appId,
+    expiresOn: authToken.validTo,
+    token: base64EncodedAuthToken,
+  }
+  await upsertMongo<AuthTokenData>({
+    context,
+    mongoObject: Mongo.AuthToken,
+    newItem,
+    skipUpdatedFields: true,
+  })
+  analyticsEvent('api', AnalyticsEvent.AuthTokenCreated, { appId }, context)
 }
