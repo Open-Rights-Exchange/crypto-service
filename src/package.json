@@ -19,7 +19,7 @@
   "dependencies": {
     "@babel/core": "7.9.0",
     "@google-cloud/storage": "^2.4.2",
-    "@open-rights-exchange/chainjs": "^0.26.12",
+    "@open-rights-exchange/chainjs": "^0.26.14",
     "@types/analytics-node": "^3.1.2",
     "@types/cors": "^2.8.8",
     "@types/debug": "^4.1.5",
@@ -48,6 +48,7 @@
     "isomorphic-unfetch": "^3.0.0",
     "js-base64": "^2.4.9",
     "js-cookie": "^2.2.0",
+    "js-sha256": "^0.9.0",
     "jwks-rsa": "^1.2.1",
     "lodash": "^4.17.10",
     "marked": "^0.6.2",
