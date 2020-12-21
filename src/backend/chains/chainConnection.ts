@@ -1,13 +1,7 @@
 import { ChainFactory, Chain } from '@open-rights-exchange/chainjs'
-import { logger, toEnumValue } from '../utils/helpers'
-import {
-  AppId,
-  ChainPlatformType as ChainPlatform,
-  Context,
-} from '../models'
-import { ChainType } from '../models'
-// import { ChainFunctions as AlgorandCustomFunctions } from './algorand'
-// import { ChainFunctions as EthereumCustomFunctions } from './ethereum'
+import { AppId, ChainPlatformType, Context, ChainType } from '../models'
+import { ChainFunctions as AlgorandCustomFunctions } from './algorand'
+import { ChainFunctions as EthereumCustomFunctions } from './ethereum'
 import { ChainFunctions as EosChainFunctions } from './eos'
 import { IChainFunctions } from './IChainFunctions'
 /** A stateful wrapper for a blockchain connection
@@ -18,7 +12,7 @@ export class ChainConnection {
   private _chainFunctions: IChainFunctions
   private _chainType: ChainType
   private _chain: Chain
-  private _chainPlatform: ChainPlatform
+  private _chainPlatform: ChainPlatformType
 
   constructor(chainType: ChainType) {
     this._chainType = chainType
@@ -73,34 +67,31 @@ export class ChainConnection {
 
   /** Determines the ChainJS ChainType to use for a given the current platformType */
   static getChainPlatformFromType(chainType: ChainType) {
-    // if (chainType === ChainType.AlgorandV1) {
-    //   return ChainPlatform.Algorand
-    // }
-    if (chainType === ChainType.EosV2) {
-      return ChainPlatform.Eos
+    if (chainType === ChainType.AlgorandV1) {
+      return ChainPlatformType.Algorand
     }
-    // if (chainType === ChainType.EthereumV1) {
-    //   return ChainPlatform.Ethereum
-    // }
+    if (chainType === ChainType.EosV2) {
+      return ChainPlatformType.Eos
+    }
+    if (chainType === ChainType.EthereumV1) {
+      return ChainPlatformType.Ethereum
+    }
     throw new Error(`Chain type ${chainType} not implemented`)
   }
 
   /** Determines the custom oreid code to use for each ChainNetwork */
   static getChainFunctions(chainType: ChainType): IChainFunctions {
     if (chainType === ChainType.AlgorandV1) {
-      // return AlgorandCustomFunctions
+      return AlgorandCustomFunctions
     }
     if (chainType === ChainType.EthereumV1) {
-      // return EthereumCustomFunctions
+      return EthereumCustomFunctions
     }
     if (chainType === ChainType.EosV2) {
       return EosChainFunctions
     }
-    throw new Error(
-      `getChainFunctions: Chaintype ${chainType} not implemented`,
-    )
+    throw new Error(`getChainFunctions: Chaintype ${chainType} not implemented`)
   }
-
 }
 
 /** Returns a ChainConnection - does not connect to the blockchain endpoint */
