@@ -19,8 +19,8 @@ export type DecryptWithPasswordParams = {
   returnAsymmetricOptions?: AsymmetricOptions
   /** options used to originally encrypt the payload */
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
-  /** encrypted auth token */
-  authToken: AuthToken
+  /** symmetric password used to encypt with */
+  password: string
 }
 
 export type SignParams = {
@@ -34,8 +34,8 @@ export type SignParams = {
   asymmetricEncryptedPrivateKeys?: AsymmetricEncryptedString[]
   /** options used to originally encrypt symmetricEncryptedPrivateKeys */
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
-  /** encrypted auth token */
-  authToken: AuthToken
+  /** symmetric password used to encypt with */
+  password: string
 }
 
 export type EncryptParams = {
@@ -45,8 +45,8 @@ export type EncryptParams = {
   payloadToEncrypt: string
   asymmetricOptions?: AsymmetricOptions
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
-  /** encrypted auth token */
-  authToken: AuthToken
+  /** symmetric password used to encypt with */
+  password: string
 }
 
 export type GenerateKeysParams = {
@@ -56,8 +56,8 @@ export type GenerateKeysParams = {
   keyCount?: number
   asymmetricOptions?: AsymmetricOptions
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
-  /** encrypted auth token */
-  authToken: AuthToken
+  /** symmetric password used to encypt with */
+  password: string
 }
 
 export type EncryptAsymmetricallyParams = {
@@ -83,4 +83,8 @@ export type DecryptAsymmetricallyParams = {
   /** Stringified JSON of encrypted (asymmmetric) payload */
   encrypted: AsymmetricEncryptedString
   privateKeys: PrivateKey[]
+}
+
+export type DecryptWithBasePrivateKey = {
+  encrypted: AsymmetricEncryptedString | string
 }
