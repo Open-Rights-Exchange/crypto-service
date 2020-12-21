@@ -3,8 +3,6 @@ import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
 import { APP_NAME } from '../constants'
 import { ContextGlobal } from '../utils/helpers'
-import { HttpStatusCode } from '../models'
-import { returnResponse } from './helpers'
 
 dotenv.config()
 // read the deploy_version file and add to process.env
