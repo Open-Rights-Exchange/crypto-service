@@ -1,4 +1,6 @@
-import { Logger, isNullOrEmpty } from 'aikon-js'
+import { isAString, tryParseJSON, isAnObject, Logger, isNullOrEmpty } from 'aikon-js'
+import { sha256 } from 'js-sha256'
+import { ChainType } from '../models/general'
 import { DEFAULT_PROCESS_ID } from '../constants'
 import { rollbar } from '../services/rollbar/connectors'
 
@@ -79,13 +81,43 @@ export async function asyncForEach(array: any[], callback: (item: any, index: nu
   }
 }
 
-export function throwNewError(message: string, code?: string, parentError?: Error) {
-  let messageToReturn = message
-  if (parentError) {
-    // add parentError to message
-    messageToReturn = `${message} - Parent Error: ${parentError?.message} ${JSON.stringify(parentError)}`
+/** Convert/parse a stringified JSON object to object
+ *  if incoming value is already an object, it will just be returned */
+export function convertStringifiedJsonOrObjectToObject(value: any) {
+  if (isAnObject(value)) return value
+  if (isAString(value)) {
+    const object = tryParseJSON(value)
+    if (object) {
+      return object
+    }
   }
-  const error = new Error(messageToReturn)
-  error.name = code
-  throw error
+  throw new Error(`Could not parse value into a JSON object. Value:${JSON.stringify(value)}`)
+}
+
+/** Convert/stringify a JSON object to a string
+ *  if incoming value is already an string, it will just be returned */
+export function convertObjectToStringifiedJson(value: any): any {
+  if (isAnObject(value)) return JSON.stringify(value)
+  return value
+}
+
+/** maps standard timestap fields to fully-typed */
+export function mapTimestamp(data: any) {
+  const { createdOn, createdBy, updatedOn, updatedBy } = data
+  return { createdOn, createdBy, updatedOn, updatedBy }
+}
+
+/** throws if chainType string isnt a valid value in ChainType enum  */
+export function assertValidChainType(chainType: string): void {
+  if (!isInEnum(ChainType, chainType)) {
+    throw new Error(`Invalid chainType: '${chainType}'.`)
+  }
+}
+
+/** Generates a SHA256 hash from a value
+ *  Returns a hex-encoded result */
+export function createSha256Hash(value: string) {
+  const hash = sha256.create()
+  hash.update(value)
+  return hash.hex()
 }

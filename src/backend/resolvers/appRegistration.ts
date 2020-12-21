@@ -1,10 +1,9 @@
-import { throwNewError } from "@open-rights-exchange/chainjs/dist/errors"
-import { isNullOrEmpty, toBool } from "aikon-js"
-import { Context } from "../models"
-import { AppRegistrationData, Mongo } from "../models/data"
-import { findOneMongo } from "../services/mongo/resolvers"
+import { isNullOrEmpty, toBool } from 'aikon-js'
+import { Context } from '../models'
+import { AppRegistrationData, Mongo } from '../models/data'
+import { findOneMongo } from '../services/mongo/resolvers'
 
-let appTokenCache: { [key: string]: any } = {}
+const appTokenCache: { [key: string]: any } = {}
 
 /**
  * Gets all the Api keys for given App ID.
@@ -26,13 +25,13 @@ export async function getApiKeysForAppRegistration(context: Context, appId: stri
   return []
 }
 
-/** 
+/**
  * Lookup the appId matching the provided API Key
  * If missing or invalid, throws an error
  * Caches key in order to limit hits against the DB */
 export async function getAppIdFromApiKey(apiKey: string, context: Context) {
   if (isNullOrEmpty(apiKey)) {
-    throwNewError('Missing required header parameter: api-key')
+    throw new Error('Missing required header parameter: api-key')
   }
 
   // Look in cache first
@@ -49,7 +48,7 @@ export async function getAppIdFromApiKey(apiKey: string, context: Context) {
     filter,
   })
   if (isNullOrEmpty(appRegistration)) {
-    throwNewError("api-key isn't valid")
+    throw new Error("api-key isn't valid")
   }
 
   appId = appRegistration._id

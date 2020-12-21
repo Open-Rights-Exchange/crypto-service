@@ -1,8 +1,6 @@
 /* eslint-disable prefer-destructuring */
 // Environment settings - stored in a .env file in the root of the app (not stored in GitHub)
 // require('dotenv-webpack');
-import { Base64 } from 'js-base64'
-
 require('dotenv').config()
 
 const settings = process.env

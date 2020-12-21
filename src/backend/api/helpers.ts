@@ -48,7 +48,7 @@ export async function getAppIdAndContext(req: Request) {
   return { appId, context }
 }
 
-// check the url's query params for each required param in paramNames
+/** check the url's query params for each required param in paramNames */
 export function checkForRequiredParams(req: Request, paramNames: any[]) {
   const missing: any = []
   paramNames.forEach(p => {
@@ -61,7 +61,7 @@ export function checkForRequiredParams(req: Request, paramNames: any[]) {
   }
 }
 
-// check the header of the request for each required param in paramNames
+/** check the header of the request for each required param in paramNames */
 export function checkForRequiredHeaderValues(req: Request, paramNames: any[]) {
   const missing: any[] = []
   paramNames.forEach(p => {
@@ -74,7 +74,7 @@ export function checkForRequiredHeaderValues(req: Request, paramNames: any[]) {
   }
 }
 
-// check the body of the request for each required param in paramNames
+/** check the body of the request for each required param in paramNames */
 export function checkForRequiredBodyValues(req: Request, paramNames: any[]) {
   const missing: any[] = []
   paramNames.forEach(p => {
@@ -87,6 +87,7 @@ export function checkForRequiredBodyValues(req: Request, paramNames: any[]) {
   }
 }
 
+/** Helper to log analytics for an API request */
 export function analyticsForApi(req: Request, data: any, context: Context) {
   const path = req.baseUrl
   // TODO: Replace depricated api (url.parse)
@@ -94,6 +95,7 @@ export function analyticsForApi(req: Request, data: any, context: Context) {
   analyticsEvent('api', AnalyticsEvent.ApiCalled, { path, query, ...data }, context)
 }
 
+/** Return response and log analytics */
 export function returnResponse(
   req: Request,
   res: Response,
@@ -112,11 +114,4 @@ export function returnResponse(
   }
   analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
   return res.status(httpStatusCode).json({ processId: context?.processId, ...responseToReturn })
-}
-
-export function parseMultisigChainAccounts(multiSigChainAccounts: string) {
-  if (!isAString(multiSigChainAccounts)) {
-    return null
-  }
-  return multiSigChainAccounts.split(',').map(ma => ma.trim()) // remove whitespace between commas
 }
