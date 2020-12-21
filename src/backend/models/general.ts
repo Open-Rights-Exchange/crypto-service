@@ -1,5 +1,6 @@
 import { Logger } from 'aikon-js'
 import { AsymEncryptedDataString, EncryptedDataString, ModelsCryptoAsymmetric } from './chainjs'
+import { ErrorCode } from './errors'
 
 export interface Lookup {
   [key: string]: any
@@ -85,4 +86,12 @@ export type SymmetricEd25519Options = {
   saltName?: string
   /** salt value - if provided, this is used instead of saltName */
   salt?: string
+}
+
+/** Generic type for return from function */
+export type ResultWithErrorCode = {
+  success: boolean
+  resultString?: string
+  errorCode?: ErrorCode
+  errorMessage?: string
 }
