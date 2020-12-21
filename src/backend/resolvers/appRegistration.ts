@@ -1,7 +1,8 @@
 import { isNullOrEmpty, toBool } from 'aikon-js'
-import { Context } from '../models'
+import { Context, ErrorType } from '../models'
 import { AppRegistrationData, Mongo } from '../models/data'
 import { findOneMongo } from '../services/mongo/resolvers'
+import { ServiceError } from './errors'
 
 const appTokenCache: { [key: string]: any } = {}
 
@@ -31,7 +32,7 @@ export async function getApiKeysForAppRegistration(context: Context, appId: stri
  * Caches key in order to limit hits against the DB */
 export async function getAppIdFromApiKey(apiKey: string, context: Context) {
   if (isNullOrEmpty(apiKey)) {
-    throw new Error('Missing required header parameter: api-key')
+    throw new ServiceError('Missing required header parameter: api-key', ErrorType.BadParam, 'getAppIdFromApiKey')
   }
 
   // Look in cache first
@@ -48,7 +49,8 @@ export async function getAppIdFromApiKey(apiKey: string, context: Context) {
     filter,
   })
   if (isNullOrEmpty(appRegistration)) {
-    throw new Error("api-key isn't valid")
+    const msg = `api-key isn't valid`
+    throw new ServiceError(msg, ErrorType.BadParam, 'getAppIdFromApiKey')
   }
 
   appId = appRegistration._id

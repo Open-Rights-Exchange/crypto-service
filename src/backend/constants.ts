@@ -1,5 +1,8 @@
 /* eslint-disable prefer-destructuring */
 // Environment settings - stored in a .env file in the root of the app (not stored in GitHub)
+
+import { ServiceError } from './resolvers/errors'
+
 // require('dotenv-webpack');
 require('dotenv').config()
 
@@ -28,5 +31,5 @@ export const HOURS_FOR_TIMEOUT_LOCK = 24
 export const APP_ACCESS_TOKEN_EXPIRATION_IN_SECONDS = 120
 
 if (!settings.BASE_PUBLIC_KEY || !settings.BASE_PRIVATE_KEY) {
-  throw new Error('Make sure you have environment settings in an .env file in the root directory of the app')
+  throw new ServiceError('Make sure you have environment settings in an .env file in the root directory of the app')
 }

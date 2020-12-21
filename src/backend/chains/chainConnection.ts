@@ -1,5 +1,6 @@
 import { ChainFactory, Chain } from '@open-rights-exchange/chainjs'
-import { AppId, ChainPlatformType, Context, ChainType } from '../models'
+import { AppId, ChainPlatformType, Context, ChainType, ErrorType } from '../models'
+import { ServiceError } from '../resolvers/errors'
 import { ChainFunctions as AlgorandCustomFunctions } from './algorand'
 import { ChainFunctions as EthereumCustomFunctions } from './ethereum'
 import { ChainFunctions as EosChainFunctions } from './eos'
@@ -7,7 +8,7 @@ import { IChainFunctions } from './IChainFunctions'
 /** A stateful wrapper for a blockchain connection
  *  Includes context and appRegistation settings */
 export class ChainConnection {
-  private _appId: string
+  private _appId: AppId
   private _context: Context
   private _chainFunctions: IChainFunctions
   private _chainType: ChainType
@@ -22,9 +23,9 @@ export class ChainConnection {
   }
 
   /** Load app setings and (by default) connect to the chain to confirm the endpoint is up */
-  async initialize(context?: Context, appId?: AppId): Promise<void> {
+  async initialize(context?: Context): Promise<void> {
     this._context = context
-    this._appId = appId
+    this._appId = context?.appId
   }
 
   /** AppId for active app */
@@ -62,7 +63,8 @@ export class ChainConnection {
   }
 
   throwNotSupported(description: string) {
-    throw new Error(`Chain ${this.chainType} does not support ${description}`)
+    const msg = `Chain ${this.chainType} does not support ${description}`
+    throw new ServiceError(msg, ErrorType.ChainConfig, 'chainConnection')
   }
 
   /** Determines the ChainJS ChainType to use for a given the current platformType */
@@ -76,7 +78,8 @@ export class ChainConnection {
     if (chainType === ChainType.EthereumV1) {
       return ChainPlatformType.Ethereum
     }
-    throw new Error(`Chain type ${chainType} not implemented`)
+    const msg = `Chain type ${chainType} not implemented`
+    throw new ServiceError(msg, ErrorType.ChainConfig, 'getChainPlatformFromType')
   }
 
   /** Determines the custom oreid code to use for each ChainNetwork */
@@ -90,7 +93,8 @@ export class ChainConnection {
     if (chainType === ChainType.EosV2) {
       return EosChainFunctions
     }
-    throw new Error(`getChainFunctions: Chaintype ${chainType} not implemented`)
+    const msg = `getChainFunctions: Chaintype ${chainType} not implemented`
+    throw new ServiceError(msg, ErrorType.ChainConfig, 'getChainFunctions')
   }
 }
 
@@ -98,10 +102,9 @@ export class ChainConnection {
 export async function getChain(
   chainType: ChainType,
   context?: Context,
-  appId?: AppId,
   connectImmediately = false,
 ): Promise<ChainConnection> {
   const chainConnection = new ChainConnection(chainType)
-  await chainConnection.initialize(context, appId)
+  await chainConnection.initialize(context)
   return chainConnection
 }

@@ -3,6 +3,8 @@ import { sha256 } from 'js-sha256'
 import { ChainType } from '../models/general'
 import { DEFAULT_PROCESS_ID } from '../constants'
 import { rollbar } from '../services/rollbar/connectors'
+import { ErrorType } from '../models'
+import { ServiceError } from '../resolvers/errors'
 
 const loggerDefaults = {
   rollbar,
@@ -44,7 +46,7 @@ export function toEnumValue<T>(e: T, value: any, throwIfInvalid = false): T[keyo
   }
   const errMsg = `Value ${JSON.stringify(value)} is not a valid member of enum ${JSON.stringify(e)}.`
   if (throwIfInvalid) {
-    throw new Error(errMsg)
+    throw new ServiceError(errMsg, ErrorType.BadParam, `toEnumValue`)
   }
   logger.error(errMsg)
   return null
@@ -91,7 +93,8 @@ export function convertStringifiedJsonOrObjectToObject(value: any) {
       return object
     }
   }
-  throw new Error(`Could not parse value into a JSON object. Value:${JSON.stringify(value)}`)
+  const msg = `Could not parse value into a JSON object. Value:${JSON.stringify(value)}`
+  throw new ServiceError(msg, ErrorType.ParseError, `convertStringifiedJsonOrObjectToObject`)
 }
 
 /** Convert/stringify a JSON object to a string
@@ -110,7 +113,7 @@ export function mapTimestamp(data: any) {
 /** throws if chainType string isnt a valid value in ChainType enum  */
 export function assertValidChainType(chainType: string): void {
   if (!isInEnum(ChainType, chainType)) {
-    throw new Error(`Invalid chainType: '${chainType}'.`)
+    throw new ServiceError(`Invalid chainType: '${chainType}'.`, ErrorType.ChainConfig, `assertValidChainType`)
   }
 }
 

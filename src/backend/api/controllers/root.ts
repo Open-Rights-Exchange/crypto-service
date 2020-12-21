@@ -3,11 +3,11 @@ import { NextFunction, Request, Response } from 'express'
 import { logger as globalLogger } from '../../utils/helpers'
 import {
   returnResponse,
-  getAppIdAndContext,
+  getAppIdAndContextFromApiKey,
   checkForRequiredHeaderValues,
   checkForRequiredBodyValues,
 } from '../helpers'
-import { HttpStatusCode } from '../../models'
+import { ErrorSeverity, ErrorType, HttpStatusCode } from '../../models'
 import { BASE_PUBLIC_KEY } from '../../constants'
 import {
   decryptWithPasswordResolver,
@@ -15,7 +15,8 @@ import {
   generateKeysResolver,
   signResolver,
 } from '../../resolvers/crypto'
-import { assertValidAuthTokenAndExtractContents } from '../../resolvers/token'
+import { logError, ServiceError } from '../../resolvers/errors'
+import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
 
 dotenv.config()
 
@@ -35,40 +36,39 @@ async function v1Root(req: Request, res: Response, next: NextFunction) {
     case 'sign':
       return handleSign(req, res, next)
     default:
-      return returnResponse(req, res, null, HttpStatusCode.NOT_FOUND_404, { message: 'Not a valid endpoint' }, null)
+      return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, null)
   }
 }
 
 // /api/decrypt-with-password
 /** Calls resolver to decrypt the payload using provided password and options */
 async function handleDecryptWithPassword(req: Request, res: Response, next: NextFunction) {
-  let appId
+  const funcName = 'api/decrypt-with-password'
   let context
   try {
     globalLogger.trace('called handleDecryptWithPassword')
     checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
     checkForRequiredBodyValues(req, ['authToken', 'chainType', 'encryptedPayload', 'symmetricOptions'])
     const { chainType, encryptedPayload, returnAsymmetricOptions, symmetricOptions } = req.body
-    ;({ context, appId } = await getAppIdAndContext(req))
-    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
+    ;({ context } = await getAppIdAndContextFromApiKey(req))
+    const authToken = await validateAuthTokenAndExtractContents(req, context)
     const password = authToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
       { chainType, encryptedPayload, password, symmetricOptions, returnAsymmetricOptions },
       context,
-      appId,
     )
 
-    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
+    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /decrypt-with-password request', error: error.toString() }
-    return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
+    logError(context, error, ErrorSeverity.Info, funcName)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
   }
 }
 
 // /api/encrypt
 /** Calls resolver to encrypt the payload using one or more public/private key pairs for a specific blockchain */
 async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
-  let appId
+  const funcName = 'api/encrypt'
   let context
   try {
     globalLogger.trace('called handleEncrypt')
@@ -78,30 +78,29 @@ async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
 
     // validate params
     if (!symmetricOptions && !asymmetricOptions) {
-      throw new Error(
-        `Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricOptions, symmetricOptions`,
-      )
+      const msg = `Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricOptions, symmetricOptions`
+      throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
-    ;({ context, appId } = await getAppIdAndContext(req))
-    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
-    const password = authToken?.secrets?.password
+
+    ;({ context } = await getAppIdAndContextFromApiKey(req))
+    // const authToken = await assertValidAuthTokenAndExtractContents(req, context)
+    const password = 'mypassword' // authToken?.secrets?.password
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, payloadToEncrypt },
       context,
-      appId,
     )
 
-    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
+    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /encrypt request', error: error.toString() }
-    return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
+    logError(context, error, ErrorSeverity.Info, funcName)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
   }
 }
 
 // /api/generate-keys
 /** Calls resolver to generate one or more public/private key pairs for a specific blockchain */
 async function handleGenerateKeys(req: Request, res: Response, next: NextFunction) {
-  let appId
+  const funcName = 'api/generate-keys'
   let context
   try {
     globalLogger.trace('called handleGenerateKeys')
@@ -111,30 +110,28 @@ async function handleGenerateKeys(req: Request, res: Response, next: NextFunctio
 
     // validate params
     if (!symmetricOptions && !asymmetricOptions) {
-      throw new Error(
-        `Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricOptions, symmetricOptions`,
-      )
+      const msg = `Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricOptions, symmetricOptions`
+      throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
-    ;({ context, appId } = await getAppIdAndContext(req))
-    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
+    ;({ context } = await getAppIdAndContextFromApiKey(req))
+    const authToken = await validateAuthTokenAndExtractContents(req, context)
     const password = authToken?.secrets?.password
     const response = await generateKeysResolver(
       { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
       context,
-      appId,
     )
 
-    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
+    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /generate-keys request', error: error.toString() }
-    return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
+    logError(context, error, ErrorSeverity.Info, funcName)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
   }
 }
 
 // /api/sign
 /** Calls resolver to sign a transaction with one or more private key pairs for a specific blockchain */
 async function handleSign(req: Request, res: Response, next: NextFunction) {
-  let appId
+  const funcName = 'api/sign'
   let context
   try {
     globalLogger.trace('called handleSign')
@@ -151,20 +148,18 @@ async function handleSign(req: Request, res: Response, next: NextFunction) {
 
     // validate params
     if (!asymmetricEncryptedPrivateKeys && !symmetricEncryptedPrivateKeys) {
-      throw new Error(
-        `Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricEncryptedPrivateKeys, symmetricEncryptedPrivateKeys`,
-      )
+      const msg = `Missing required parameter(s) in request body. Must provide at least one of these parameters: asymmetricEncryptedPrivateKeys, symmetricEncryptedPrivateKeys`
+      throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
     if (
       (asymmetricEncryptedPrivateKeys && !Array.isArray(asymmetricEncryptedPrivateKeys)) ||
       (symmetricEncryptedPrivateKeys && !Array.isArray(symmetricEncryptedPrivateKeys))
     ) {
-      throw new Error(
-        `Bad parameter(s) in request body. ...EncryptedPrivateKeys parameter(s) must be an array. If only have one value, enclose it in an array i.e. [ ].`,
-      )
+      const msg = `Bad parameter(s) in request body. ...EncryptedPrivateKeys parameter(s) must be an array. If only have one value, enclose it in an array i.e. [ ].`
+      throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
-    ;({ context, appId } = await getAppIdAndContext(req))
-    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
+    ;({ context } = await getAppIdAndContextFromApiKey(req))
+    const authToken = await validateAuthTokenAndExtractContents(req, context)
     const password = authToken?.secrets?.password
     const response = await signResolver(
       {
@@ -176,29 +171,28 @@ async function handleSign(req: Request, res: Response, next: NextFunction) {
         symmetricEncryptedPrivateKeys,
       },
       context,
-      appId,
     )
 
-    return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
+    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /sign request', error: error.toString() }
-    return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
+    logError(context, error, ErrorSeverity.Info, funcName)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
   }
 }
 
 // /api/public-key
 /** Returns the public key for which all incoming secrets should be asymmetrically encrypted */
 async function handlePublicKey(req: Request, res: Response, next: NextFunction) {
-  let appId
+  const funcName = 'api/public-key'
   let context
   try {
     globalLogger.trace('called handlePublicKey')
     checkForRequiredHeaderValues(req, ['api-key'])
-    ;({ context, appId } = await getAppIdAndContext(req))
-    return returnResponse(req, res, appId, HttpStatusCode.OK_200, { publicKey: BASE_PUBLIC_KEY }, context)
+    ;({ context } = await getAppIdAndContextFromApiKey(req))
+    return returnResponse(req, res, HttpStatusCode.OK_200, { publicKey: BASE_PUBLIC_KEY }, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /public-key request', error: error.toString() }
-    return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
+    logError(context, error, ErrorSeverity.Critical, funcName)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context)
   }
 }
 

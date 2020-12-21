@@ -4,7 +4,8 @@ import { generateProcessId, Logger, isNullOrEmpty, isAString } from 'aikon-js'
 import dotenv from 'dotenv'
 import { analyticsEvent } from '../services/segment/resolvers'
 import { rollbar } from '../services/rollbar/connectors'
-import { HttpStatusCode, Context, AnalyticsEvent, AppId } from '../models'
+import { AnalyticsEvent, AppId, Context, ErrorType, HttpStatusCode } from '../models'
+import { composeErrorResponse, ServiceError } from '../resolvers/errors'
 import { getAppIdFromApiKey } from '../resolvers/appRegistration'
 
 dotenv.config()
@@ -31,7 +32,7 @@ export function createContext(req: Request, appId?: AppId): Context {
 
 /** use request headers to determine appId, serviceID, and processId
  * also creates a context object from these values */
-export async function getAppIdAndContext(req: Request) {
+export async function getAppIdAndContextFromApiKey(req: Request) {
   // this context can be passed to mutations that update the database
   const context = createContext(req)
   const { logger } = context
@@ -39,7 +40,11 @@ export async function getAppIdAndContext(req: Request) {
   // appId
   const appId = await getAppIdFromApiKey(req.headers['api-key'] as string, context)
   if (isNullOrEmpty(appId)) {
-    throw new Error('Missing required header parameter: api-key')
+    throw new ServiceError(
+      'Missing required header parameter: api-key',
+      ErrorType.BadParam,
+      'getAppIdAndContextFromApiKey',
+    )
   }
 
   context.appId = appId
@@ -57,7 +62,7 @@ export function checkForRequiredParams(req: Request, paramNames: any[]) {
     }
   })
   if (!isNullOrEmpty(missing)) {
-    throw new Error(`Missing required parameter(s): ${missing.join(', ')}`)
+    throw new ServiceError(`Missing required parameter(s): ${missing.join(', ')}`, ErrorType.BadParam)
   }
 }
 
@@ -70,7 +75,7 @@ export function checkForRequiredHeaderValues(req: Request, paramNames: any[]) {
     }
   })
   if (!isNullOrEmpty(missing)) {
-    throw new Error(`Missing required parameter(s) in request header: ${missing.join(', ')}`)
+    throw new ServiceError(`Missing required parameter(s) in request header: ${missing.join(', ')}`, ErrorType.BadParam)
   }
 }
 
@@ -83,7 +88,7 @@ export function checkForRequiredBodyValues(req: Request, paramNames: any[]) {
     }
   })
   if (!isNullOrEmpty(missing)) {
-    throw new Error(`Missing required parameter(s) in request body: ${missing.join(', ')}`)
+    throw new ServiceError(`Missing required parameter(s) in request body: ${missing.join(', ')}`, ErrorType.BadParam)
   }
 }
 
@@ -91,7 +96,7 @@ export function checkForRequiredBodyValues(req: Request, paramNames: any[]) {
 export function analyticsForApi(req: Request, data: any, context: Context) {
   const path = req.baseUrl
   // TODO: Replace depricated api (url.parse)
-  const { query } = url.parse(req.url) // eslint-disable-line 
+  const { query } = url.parse(req.url) // eslint-disable-line
   analyticsEvent('api', AnalyticsEvent.ApiCalled, { path, query, ...data }, context)
 }
 
@@ -99,14 +104,17 @@ export function analyticsForApi(req: Request, data: any, context: Context) {
 export function returnResponse(
   req: Request,
   res: Response,
-  appId: AppId,
   httpStatusCode: number,
   responseToReturn: any,
   context: Context,
+  error?: Error,
 ) {
+  const { appId } = context || {}
   let errorResponse
+
   if (httpStatusCode !== HttpStatusCode.OK_200) {
-    errorResponse = responseToReturn
+    errorResponse = composeErrorResponse(context, error)
+    responseToReturn = { ...errorResponse, ...responseToReturn }
   }
   // if no context provided, create one (in part, to get processId from request header)
   if (!context) {
