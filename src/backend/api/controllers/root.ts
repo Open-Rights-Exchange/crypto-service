@@ -8,7 +8,6 @@ import {
   checkForRequiredBodyValues,
 } from '../helpers'
 import { HttpStatusCode } from '../../models'
-import { assertValidChainType } from '../../models/helpers'
 import { BASE_PUBLIC_KEY } from '../../constants'
 import {
   decryptWithPasswordResolver,
@@ -16,6 +15,7 @@ import {
   generateKeysResolver,
   signResolver,
 } from '../../resolvers/crypto'
+import { assertValidAuthTokenAndExtractContents } from '../../resolvers/token'
 
 dotenv.config()
 
@@ -46,21 +46,21 @@ async function handleDecryptWithPassword(req: Request, res: Response, next: Next
   let context
   try {
     globalLogger.trace('called handleDecryptWithPassword')
-    checkForRequiredHeaderValues(req, ['api-key'])
+    checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
     checkForRequiredBodyValues(req, ['authToken', 'chainType', 'encryptedPayload', 'symmetricOptions'])
-    const { authToken, chainType, encryptedPayload, returnAsymmetricOptions, symmetricOptions } = req.body
-
+    const { chainType, encryptedPayload, returnAsymmetricOptions, symmetricOptions } = req.body
     ;({ context, appId } = await getAppIdAndContext(req))
-
+    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
+    const password = authToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
-      { authToken, chainType, encryptedPayload, symmetricOptions, returnAsymmetricOptions },
+      { chainType, encryptedPayload, password, symmetricOptions, returnAsymmetricOptions },
       context,
       appId,
     )
 
     return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /generate-keys request', error: error.toString() }
+    const errResponse = { message: 'Problem handling /decrypt-with-password request', error: error.toString() }
     return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
   }
 }
@@ -72,9 +72,9 @@ async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
   let context
   try {
     globalLogger.trace('called handleEncrypt')
-    checkForRequiredHeaderValues(req, ['api-key'])
-    checkForRequiredBodyValues(req, ['authToken', 'chainType', 'payloadToEncrypt'])
-    const { authToken, asymmetricOptions, chainType, payloadToEncrypt, symmetricOptions } = req.body
+    checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
+    checkForRequiredBodyValues(req, ['chainType', 'payloadToEncrypt'])
+    const { asymmetricOptions, chainType, payloadToEncrypt, symmetricOptions } = req.body
 
     // validate params
     if (!symmetricOptions && !asymmetricOptions) {
@@ -83,16 +83,17 @@ async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
       )
     }
     ;({ context, appId } = await getAppIdAndContext(req))
-
+    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
+    const password = authToken?.secrets?.password
     const response = await encryptResolver(
-      { chainType, asymmetricOptions, symmetricOptions, authToken, payloadToEncrypt },
+      { chainType, asymmetricOptions, symmetricOptions, password, payloadToEncrypt },
       context,
       appId,
     )
 
     return returnResponse(req, res, appId, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    const errResponse = { message: 'Problem handling /generate-keys request', error: error.toString() }
+    const errResponse = { message: 'Problem handling /encrypt request', error: error.toString() }
     return returnResponse(req, res, appId, HttpStatusCode.BAD_REQUEST_400, errResponse, context)
   }
 }
@@ -104,9 +105,9 @@ async function handleGenerateKeys(req: Request, res: Response, next: NextFunctio
   let context
   try {
     globalLogger.trace('called handleGenerateKeys')
-    checkForRequiredHeaderValues(req, ['api-key'])
+    checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
     checkForRequiredBodyValues(req, ['chainType', 'authToken'])
-    const { authToken, asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
+    const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
     // validate params
     if (!symmetricOptions && !asymmetricOptions) {
@@ -115,9 +116,10 @@ async function handleGenerateKeys(req: Request, res: Response, next: NextFunctio
       )
     }
     ;({ context, appId } = await getAppIdAndContext(req))
-
+    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
+    const password = authToken?.secrets?.password
     const response = await generateKeysResolver(
-      { chainType, keyCount, asymmetricOptions, symmetricOptions, authToken },
+      { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
       context,
       appId,
     )
@@ -136,10 +138,9 @@ async function handleSign(req: Request, res: Response, next: NextFunction) {
   let context
   try {
     globalLogger.trace('called handleSign')
-    checkForRequiredHeaderValues(req, ['api-key'])
-    checkForRequiredBodyValues(req, ['chainType', 'authToken', 'payloadToSign'])
+    checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
+    checkForRequiredBodyValues(req, ['chainType', 'payloadToSign'])
     const {
-      authToken,
       asymmetricOptions,
       chainType,
       payloadToSign,
@@ -163,11 +164,12 @@ async function handleSign(req: Request, res: Response, next: NextFunction) {
       )
     }
     ;({ context, appId } = await getAppIdAndContext(req))
-
+    const authToken = await assertValidAuthTokenAndExtractContents(req, context, appId)
+    const password = authToken?.secrets?.password
     const response = await signResolver(
       {
-        authToken,
         chainType,
+        password,
         payloadToSign,
         symmetricOptions,
         asymmetricEncryptedPrivateKeys,

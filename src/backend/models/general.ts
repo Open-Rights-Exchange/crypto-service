@@ -40,15 +40,19 @@ export enum ChainType {
   EthereumV1 = 'ethereum',
 }
 
-/** Athorization token sent (encrypted) by caller
+/** Decrypted Athorization token sent (encrypted) by caller
  *  Ensures that the request is coming from an authorized called
  *  and the request is only executed/authorized once
  *  Optionally includes symmetric password for encryption/decryption */
 export type AuthToken = {
-  paramsHash: Hash
-  password?: SymmetricPassword
+  /** hash of stringified JSON object of request body set to function along with this authToken */
+  payloadHash: Hash
   validFrom: Date
-  expiresOn: Date
+  validTo: Date
+  secrets?: {
+    /** Symmetric password used to decrypt a symetrically encrypted payload (that was, for example, sent in the request) */
+    password?: SymmetricPassword
+  }
 }
 
 /** Options for asym encryption */
