@@ -1,7 +1,7 @@
 {
   "extends": [
     "airbnb-typescript/base",
-    "plugin:@typescript-eslint/recommended", // Uses the recommended rules from the @typescript-eslint/eslint-plugin
+    // "plugin:@typescript-eslint/recommended", // Uses the recommended rules from the @typescript-eslint/eslint-plugin
     "plugin:jest/recommended",
     "prettier",
     "prettier/@typescript-eslint",
@@ -92,7 +92,7 @@
     },
     "import/resolver": {
       "node": {
-        "extensions": [".js", ".jsx", ".ts", ".tsx"],
+        "extensions": [".js", ".ts"],
         "paths": ["web"],
         "moduleDirectory": ["web", "node_modules"]
       }

@@ -9,10 +9,15 @@ import { IChainFunctions } from './IChainFunctions'
  *  Includes context and appRegistation settings */
 export class ChainConnection {
   private _appId: AppId
+
   private _context: Context
+
   private _chainFunctions: IChainFunctions
+
   private _chainType: ChainType
+
   private _chain: Chain
+
   private _chainPlatform: ChainPlatformType
 
   constructor(chainType: ChainType) {

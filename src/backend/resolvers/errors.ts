@@ -13,10 +13,13 @@ import { Context, ErrorType, ErrorSeverity } from '../models'
 export class ServiceError extends Error {
   /** Chain-specific error throw by chain (via chainJs) */
   public chainError?: ChainError
+
   /** Additional info logged interally - not returned to the caller */
   public internalDetails: string
+
   /** A simple code intended to return to caller */
   public type?: ErrorType
+
   /** original error from which this error was composed */
   public originalError: Error
 

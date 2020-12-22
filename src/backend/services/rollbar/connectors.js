@@ -1,6 +1,5 @@
+import Rollbar from 'rollbar'
 import { ROLLBAR_POST_WRITE_SERVER_KEY, ENVIRONMENT } from '../../constants'
-
-const Rollbar = require('rollbar')
 
 const rollbarConfig = {
   accessToken: ROLLBAR_POST_WRITE_SERVER_KEY,
