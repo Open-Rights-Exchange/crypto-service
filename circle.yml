@@ -47,7 +47,7 @@ jobs:
 
       # install gcloud and login to it
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             if [ "$CIRCLE_BRANCH" == "master" ] || [ "$CIRCLE_BRANCH" == "staging" ]
               then
@@ -61,7 +61,7 @@ jobs:
 
       # copy .env file from circleci injected environmental variables
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             if [ "$CIRCLE_BRANCH" == "master" ]
              then
@@ -84,7 +84,7 @@ jobs:
 
       # create deploy_version file
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             ENV_HASH=$(sha1sum ./.env | awk '{print $1}') 
             echo ENV_HASH = "\"$ENV_HASH\"" >> ./deploy-version
@@ -98,14 +98,14 @@ jobs:
       # per https://mp.weixin.qq.com Setting / Public Number Setting / Web page authorized domain name
       # Add Apple domain validation file for Signin with Apple per https://help.apple.com/developer-account/#/dev1c0e25352
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             echo $WECHAT_DOMAIN_FILE >> ./public/MP_verify_22mzZzLf2LWkDGfw.txt
             echo $APPLE_DOMAIN_FILE >> ./apple-developer-domain-association.txt
 
       # install npm dependencies and run build script
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             npm install
             npm run build
@@ -115,17 +115,17 @@ jobs:
       
       # Linter
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: npm run lint
 
       # Unit Tests
       #- run:
-      #    working_directory: ~/API-market/crypto-service/app
+      #    working_directory: ~/API-market/crypto-service/src
       #    command: npm test
 
       # deploy to Google Cloud
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             if [ "$CIRCLE_BRANCH" == "master" ] || [ "$CIRCLE_BRANCH" == "staging" ]
               then
