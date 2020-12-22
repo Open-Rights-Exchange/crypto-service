@@ -94,15 +94,6 @@ jobs:
             CURRENTDATE=`date +"%A, %b %d, %Y %I:%M %p"`
             echo DEPLOY_DATE = "\"$CURRENTDATE\"" >> ./deploy-version
 
-      # Add wechat domain validation file
-      # per https://mp.weixin.qq.com Setting / Public Number Setting / Web page authorized domain name
-      # Add Apple domain validation file for Signin with Apple per https://help.apple.com/developer-account/#/dev1c0e25352
-      - run:
-          working_directory: ~/API-market/crypto-service/src
-          command: |
-            echo $WECHAT_DOMAIN_FILE >> ./public/MP_verify_22mzZzLf2LWkDGfw.txt
-            echo $APPLE_DOMAIN_FILE >> ./apple-developer-domain-association.txt
-
       # install npm dependencies and run build script
       - run:
           working_directory: ~/API-market/crypto-service/src
@@ -133,18 +124,6 @@ jobs:
                   # deploy to AppEngine
                   #- ./scripts/deploy.sh --version=$SERVICE_VERSION
                   ./scripts/deploy.sh
-            fi
-
-      # Integration Tests
-      - run:
-          command: |
-            if [ "$CIRCLE_BRANCH" == "master" ]
-             then
-                 curl -o /dev/null https://api.ghostinspector.com/v1/suites/5c475541638e692a230eb3eb/execute/?apiKey=${GHOST_INSPECTOR_API_KEY}
-            fi
-            if [ "$CIRCLE_BRANCH" == "staging" ]
-             then
-                 curl -o /dev/null https://api.ghostinspector.com/v1/suites/5c477d16638e692a230fe203/execute/?apiKey=${GHOST_INSPECTOR_API_KEY}
             fi
 
       # Save dependency cache
