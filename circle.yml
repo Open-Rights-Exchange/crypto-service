@@ -17,7 +17,7 @@ jobs:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
       PYTHONPATH: ${PYTHONPATH}:${HOME}/google_appengine
-      GCLOUD_PROJECT: ore-id
+      GCLOUD_PROJECT: cryptoservice
       SERVICE_VERSION: 1
     # In CircleCI 2.0 you can now specify your own image, or use one of our pre-configured images.
     # To see the list of pre-built images that CircleCI provides for most common languages see

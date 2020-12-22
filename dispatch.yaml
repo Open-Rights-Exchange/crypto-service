@@ -2,7 +2,7 @@
 dispatch:
 
   # To deploy this file... 
-  # gcloud config set project ore-id 
+  # gcloud config set project cryptoservice 
   # gcloud app deploy dispatch.yaml
 
   # Default service serves the typical web resources and all static resources.
