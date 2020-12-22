@@ -17,7 +17,7 @@ jobs:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
       PYTHONPATH: ${PYTHONPATH}:${HOME}/google_appengine
-      GCLOUD_PROJECT: ore-id
+      GCLOUD_PROJECT: cryptoservice
       SERVICE_VERSION: 1
     # In CircleCI 2.0 you can now specify your own image, or use one of our pre-configured images.
     # To see the list of pre-built images that CircleCI provides for most common languages see
@@ -47,7 +47,7 @@ jobs:
 
       # install gcloud and login to it
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             if [ "$CIRCLE_BRANCH" == "master" ] || [ "$CIRCLE_BRANCH" == "staging" ]
               then
@@ -61,7 +61,7 @@ jobs:
 
       # copy .env file from circleci injected environmental variables
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             if [ "$CIRCLE_BRANCH" == "master" ]
              then
@@ -84,7 +84,7 @@ jobs:
 
       # create deploy_version file
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             ENV_HASH=$(sha1sum ./.env | awk '{print $1}') 
             echo ENV_HASH = "\"$ENV_HASH\"" >> ./deploy-version
@@ -94,18 +94,9 @@ jobs:
             CURRENTDATE=`date +"%A, %b %d, %Y %I:%M %p"`
             echo DEPLOY_DATE = "\"$CURRENTDATE\"" >> ./deploy-version
 
-      # Add wechat domain validation file
-      # per https://mp.weixin.qq.com Setting / Public Number Setting / Web page authorized domain name
-      # Add Apple domain validation file for Signin with Apple per https://help.apple.com/developer-account/#/dev1c0e25352
-      - run:
-          working_directory: ~/API-market/crypto-service/app
-          command: |
-            echo $WECHAT_DOMAIN_FILE >> ./public/MP_verify_22mzZzLf2LWkDGfw.txt
-            echo $APPLE_DOMAIN_FILE >> ./apple-developer-domain-association.txt
-
       # install npm dependencies and run build script
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             npm install
             npm run build
@@ -115,17 +106,17 @@ jobs:
       
       # Linter
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: npm run lint
 
       # Unit Tests
       #- run:
-      #    working_directory: ~/API-market/crypto-service/app
+      #    working_directory: ~/API-market/crypto-service/src
       #    command: npm test
 
       # deploy to Google Cloud
       - run:
-          working_directory: ~/API-market/crypto-service/app
+          working_directory: ~/API-market/crypto-service/src
           command: |
             if [ "$CIRCLE_BRANCH" == "master" ] || [ "$CIRCLE_BRANCH" == "staging" ]
               then
@@ -133,18 +124,6 @@ jobs:
                   # deploy to AppEngine
                   #- ./scripts/deploy.sh --version=$SERVICE_VERSION
                   ./scripts/deploy.sh
-            fi
-
-      # Integration Tests
-      - run:
-          command: |
-            if [ "$CIRCLE_BRANCH" == "master" ]
-             then
-                 curl -o /dev/null https://api.ghostinspector.com/v1/suites/5c475541638e692a230eb3eb/execute/?apiKey=${GHOST_INSPECTOR_API_KEY}
-            fi
-            if [ "$CIRCLE_BRANCH" == "staging" ]
-             then
-                 curl -o /dev/null https://api.ghostinspector.com/v1/suites/5c477d16638e692a230fe203/execute/?apiKey=${GHOST_INSPECTOR_API_KEY}
             fi
 
       # Save dependency cache

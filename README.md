@@ -1,16 +1,16 @@
 
-## Crypto Service API
+## Crypto Service
 
-The app is an Express(Node) server that provides a traditional Restful HTTP API that serves GET and POST requests via the /api path
+This app is an Express(Node) server that provides a traditional Restful HTTP API that serves GET and POST requests via the /api path
 
 It provides basic crypto and blockchain-related functions including:
 
 * generating public/private key pairs
 * signing transactions
 * encrypting / decrypting payloads - supporting both symmetric and asymmetric encryption
+* decrypt and re-encrypt with different keys - in a single call
 
-This service is stateless - it holds no user data or keys
-
+This service is mostly stateless - it holds no user data or keys - but it does hold developer (app) registrations in order to issue api keys
 ## Running on local machine
 
 1. Create .env file in project's root directory from .env.staging value in LastPass
