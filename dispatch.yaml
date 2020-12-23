@@ -10,9 +10,14 @@ dispatch:
   #   service: web
 
   # prod - service
-- url: "crypto.oreid.io/*"
+- url: "api.crypto-service.io/*"
   service: crypto-service
 
   # staging - service
-- url: "staging.crypto.oreid.io/*"
+- url: "staging.api.crypto-service.io/*"
   service: crypto-service-staging
+
+  # web
+- url: "wwww.crypto-service.io/*"
+  service: default
+  
