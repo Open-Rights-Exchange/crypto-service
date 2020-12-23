@@ -110,9 +110,9 @@ jobs:
           command: npm run lint
 
       # Unit Tests
-      #- run:
-      #    working_directory: ~/API-market/crypto-service/src
-      #    command: npm test
+      - run:
+         working_directory: ~/API-market/crypto-service/src
+         command: npm test
 
       # deploy to Google Cloud
       - run:

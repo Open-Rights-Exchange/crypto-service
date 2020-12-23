@@ -42,7 +42,7 @@ async function v1Root(req: Request, res: Response, next: NextFunction) {
 
 // /api/decrypt-with-password
 /** Calls resolver to decrypt the payload using provided password and options */
-async function handleDecryptWithPassword(req: Request, res: Response, next: NextFunction) {
+export async function handleDecryptWithPassword(req: Request, res: Response, next: NextFunction) {
   const funcName = 'api/decrypt-with-password'
   let context
   try {
@@ -51,7 +51,7 @@ async function handleDecryptWithPassword(req: Request, res: Response, next: Next
     checkForRequiredBodyValues(req, ['authToken', 'chainType', 'encryptedPayload', 'symmetricOptions'])
     const { chainType, encryptedPayload, returnAsymmetricOptions, symmetricOptions } = req.body
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req, context)
+    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
     const password = authToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
       { chainType, encryptedPayload, password, symmetricOptions, returnAsymmetricOptions },
@@ -67,10 +67,11 @@ async function handleDecryptWithPassword(req: Request, res: Response, next: Next
 
 // /api/encrypt
 /** Calls resolver to encrypt the payload using one or more public/private key pairs for a specific blockchain */
-async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
+export async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
   const funcName = 'api/encrypt'
   let context
   try {
+    console.log('request:', req)
     globalLogger.trace('called handleEncrypt')
     checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
     checkForRequiredBodyValues(req, ['chainType', 'payloadToEncrypt'])
@@ -99,7 +100,7 @@ async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
 
 // /api/generate-keys
 /** Calls resolver to generate one or more public/private key pairs for a specific blockchain */
-async function handleGenerateKeys(req: Request, res: Response, next: NextFunction) {
+export async function handleGenerateKeys(req: Request, res: Response, next: NextFunction) {
   const funcName = 'api/generate-keys'
   let context
   try {
@@ -114,7 +115,7 @@ async function handleGenerateKeys(req: Request, res: Response, next: NextFunctio
       throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req, context)
+    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
     const password = authToken?.secrets?.password
     const response = await generateKeysResolver(
       { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
@@ -130,7 +131,7 @@ async function handleGenerateKeys(req: Request, res: Response, next: NextFunctio
 
 // /api/sign
 /** Calls resolver to sign a transaction with one or more private key pairs for a specific blockchain */
-async function handleSign(req: Request, res: Response, next: NextFunction) {
+export async function handleSign(req: Request, res: Response, next: NextFunction) {
   const funcName = 'api/sign'
   let context
   try {
@@ -159,7 +160,7 @@ async function handleSign(req: Request, res: Response, next: NextFunction) {
       throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req, context)
+    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
     const password = authToken?.secrets?.password
     const response = await signResolver(
       {
@@ -182,7 +183,7 @@ async function handleSign(req: Request, res: Response, next: NextFunction) {
 
 // /api/public-key
 /** Returns the public key for which all incoming secrets should be asymmetrically encrypted */
-async function handlePublicKey(req: Request, res: Response, next: NextFunction) {
+export async function handlePublicKey(req: Request, res: Response, next: NextFunction) {
   const funcName = 'api/public-key'
   let context
   try {

@@ -1,4 +1,3 @@
-import { Request } from 'express'
 import { isNullOrEmpty, isValidDate, tryBase64Decode } from 'aikon-js'
 import { convertStringifiedJsonOrObjectToObject, createSha256Hash } from '../utils/helpers'
 import { AnalyticsEvent, AuthToken, Context, ErrorType, Mongo } from '../models'
@@ -13,9 +12,12 @@ import { analyticsEvent } from '../services/segment/resolvers'
  *  hashOfPayload - the hash of the stringified JSON object of all params set to called function along with this authToken
  *  Returns data extracted from authToken
  */
-export async function validateAuthTokenAndExtractContents(req: Request, context: Context): Promise<AuthToken> {
+export async function validateAuthTokenAndExtractContents(
+  base64EncodedAuthToken: string,
+  requestBody: any,
+  context: Context,
+): Promise<AuthToken> {
   const { appId } = context
-  const base64EncodedAuthToken = req.headers['auth-token'] as string
   const encryptedAuthToken = tryBase64Decode(base64EncodedAuthToken)
   if (isNullOrEmpty(encryptedAuthToken)) {
     const msg = `Missing required parameter in request Header. Must provide auth-token.`
@@ -55,7 +57,7 @@ export async function validateAuthTokenAndExtractContents(req: Request, context:
   }
 
   // VERIFY: payloadHash matches hash of request body
-  const body = JSON.stringify(req.body || '')
+  const body = JSON.stringify(requestBody || '')
   const hashOfBody = createSha256Hash(body)
   if (hashOfBody !== payloadHash) {
     const msg = `Auth Token payloadHash does not match Sha256Hash of request body.`
