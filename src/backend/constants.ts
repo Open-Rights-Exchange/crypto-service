@@ -3,7 +3,6 @@
 
 import { ServiceError } from './resolvers/errors'
 
-// require('dotenv-webpack');
 require('dotenv').config()
 
 const settings = process.env
