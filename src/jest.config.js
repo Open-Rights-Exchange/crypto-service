@@ -14,8 +14,7 @@ module.exports = {
   ],
   testURL: 'http://localhost',
   transform: {
-    '^.+\\.(js|jsx)$': '<rootDir>/node_modules/babel-jest',
-    '^.+\\.(ts|tsx)?$': 'ts-jest',
+    '^.+\\.(js|jsx|ts|tsx)?$': 'ts-jest',
   },
   transformIgnorePatterns: ['[/\\\\]node_modules[/\\\\].+\\.(js|jsx)$', '[/\\\\]dist[/\\\\].+\\.(ts|js)$'],
   moduleNameMapper: {
