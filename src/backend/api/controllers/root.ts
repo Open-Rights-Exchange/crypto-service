@@ -71,7 +71,6 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
   const funcName = 'api/encrypt'
   let context
   try {
-    console.log('request:', req)
     globalLogger.trace('called handleEncrypt')
     checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
     checkForRequiredBodyValues(req, ['chainType', 'payloadToEncrypt'])
