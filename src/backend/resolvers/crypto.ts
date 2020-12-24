@@ -52,7 +52,7 @@ export async function generateKeysResolver(params: GenerateKeysParams, context: 
   const { chain } = chainConnect
   const count = params?.keyCount ? Math.round(params?.keyCount) : 1
 
-  // key n set of public/priuvate keys - enbcrypting the private keys
+  // key n set of public/private keys - encrypting the private keys
   for (let index = 0; index < count; index += 1) {
     const keys = await chain.generateKeyPair()
     const encryptParams: EncryptParams = {
@@ -98,7 +98,7 @@ export async function encryptResolver(
       params?.symmetricOptions,
       context,
     )
-    const { publicKeys } = params?.asymmetricOptions
+    const { publicKeys } = params?.asymmetricOptions || {}
     const shouldEncryptAsym = !isNullOrEmpty(publicKeys)
     const { password } = params
     const shouldEncryptSym = !isNullOrEmpty(password)
@@ -341,7 +341,7 @@ export function mapAsymmetricOptionsParam(asymmetricOptionsFromParams: Asymmetri
 
 /** Map incoming params to SymmetricEccOptions an/or SymmetricEd25519Options */
 export async function mapSymmetricOptionsParam(
-  symmetricOptionsFromParams: SymmetricEccOptions | SymmetricEd25519Options,
+  symmetricOptionsFromParams: SymmetricEccOptions | SymmetricEd25519Options = {},
   context: Context,
 ) {
   const symmetricEccOptions: SymmetricEccOptions = {}
