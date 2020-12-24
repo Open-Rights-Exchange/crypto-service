@@ -8,13 +8,13 @@ import { wellknown } from './controllers/wellknown'
 
 const router = express.Router()
 router.use(
-  '/api/admin',
+  '/admin',
   asyncHandler((req: Request, res: Response, next: NextFunction) => {
     v1Admin(req, res, next)
   }),
 )
 router.use(
-  '/api/:action',
+  '/:action',
   asyncHandler((req: Request, res: Response, next: NextFunction) => {
     v1Root(req, res, next)
   }),

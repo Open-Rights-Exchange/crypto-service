@@ -58,9 +58,8 @@ async function createExpressServer() {
   // secure apps by setting various HTTP headers
   server.use(helmet())
 
-  // /api, /healthcheck, and other endpoints
+  // /healthcheck, and other api endpoints
   server.use(apiRouter)
-
   // this should be after middleware that can throw errors
   server.use(errorHandler)
 

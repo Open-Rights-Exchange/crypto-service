@@ -48,7 +48,7 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
   try {
     globalLogger.trace('called handleDecryptWithPassword')
     checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
-    checkForRequiredBodyValues(req, ['authToken', 'chainType', 'encryptedPayload', 'symmetricOptions'])
+    checkForRequiredBodyValues(req, ['chainType', 'encryptedPayload', 'symmetricOptions'])
     const { chainType, encryptedPayload, returnAsymmetricOptions, symmetricOptions } = req.body
     ;({ context } = await getAppIdAndContextFromApiKey(req))
     const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
@@ -83,8 +83,8 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
     }
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    // const authToken = await assertValidAuthTokenAndExtractContents(req, context)
-    const password = 'mypassword' // authToken?.secrets?.password
+    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
+    const password = authToken?.secrets?.password
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, payloadToEncrypt },
       context,
@@ -105,7 +105,7 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
   try {
     globalLogger.trace('called handleGenerateKeys')
     checkForRequiredHeaderValues(req, ['api-key', 'auth-token'])
-    checkForRequiredBodyValues(req, ['chainType', 'authToken'])
+    checkForRequiredBodyValues(req, ['chainType'])
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
     // validate params
