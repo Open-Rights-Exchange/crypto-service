@@ -11,7 +11,7 @@ import { createAuthToken } from './helpers';
 require("dotenv").config();
 
 // address of a service you trust
-const serviceUrl = "http://localhost:8080";
+const serviceUrl = "https://api.crypto-service.io";
 // a well-known public key of the serivce you trust
 const servicePublicKey = "04cea2c951504b5bfefa78480ae632da2c7889561325f9d76ca7b0a1e62f7a8cd52ce313c8b3fd3c7ffe2f588322e5be331c64b31b256a8769e92f947ae712b761";
 
