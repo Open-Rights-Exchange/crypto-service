@@ -83,8 +83,8 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
     }
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    // const authToken = await assertValidAuthTokenAndExtractContents(req, context)
-    const password = 'mypassword' // authToken?.secrets?.password
+    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
+    const password = authToken?.secrets?.password
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, payloadToEncrypt },
       context,
