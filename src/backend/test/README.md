@@ -5,7 +5,7 @@
   - __ mocks __ : contains mocks for requests sent to any external libraries (e.g. segment etc.)
   - dbMocks: contains the sample data for the mongo tables
   - dataMocks: reusable data structures used in tests
-  - api: mocks for the /api/routes
+  - api: mocks for the api /routes
   - resolvers: one test file for each code file in backend/resolvers
 
 ## Setup

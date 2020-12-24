@@ -1,7 +1,7 @@
 
 ## Crypto Service
 
-This app is an Express(Node) server that provides a traditional Restful HTTP API that serves GET and POST requests via the /api path
+This app is an Express(Node) server that provides a traditional Restful HTTP API that serves GET and POST requests
 
 It provides basic crypto and blockchain-related functions including:
 
