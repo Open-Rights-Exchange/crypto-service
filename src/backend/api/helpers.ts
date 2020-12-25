@@ -54,7 +54,7 @@ export async function getAppIdAndContextFromApiKey(req: Request) {
 }
 
 /** check the url's query params for each required param in paramNames */
-export function checkForRequiredParams(req: Request, paramNames: any[]) {
+export function checkForRequiredParams(req: Request, paramNames: any[], funcName: string) {
   const missing: any = []
   paramNames.forEach(p => {
     if (isNullOrEmpty(req.query[p])) {
@@ -62,12 +62,12 @@ export function checkForRequiredParams(req: Request, paramNames: any[]) {
     }
   })
   if (!isNullOrEmpty(missing)) {
-    throw new ServiceError(`Missing required parameter(s): ${missing.join(', ')}`, ErrorType.BadParam)
+    throw new ServiceError(`Missing required parameter(s): ${missing.join(', ')}`, ErrorType.BadParam, funcName)
   }
 }
 
 /** check the header of the request for each required param in paramNames */
-export function checkForRequiredHeaderValues(req: Request, paramNames: any[]) {
+export function checkHeaderForRequiredValues(req: Request, paramNames: any[], funcName: string) {
   const missing: any[] = []
   paramNames.forEach(p => {
     if (isNullOrEmpty(req.headers[p])) {
@@ -75,12 +75,16 @@ export function checkForRequiredHeaderValues(req: Request, paramNames: any[]) {
     }
   })
   if (!isNullOrEmpty(missing)) {
-    throw new ServiceError(`Missing required parameter(s) in request header: ${missing.join(', ')}`, ErrorType.BadParam)
+    throw new ServiceError(
+      `Missing required parameter(s) in request header: ${missing.join(', ')}`,
+      ErrorType.BadParam,
+      funcName,
+    )
   }
 }
 
 /** check the body of the request for each required param in paramNames */
-export function checkForRequiredBodyValues(req: Request, paramNames: any[]) {
+export function checkBodyForRequiredValues(req: Request, paramNames: any[], funcName: string) {
   const missing: any[] = []
   paramNames.forEach(p => {
     if (isNullOrEmpty(req.body[p])) {
@@ -88,7 +92,39 @@ export function checkForRequiredBodyValues(req: Request, paramNames: any[]) {
     }
   })
   if (!isNullOrEmpty(missing)) {
-    throw new ServiceError(`Missing required parameter(s) in request body: ${missing.join(', ')}`, ErrorType.BadParam)
+    throw new ServiceError(
+      `Missing required parameter(s) in request body: ${missing.join(', ')}`,
+      ErrorType.BadParam,
+      funcName,
+    )
+  }
+}
+
+/** check the body of the request - must include at least one of the params in the list */
+export function checkBodyForAtLeastOneOfValues(req: Request, paramNames: any[], funcName: string) {
+  const matches = paramNames.filter(p => {
+    return !isNullOrEmpty(req.body[p])
+  })
+  if (matches.length === 0) {
+    throw new ServiceError(
+      `Missing at least one of these parameters in request body: ${paramNames.join(', ')}`,
+      ErrorType.BadParam,
+      funcName,
+    )
+  }
+}
+
+/** check the body of the request - must include one and only one of params in the list */
+export function checkBodyForOnlyOneOfValues(req: Request, paramNames: any[], funcName: string) {
+  const matches = paramNames.filter(p => {
+    return !isNullOrEmpty(req.body[p])
+  })
+  if (matches.length > 1) {
+    throw new ServiceError(
+      `You can only provide one of these parameters in request body: ${paramNames.join(', ')}`,
+      ErrorType.BadParam,
+      funcName,
+    )
   }
 }
 
