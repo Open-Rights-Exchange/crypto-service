@@ -65,19 +65,19 @@ jobs:
           command: |
             if [ "$CIRCLE_BRANCH" == "master" ]
              then
-                  cp -rf ./scripts/config/prod.app.yaml ./app.yaml
+                  cp -rf ../scripts/config/prod.app.yaml ./app.yaml
                   echo $ENV_PROD | base64 --decode >> ./.env
                   echo $ENV_TEST_PROD | base64 --decode >> ./backend/test/config/.env.test
             fi
             if [ "$CIRCLE_BRANCH" == "staging" ]
              then
-                  cp -rf ./scripts/config/staging.app.yaml ./app.yaml
+                  cp -rf ../scripts/config/staging.app.yaml ./app.yaml
                   echo $ENV_STAGING | base64 --decode >> ./.env
                   echo $ENV_TEST_STAGING | base64 --decode >> ./backend/test/config/.env.test
             fi
             if [ "$CIRCLE_BRANCH" != "master" ] && [ "$CIRCLE_BRANCH" != "staging" ]
              then
-                  cp -rf ./scripts/config/staging.app.yaml ./app.yaml
+                  cp -rf ../scripts/config/staging.app.yaml ./app.yaml
                   echo $ENV_STAGING | base64 --decode >> ./.env
                   echo $ENV_TEST_STAGING | base64 --decode >> ./backend/test/config/.env.test
             fi
@@ -122,8 +122,8 @@ jobs:
               then
                   rm -rf ./node_modules
                   # deploy to AppEngine
-                  #- ./scripts/deploy.sh --version=$SERVICE_VERSION
-                  ./scripts/deploy.sh
+                  #- ../scripts/deploy.sh --version=$SERVICE_VERSION
+                  ../scripts/deploy.sh
             fi
 
       # Save dependency cache

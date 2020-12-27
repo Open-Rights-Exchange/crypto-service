@@ -1,5 +1,5 @@
 import { Logger } from 'aikon-js'
-import { AsymEncryptedDataString, EncryptedDataString, ModelsCryptoAsymmetric } from './chainjs'
+import { Crypto } from './chainjs'
 
 export interface Lookup {
   [key: string]: any
@@ -20,10 +20,13 @@ export type Hash = string
 export type PublicKey = string
 export type PrivateKey = string
 export type SaltName = string
-export type SymmetricEncryptedString = EncryptedDataString
-export type AsymmetricEncryptedString = AsymEncryptedDataString
-export type AsymmetricEncryptionOptions = ModelsCryptoAsymmetric.EciesOptions
-export type AsymmetricEncryptedItem = ModelsCryptoAsymmetric.EncryptedAsymmetric
+export type AsymmetricEncryptedString = Crypto.Asymmetric.AsymmetricEncryptedDataString
+export type AsymmetricEncryptionOptions = Crypto.Asymmetric.EciesOptions
+export type AsymmetricEncryptedData = Crypto.Asymmetric.AsymmetricEncryptedData
+export type SymmetricEncryptedString =
+  | Crypto.AesCrypto.AesEncryptedDataString
+  | Crypto.Ed25519Crypto.Ed25519EncryptedDataString
+export type SymmetricEncryptedData = Crypto.AesCrypto.AesEncryptedData | Crypto.Ed25519Crypto.Ed25519EncryptedData
 export type SymmetricPassword = string
 
 /** Flavor of chain network */
@@ -50,7 +53,7 @@ export type AuthToken = {
   validFrom: Date
   validTo: Date
   secrets?: {
-    /** Symmetric password used to decrypt a symetrically encrypted payload (that was, for example, sent in the request) */
+    /** Symmetric password used to decrypt a symmetrically encrypted payload (that was, for example, sent in the request) */
     password?: SymmetricPassword
   }
 }

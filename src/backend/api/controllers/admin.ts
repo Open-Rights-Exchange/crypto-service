@@ -14,7 +14,7 @@ async function v1Admin(req: Request, res: Response, next: NextFunction) {
   const funcName = 'api/admin'
   const { context } = await getAppIdAndContextFromApiKey(req)
   try {
-    checkForRequiredParams(req, ['action'])
+    checkForRequiredParams(req, ['action'], funcName)
     const { action }: any = req.query
     switch (action) {
       case 'refresh':

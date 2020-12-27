@@ -1,10 +1,10 @@
-import { isAString, tryParseJSON, isAnObject, Logger, isNullOrEmpty } from 'aikon-js'
+import { createGuidWithoutDashes, isAString, tryParseJSON, isAnObject, Logger, isNullOrEmpty } from 'aikon-js'
 import { sha256 } from 'js-sha256'
-import { ChainType } from '../models/general'
-import { DEFAULT_PROCESS_ID } from '../constants'
-import { rollbar } from '../services/rollbar/connectors'
-import { ErrorType } from '../models'
-import { ServiceError } from '../resolvers/errors'
+import { ChainType } from './models/general'
+import { DEFAULT_PROCESS_ID } from './constants'
+import { rollbar } from './services/rollbar/connectors'
+import { ErrorType } from './models'
+import { ServiceError } from './resolvers/errors'
 
 const loggerDefaults = {
   rollbar,
@@ -83,16 +83,15 @@ export async function asyncForEach(array: any[], callback: (item: any, index: nu
   }
 }
 
-/** Convert/parse a stringified JSON object to object
+/** Convert/parse a stringified JSON object to object -
  *  if incoming value is already an object, it will just be returned */
-export function convertStringifiedJsonOrObjectToObject(value: any) {
+export function convertStringifiedJsonOrObjectToObject(value: any, returnNullIfObjectFails = false) {
   if (isAnObject(value)) return value
   if (isAString(value)) {
     const object = tryParseJSON(value)
-    if (object) {
-      return object
-    }
+    if (object) return object
   }
+  if (returnNullIfObjectFails) return null
   const msg = `Could not parse value into a JSON object. Value:${JSON.stringify(value)}`
   throw new ServiceError(msg, ErrorType.ParseError, `convertStringifiedJsonOrObjectToObject`)
 }
@@ -123,4 +122,18 @@ export function createSha256Hash(value: string) {
   const hash = sha256.create()
   hash.update(value)
   return hash.hex()
+}
+
+/**
+ * Ensure that a value is wrapped in an array
+ */
+export function ensureArray(value: any): any[] {
+  if (value && !Array.isArray(value)) {
+    value = [value]
+  }
+  return value
+}
+
+export function createGuidWithPrefix(prefix = '') {
+  return `${prefix}${createGuidWithoutDashes()}`
 }

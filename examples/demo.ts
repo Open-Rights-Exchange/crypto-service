@@ -12,6 +12,7 @@ require("dotenv").config();
 
 // address of a service you trust
 const serviceUrl = "https://api.crypto-service.io";
+
 // a well-known public key of the serivce you trust
 const servicePublicKey = "04cea2c951504b5bfefa78480ae632da2c7889561325f9d76ca7b0a1e62f7a8cd52ce313c8b3fd3c7ffe2f588322e5be331c64b31b256a8769e92f947ae712b761";
 
@@ -25,9 +26,12 @@ const algoPrivateKey = "68c7d4579c891145a23deb3c8393810a5501dd1e41c09be56e23f2be
 
 // options to encrypt 
 const myPassword = "my-secure-password";
-const symmetricOptions = {
+const symmetricAesOptions = {
   salt: "my-salt",
   iter: 50000,
+};
+const symmetricEd25519Options = {
+  salt: "my-salt",
 };
 
 // api key for demo app registration
@@ -42,16 +46,17 @@ async function generateKeys( chain: Chain ) {
   console.log("--------------- generateKeys -------------->");
     const generateKeyOptions = {
       chainType: "ethereum",
-      symmetricOptions,
+      symmetricOptions: symmetricAesOptions,
     };
     const authToken = await createAuthToken( generateKeyOptions, servicePublicKey, { password: myPassword } );
     headers["auth-token"] = authToken;
+    console.log('sign auth-token:', authToken)
     const { data } = await axios.post(`${serviceUrl}/generate-keys`, generateKeyOptions, { headers } );
     console.log("generate-keys results:", data);
     // The new keys are encrypted with your password, decrypt and display them
     const newPublicKey = data[0].publicKey;
     const encryptedPrivateKey = data[0].symmetricEncryptedString;
-    const newPrivateKey = chain.decryptWithPassword( encryptedPrivateKey, myPassword, symmetricOptions );
+    const newPrivateKey = chain.decryptWithPassword( encryptedPrivateKey, myPassword, symmetricAesOptions );
     console.log("Decrypted New Public key:", newPublicKey);
     console.log("Decrypted New Private key:", newPrivateKey);
 }
@@ -66,7 +71,7 @@ async function encryptAndDecryptString( chain: Chain, stringToEncrypt: string ) 
   console.log("--------------- encryptAndDecryptString -------------->");
   const encryptOptions = {
     chainType: "ethereum",
-    payloadToEncrypt: stringToEncrypt,
+    toEncrypt: stringToEncrypt,
     asymmetricOptions: {
       "publicKeys" : [ ethPubKey ]
     }
@@ -83,21 +88,57 @@ async function encryptAndDecryptString( chain: Chain, stringToEncrypt: string ) 
 }
 
 /** 
+ *  Use the service to decrypt a payload using private keys that are themselves encrypted (with our password)
+ *  We'll also ask the service to re-encrypt the result using our own public key (by providing returnAsymmetricOptions)
+ *  The encrypted private keys provided to the service can be encrypted with:
+ *  ... a password (symmetricEncryptedPrivateKeys) ..OR..
+ *  ... with the service's public key (asymmetricEncryptedPrivateKeys)
+ *  If returnAsymmetricOptions is provided, then results are encrypted using the specified public key before being returned
+ */
+async function decryptWithPrivateKey( chain: Chain, stringToEncrypt: string ) {
+  console.log("--------------- decryptWithPrivateKey -------------->");
+  const decryptWPrivateKeyOptions: any = {
+    chainType: "algorand",
+    symmetricOptionsForEncryptedPrivateKeys: symmetricAesOptions,
+    returnAsymmetricOptions: {
+      "publicKeys" : [ algoPubKey ]
+    }
+  }
+  // encrypt our private key symmetrically (using our password)
+  decryptWPrivateKeyOptions.symmetricEncryptedPrivateKeys = [chain.encryptWithPassword(algoPrivateKey, myPassword, symmetricAesOptions)]
+  console.log('decryptWPrivateKeyOptions.symmetricEncryptedPrivateKeys:', decryptWPrivateKeyOptions.symmetricEncryptedPrivateKeys)
+  // encrypt a payload using our associated public key
+  decryptWPrivateKeyOptions.encrypted = await chain.encryptWithPublicKey(stringToEncrypt, algoPubKey)
+
+  // use service to demonstrate decrypting the payload with our encryptedPrivateKey (which the service will decrypt with our password)
+  const authToken = await createAuthToken( decryptWPrivateKeyOptions, servicePublicKey,  { password: myPassword } );
+  headers["auth-token"] = authToken;
+  const { data } = await axios.post(`${serviceUrl}/decrypt-with-private-keys`, decryptWPrivateKeyOptions, { headers } );
+  console.log('data:', data)
+  // results are encrypted with our public key, so we can decrypt it with the matching private key
+  // TODO: Handle if passing in bad value to chain.decryptWithPrivateKey
+  const encryptedString = chain.toAsymEncryptedDataString(JSON.stringify(JSON.parse(data.asymmetricEncryptedString)[0]))
+  const decryptedString = await chain.decryptWithPrivateKey( encryptedString, algoPrivateKey );
+  console.log("Decrypted string:", decryptedString);
+}
+
+/**
  *  Use the service to generate a signature from a string.
  *  The signature is compliant with the block chain specified (e.g. ethereum)
  *  */
-async function sign( chain: Chain, payloadToSign: string, privateKey: string ) {
+async function sign( chain: Chain, toSign: string, privateKey: string ) {
   console.log(`--------------- sign for chain ${chain.chainType}-------------->`);
   // encrypt our private key with our password - the service will decrypt it (and sign with it) using the same password (sent via the authToken)
-  const encryptedPrivateKey = chain.encryptWithPassword(privateKey, myPassword, symmetricOptions)
+  const encryptedPrivateKey = chain.encryptWithPassword(privateKey, myPassword, symmetricAesOptions)
   const signOptions = {
     chainType: chain.chainType,
-    payloadToSign,
-    symmetricOptions,
+    toSign,
+    symmetricOptions: symmetricAesOptions,
     symmetricEncryptedPrivateKeys: [encryptedPrivateKey],
   }
   const authToken = await createAuthToken( signOptions, servicePublicKey, { password: myPassword } );
   headers["auth-token"] = authToken;
+  console.log('sign auth-token:', authToken)
   const { data } = await axios.post(`${serviceUrl}/sign`, signOptions, { headers } );
   console.log("sign results:", data);
 }
@@ -125,6 +166,7 @@ async function run() {
     await generateKeys(ethChain)
     // Use /encrypt to encrypt on the server
     await encryptAndDecryptString(ethChain, 'encrypt-this-string')
+    await decryptWithPrivateKey(algoChain, 'private-message-decrypted-by-service' )
     await sign(ethChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', ethPrivateKey)
     await sign(eosChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', eosPrivateKey)
     await sign(algoChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', algoPrivateKey)
