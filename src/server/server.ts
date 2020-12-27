@@ -21,7 +21,7 @@ import bodyParser from 'body-parser'
 import { connect } from '../backend/services/mongo/connectors'
 import { addCorsMiddlware, errorHandler, logger } from './server_auth'
 import { router as apiRouter } from '../backend/api/_routes'
-import { initLogger } from '../backend/utils/helpers'
+import { initLogger } from '../backend/helpers'
 
 /* eslint-enable */
 
@@ -58,9 +58,8 @@ async function createExpressServer() {
   // secure apps by setting various HTTP headers
   server.use(helmet())
 
-  // /api, /healthcheck, and other endpoints
+  // /healthcheck, and other api endpoints
   server.use(apiRouter)
-
   // this should be after middleware that can throw errors
   server.use(errorHandler)
 

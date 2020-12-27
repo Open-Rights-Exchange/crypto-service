@@ -1,6 +1,7 @@
 export * from '@open-rights-exchange/chainjs/dist/errors'
 export * from '@open-rights-exchange/chainjs/dist/models'
 export * from '@open-rights-exchange/chainjs/dist/interfaces'
+export * as Crypto from '@open-rights-exchange/chainjs/dist/crypto'
 export * as AlgorandModels from '@open-rights-exchange/chainjs/dist/chains/algorand_1/models'
 export * as EthereumModels from '@open-rights-exchange/chainjs/dist/chains/ethereum_1/models'
 export * as EosModels from '@open-rights-exchange/chainjs/dist/chains/eos_2/models'

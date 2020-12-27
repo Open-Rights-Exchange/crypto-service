@@ -1,11 +1,11 @@
 import { isNullOrEmpty, isValidDate, tryBase64Decode } from 'aikon-js'
-import { convertStringifiedJsonOrObjectToObject, createSha256Hash } from '../utils/helpers'
+import { convertStringifiedJsonOrObjectToObject, createSha256Hash } from '../helpers'
 import { AnalyticsEvent, AuthToken, Context, ErrorType, Mongo } from '../models'
-import { decryptWithBasePrivateKey } from './crypto'
 import { AuthTokenData } from '../services/mongo/models'
 import { findOneMongo, upsertMongo } from '../services/mongo/resolvers'
 import { ServiceError } from './errors'
 import { analyticsEvent } from '../services/segment/resolvers'
+import { decryptWithBasePrivateKey } from './crypto'
 
 /** Extract auth-token from header of request and verifies that it is valid
  *  Checks that it was signed by the public key in encryptedKey, hasn't expired, and has not been used
