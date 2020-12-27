@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
-import { logger as globalLogger } from '../../utils/helpers'
+import { logger as globalLogger } from '../../helpers'
 import {
   returnResponse,
   getAppIdAndContextFromApiKey,

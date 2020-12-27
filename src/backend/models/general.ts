@@ -53,7 +53,7 @@ export type AuthToken = {
   validFrom: Date
   validTo: Date
   secrets?: {
-    /** Symmetric password used to decrypt a symetrically encrypted payload (that was, for example, sent in the request) */
+    /** Symmetric password used to decrypt a symmetrically encrypted payload (that was, for example, sent in the request) */
     password?: SymmetricPassword
   }
 }

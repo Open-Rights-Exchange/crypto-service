@@ -10,7 +10,7 @@ import { rollbar } from '../../services/rollbar/connectors'
 import { findOneMongo } from '../../services/mongo/resolvers'
 import { ConfirmType, ChainErrorType } from '../../models/chainjs'
 import { EosModels } from '../../models/chainjs'
-import { logger } from '../../utils/helpers'
+import { logger } from '../../helpers'
 import { Context } from '../../models'
 
 import { EosTransaction } from '../__mocks__/eosTransaction'

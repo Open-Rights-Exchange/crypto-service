@@ -1,10 +1,10 @@
-import { isAString, tryParseJSON, isAnObject, Logger, isNullOrEmpty } from 'aikon-js'
+import { createGuidWithoutDashes, isAString, tryParseJSON, isAnObject, Logger, isNullOrEmpty } from 'aikon-js'
 import { sha256 } from 'js-sha256'
-import { ChainType } from '../models/general'
-import { DEFAULT_PROCESS_ID } from '../constants'
-import { rollbar } from '../services/rollbar/connectors'
-import { ErrorType } from '../models'
-import { ServiceError } from '../resolvers/errors'
+import { ChainType } from './models/general'
+import { DEFAULT_PROCESS_ID } from './constants'
+import { rollbar } from './services/rollbar/connectors'
+import { ErrorType } from './models'
+import { ServiceError } from './resolvers/errors'
 
 const loggerDefaults = {
   rollbar,
@@ -132,4 +132,8 @@ export function ensureArray(value: any): any[] {
     value = [value]
   }
   return value
+}
+
+export function createGuidWithPrefix(prefix = '') {
+  return `${prefix}${createGuidWithoutDashes()}`
 }

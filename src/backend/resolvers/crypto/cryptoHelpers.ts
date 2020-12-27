@@ -1,9 +1,7 @@
-import { isNullOrEmpty, isAnObject, tryParseJSON, isAString } from 'aikon-js'
+import { isNullOrEmpty } from 'aikon-js'
 import { Chain, Crypto } from '@open-rights-exchange/chainjs'
-import { BASE_PUBLIC_KEY, BASE_PRIVATE_KEY } from '../constants'
-import { analyticsEvent } from '../services/segment/resolvers'
+import { BASE_PUBLIC_KEY, BASE_PRIVATE_KEY } from '../../constants'
 import {
-  AnalyticsEvent,
   AppConfigType,
   AppId,
   AsymmetricEncryptedData,
@@ -16,226 +14,25 @@ import {
   DecryptPrivateKeysParams,
   DecryptSymmetricallyParams,
   DecryptWithBasePrivateKey,
-  DecryptWithPasswordParams,
-  DecryptWithPrivateKeysParams,
-  DEFAULT_SIGNATURE_ENCODING,
   EncryptAsymmetricallyParams,
-  EncryptParams,
   EncryptSymmetricallyParams,
   ErrorType,
-  GenerateKeysParams,
   PrivateKey,
   PublicKey,
-  SignParams,
   SymmetricEccOptions,
   SymmetricEd25519Options,
   SymmetricEncryptedData,
   SymmetricEncryptedString,
-} from '../models'
-import { ServiceError } from './errors'
-import { ChainConnection, getChain } from '../chains/chainConnection'
+} from '../../models'
+import { ServiceError } from '../errors'
+import { ChainConnection } from '../../chains/chainConnection'
 import {
-  assertValidChainType,
   ensureArray,
   asyncForEach,
   convertStringifiedJsonOrObjectToObject,
   convertObjectToStringifiedJson,
-} from '../utils/helpers'
-import { getAppConfig } from './appConfig'
-
-export type GenerateKeyResult = {
-  publicKey: PublicKeyCredential
-  symmetricEncryptedString: SymmetricEncryptedString
-  asymmetricEncryptedString: AsymmetricEncryptedString
-}
-
-/**
- *  Creates one or more new public/private key pairs using the curve specified
- *  Returns: an array of symmetrically and/or asymmetrically encrypted items
- */
-export async function generateKeysResolver(params: GenerateKeysParams, context: Context): Promise<GenerateKeyResult[]> {
-  const results: GenerateKeyResult[] = []
-
-  assertValidChainType(params?.chainType)
-  const chainConnect = await getChain(params?.chainType, context)
-  const { chain } = chainConnect
-  const count = params?.keyCount ? Math.round(params?.keyCount) : 1
-
-  // key n set of public/private keys - encrypting the private keys
-  for (let index = 0; index < count; index += 1) {
-    const keys = await chain.generateKeyPair()
-    const encryptParams: EncryptParams = {
-      chainType: params?.chainType,
-      asymmetricOptions: params?.asymmetricOptions,
-      symmetricOptions: params?.symmetricOptions,
-      password: params?.password,
-      toEncrypt: keys?.privateKey,
-    }
-    // encrypt and add to array for results
-    const { asymmetricEncryptedString, symmetricEncryptedString } = await encryptResolver(encryptParams, context)
-    const resultItem: Partial<GenerateKeyResult> = {
-      publicKey: keys?.publicKey,
-    }
-    if (symmetricEncryptedString) resultItem.symmetricEncryptedString = symmetricEncryptedString
-    if (asymmetricEncryptedString) resultItem.asymmetricEncryptedString = asymmetricEncryptedString
-    results.push(resultItem as GenerateKeyResult)
-  }
-  return results
-}
-
-/**
- *  Encrypts a string using symmetric and/or asymmetric encryption
- *  Returns: an array of symmetrically and/or asymmetrically encrypted items
- */
-export async function encryptResolver(
-  params: EncryptParams,
-  context: Context,
-): Promise<{
-  symmetricEncryptedString: SymmetricEncryptedString
-  asymmetricEncryptedString: AsymmetricEncryptedString
-}> {
-  assertValidChainType(params?.chainType)
-  const chainConnect = await getChain(params?.chainType, context)
-  const { chain } = chainConnect
-  const { logger } = context
-  let asymmetricEncryptedString: AsymmetricEncryptedString
-  let symmetricEncryptedString: SymmetricEncryptedString
-
-  try {
-    const keys = await chain.generateKeyPair()
-    const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(
-      params?.symmetricOptions,
-      context,
-    )
-    const { publicKeys } = params?.asymmetricOptions || {}
-    const shouldEncryptAsym = !isNullOrEmpty(publicKeys)
-    const { password } = params
-    const shouldEncryptSym = !isNullOrEmpty(password)
-
-    // Encrypt symetrically with password
-    if (shouldEncryptSym) {
-      const encryptedPrivateKey = await encryptSymmetrically(chainConnect, {
-        unencrypted: params?.toEncrypt,
-        password,
-        options: symmetricEccOptions || symmetricEd25519Options,
-      })
-      symmetricEncryptedString = encryptedPrivateKey
-    }
-    // Encrypt asymetrically with publicKey(s)
-    if (shouldEncryptAsym) {
-      const options = mapAsymmetricOptionsParam(params?.asymmetricOptions)
-      const encryptedPrivateKey = await encryptAsymmetrically(chainConnect, {
-        unencrypted: params?.toEncrypt,
-        publicKeys,
-        ...options,
-      })
-      asymmetricEncryptedString = encryptedPrivateKey
-    }
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
-  }
-
-  return { asymmetricEncryptedString, symmetricEncryptedString }
-}
-
-/**
- *  Decrypts a symmetrically encrypted payload using a password (in the authToken)
- *  If returnAsymmetricOptions is specified, the decrypted item is encrypted with this public key before being returned
- *  Returns: the decrypted string OR an asymmetrically re-encrypted payload (using returnAsymmetricOptions)
- */
-export async function decryptWithPasswordResolver(
-  params: DecryptWithPasswordParams,
-  context: Context,
-): Promise<{
-  decryptedResult?: string
-  encryptedResult?: AsymmetricEncryptedString
-}> {
-  assertValidChainType(params?.chainType)
-  const { password, returnAsymmetricOptions, chainType, encrypted, symmetricOptions } = params
-  const chainConnect = await getChain(chainType, context)
-  const { chain } = chainConnect
-  const { logger } = context
-
-  try {
-    const keys = await chain.generateKeyPair()
-    const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
-
-    // Decrypt symetrically with password
-    const unencrypted = await decryptSymmetrically(chainConnect, {
-      encrypted,
-      password,
-      options: symmetricEccOptions || symmetricEd25519Options,
-    })
-
-    // Optionally re-encrypt result asymmetrically before returning
-    return optionallyEncryptReturnValue({ chainConnect, unencrypted, returnAsymmetricOptions })
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
-  }
-
-  return { decryptedResult: null, encryptedResult: null }
-}
-
-/**
- *  Decrypts a symmetrically encrypted payload using a password (in the authToken)
- *  If returnAsymmetricOptions is specified, the decrypted item is encrypted with this public key before being returned
- *  Returns: the decrypted string OR an asymmetrically re-encrypted payload (using returnAsymmetricOptions)
- */
-export async function decryptWithPrivateKeysResolver(
-  params: DecryptWithPrivateKeysParams,
-  context: Context,
-): Promise<{
-  decryptedResult?: string
-  asymmetricEncryptedString?: AsymmetricEncryptedString
-}> {
-  assertValidChainType(params?.chainType)
-  const {
-    chainType,
-    encrypted,
-    asymmetricEncryptedPrivateKeys,
-    symmetricEncryptedPrivateKeys,
-    symmetricOptionsForEncryptedPrivateKeys,
-    password,
-    returnAsymmetricOptions,
-  } = params
-  const chainConnect = await getChain(chainType, context)
-  const { logger } = context
-
-  try {
-    if (!asymmetricEncryptedPrivateKeys && !symmetricEncryptedPrivateKeys) {
-      const msg = `You can only provide asymmetricEncryptedPrivateKeys OR symmetricEncryptedPrivateKeys - both were provided.`
-      throw new ServiceError(msg, ErrorType.BadParam, 'decryptWithPrivateKeysResolver')
-    }
-
-    // extract encrypted keys
-    const privateKeys = await decryptPrivateKeys({
-      symmetricEncryptedPrivateKeys,
-      asymmetricEncryptedPrivateKeys,
-      symmetricOptions: symmetricOptionsForEncryptedPrivateKeys,
-      password,
-      chainConnect,
-    })
-
-    // wrap encrypted value in an array if not already
-    const encryptedArray = ensureEncryptedAsymIsArrayObject(chainConnect, encrypted) || []
-
-    // Decrypt asymetrically with private keys
-    const unencrypted = await decryptAsymmetrically(chainConnect, {
-      encrypted: encryptedArray,
-      privateKeys,
-    })
-
-    // Optionally re-encrypt result asymmetrically before returning
-    return optionallyEncryptReturnValue({ chainConnect, unencrypted, returnAsymmetricOptions })
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
-  }
-
-  return { decryptedResult: null, asymmetricEncryptedString: null }
-}
+} from '../../helpers'
+import { getAppConfig } from '../appConfig'
 
 export type EncryptReturnValueParams = {
   /** chain/curve used to encrypt */
@@ -247,7 +44,7 @@ export type EncryptReturnValueParams = {
 }
 
 /** Optionally encrypt value before returning it using returnAsymmetricOptions */
-async function optionallyEncryptReturnValue(params: EncryptReturnValueParams) {
+export async function optionallyEncryptReturnValue(params: EncryptReturnValueParams) {
   const { chainConnect, unencrypted, returnAsymmetricOptions } = params
   let asymmetricEncryptedString: AsymmetricEncryptedString
   let decryptedResult = unencrypted
@@ -262,52 +59,6 @@ async function optionallyEncryptReturnValue(params: EncryptReturnValueParams) {
     decryptedResult = null
   }
   return { decryptedResult, asymmetricEncryptedString }
-}
-
-/**
- *  Encrypt a string using one or more private keys
- *  If symmetricEncryptedPrivateKeys is provided, they will be decrypted symmetricOptions and password (in the authToken)
- *  If asymmetricEncryptedPrivateKeys is provided, they will be decrypted symmetricOptions and password (in the authToken)
- *  Returns: One or more signatures - one for each privateKey provided
- */
-export async function signResolver(params: SignParams, context: Context): Promise<string[]> {
-  const {
-    asymmetricEncryptedPrivateKeys = [],
-    chainType,
-    password,
-    toSign,
-    symmetricEncryptedPrivateKeys = [],
-    symmetricOptions,
-  } = params
-  assertValidChainType(chainType)
-  const chainConnect = await getChain(chainType, context)
-  const { chain } = chainConnect
-  const { logger } = context
-  const signatures: string[] = []
-
-  try {
-    // extract ecnrypted keys
-    const privateKeys = await decryptPrivateKeys({
-      symmetricEncryptedPrivateKeys,
-      asymmetricEncryptedPrivateKeys,
-      symmetricOptions,
-      password,
-      chainConnect,
-    })
-
-    // generate a signature for each privateKey
-    await Promise.all(
-      privateKeys.map(async pk => {
-        const signature = await chain.sign(toSign, pk, DEFAULT_SIGNATURE_ENCODING)
-        signatures.push(signature)
-      }),
-    )
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
-  }
-
-  return signatures
 }
 
 /** Decrypt private keys and return array
