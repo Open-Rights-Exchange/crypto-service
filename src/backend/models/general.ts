@@ -1,5 +1,5 @@
 import { Logger } from 'aikon-js'
-import { Crypto, ModelsCryptoAsymmetric, ModelsCryptoSymmetric } from './chainjs'
+import { Crypto } from './chainjs'
 
 export interface Lookup {
   [key: string]: any
@@ -20,11 +20,13 @@ export type Hash = string
 export type PublicKey = string
 export type PrivateKey = string
 export type SaltName = string
-export type AsymmetricEncryptedString = Crypto.Asymmetric.AsymEncryptedDataString
+export type AsymmetricEncryptedString = Crypto.Asymmetric.AsymmetricEncryptedDataString
 export type AsymmetricEncryptionOptions = Crypto.Asymmetric.EciesOptions
-export type AsymmetricEncryptedItem = Crypto.Asymmetric.EncryptedAsymmetric
-export type SymmetricEncryptedString = Crypto.Symmetric.EncryptedDataString
-export type SymmetricEncryptedItem = Crypto.Symmetric.EncryptedSymmetric
+export type AsymmetricEncryptedData = Crypto.Asymmetric.AsymmetricEncryptedData
+export type SymmetricEncryptedString =
+  | Crypto.AesCrypto.AesEncryptedDataString
+  | Crypto.Ed25519Crypto.Ed25519EncryptedDataString
+export type SymmetricEncryptedData = Crypto.AesCrypto.AesEncryptedData | Crypto.Ed25519Crypto.Ed25519EncryptedData
 export type SymmetricPassword = string
 
 /** Flavor of chain network */

@@ -52,13 +52,13 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
   try {
     globalLogger.trace('called handleDecryptWithPassword')
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'encryptedPayload', 'symmetricOptions'], funcName)
-    const { chainType, encryptedPayload, returnAsymmetricOptions, symmetricOptions } = req.body
+    checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
+    const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
     ;({ context } = await getAppIdAndContextFromApiKey(req))
     const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
     const password = authToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
-      { chainType, encryptedPayload, password, symmetricOptions, returnAsymmetricOptions },
+      { chainType, encrypted, password, symmetricOptions, returnAsymmetricOptions },
       context,
     )
 
@@ -77,11 +77,11 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
   try {
     globalLogger.trace('called handleDecryptWithPrivateKeys')
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'encryptedPayload'], funcName)
+    checkBodyForRequiredValues(req, ['chainType', 'encrypted'], funcName)
     checkBodyForOnlyOneOfValues(req, ['asymmetricEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'], funcName)
     const {
       chainType,
-      encryptedPayload,
+      encrypted,
       asymmetricEncryptedPrivateKeys,
       symmetricEncryptedPrivateKeys,
       symmetricOptionsForEncryptedPrivateKeys,
@@ -94,7 +94,7 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
     const response = await decryptWithPrivateKeysResolver(
       {
         chainType,
-        encryptedPayload,
+        encrypted,
         asymmetricEncryptedPrivateKeys,
         symmetricEncryptedPrivateKeys,
         symmetricOptionsForEncryptedPrivateKeys,
@@ -119,15 +119,15 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
   try {
     globalLogger.trace('called handleEncrypt')
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'payloadToEncrypt'], funcName)
+    checkBodyForRequiredValues(req, ['chainType', 'toEncrypt'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
-    const { asymmetricOptions, chainType, payloadToEncrypt, symmetricOptions } = req.body
+    const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
     const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
     const password = authToken?.secrets?.password
     const response = await encryptResolver(
-      { chainType, asymmetricOptions, symmetricOptions, password, payloadToEncrypt },
+      { chainType, asymmetricOptions, symmetricOptions, password, toEncrypt },
       context,
     )
 
@@ -173,12 +173,11 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
   try {
     globalLogger.trace('called handleSign')
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'payloadToSign'], funcName)
+    checkBodyForRequiredValues(req, ['chainType', 'toSign'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['asymmetricEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'], funcName)
     const {
-      asymmetricOptions,
       chainType,
-      payloadToSign,
+      toSign,
       symmetricOptions,
       asymmetricEncryptedPrivateKeys,
       symmetricEncryptedPrivateKeys,
@@ -199,7 +198,7 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       {
         chainType,
         password,
-        payloadToSign,
+        toSign,
         symmetricOptions,
         asymmetricEncryptedPrivateKeys,
         symmetricEncryptedPrivateKeys,
