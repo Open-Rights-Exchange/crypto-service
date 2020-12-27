@@ -25,27 +25,22 @@ export async function signResolver(params: SignParams, context: Context): Promis
   const { logger } = context
   const signatures: string[] = []
 
-  try {
-    // extract ecnrypted keys
-    const privateKeys = await decryptPrivateKeys({
-      symmetricEncryptedPrivateKeys,
-      asymmetricEncryptedPrivateKeys,
-      symmetricOptions,
-      password,
-      chainConnect,
-    })
+  // extract ecnrypted keys
+  const privateKeys = await decryptPrivateKeys({
+    symmetricEncryptedPrivateKeys,
+    asymmetricEncryptedPrivateKeys,
+    symmetricOptions,
+    password,
+    chainConnect,
+  })
 
-    // generate a signature for each privateKey
-    await Promise.all(
-      privateKeys.map(async pk => {
-        const signature = await chain.sign(toSign, pk, DEFAULT_SIGNATURE_ENCODING)
-        signatures.push(signature)
-      }),
-    )
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
-  }
+  // generate a signature for each privateKey
+  await Promise.all(
+    privateKeys.map(async pk => {
+      const signature = await chain.sign(toSign, pk, DEFAULT_SIGNATURE_ENCODING)
+      signatures.push(signature)
+    }),
+  )
 
   return signatures
 }

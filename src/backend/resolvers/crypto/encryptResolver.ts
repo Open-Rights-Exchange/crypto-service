@@ -1,7 +1,7 @@
 import { isNullOrEmpty } from 'aikon-js'
 import { AsymmetricEncryptedString, Context, EncryptParams, SymmetricEncryptedString } from '../../models'
 import { ServiceError } from '../errors'
-import { ChainConnection, getChain } from '../../chains/chainConnection'
+import { getChain } from '../../chains/chainConnection'
 import { assertValidChainType } from '../../helpers'
 import {
   encryptAsymmetrically,
@@ -28,39 +28,33 @@ export async function encryptResolver(
   let asymmetricEncryptedString: AsymmetricEncryptedString
   let symmetricEncryptedString: SymmetricEncryptedString
 
-  try {
-    const keys = await chain.generateKeyPair()
-    const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(
-      params?.symmetricOptions,
-      context,
-    )
-    const { publicKeys } = params?.asymmetricOptions || {}
-    const shouldEncryptAsym = !isNullOrEmpty(publicKeys)
-    const { password } = params
-    const shouldEncryptSym = !isNullOrEmpty(password)
+  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(
+    params?.symmetricOptions,
+    context,
+  )
+  const { publicKeys } = params?.asymmetricOptions || {}
+  const shouldEncryptAsym = !isNullOrEmpty(publicKeys)
+  const { password } = params
+  const shouldEncryptSym = !isNullOrEmpty(password)
 
-    // Encrypt symetrically with password
-    if (shouldEncryptSym) {
-      const encryptedPrivateKey = await encryptSymmetrically(chainConnect, {
-        unencrypted: params?.toEncrypt,
-        password,
-        options: symmetricEccOptions || symmetricEd25519Options,
-      })
-      symmetricEncryptedString = encryptedPrivateKey
-    }
-    // Encrypt asymetrically with publicKey(s)
-    if (shouldEncryptAsym) {
-      const options = mapAsymmetricOptionsParam(params?.asymmetricOptions)
-      const encryptedPrivateKey = await encryptAsymmetrically(chainConnect, {
-        unencrypted: params?.toEncrypt,
-        publicKeys,
-        ...options,
-      })
-      asymmetricEncryptedString = encryptedPrivateKey
-    }
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
+  // Encrypt symmetrically with password
+  if (shouldEncryptSym) {
+    const encryptedPrivateKey = await encryptSymmetrically(chainConnect, {
+      unencrypted: params?.toEncrypt,
+      password,
+      options: symmetricEccOptions || symmetricEd25519Options,
+    })
+    symmetricEncryptedString = encryptedPrivateKey
+  }
+  // Encrypt asymmetrically with publicKey(s)
+  if (shouldEncryptAsym) {
+    const options = mapAsymmetricOptionsParam(params?.asymmetricOptions)
+    const encryptedPrivateKey = await encryptAsymmetrically(chainConnect, {
+      unencrypted: params?.toEncrypt,
+      publicKeys,
+      ...options,
+    })
+    asymmetricEncryptedString = encryptedPrivateKey
   }
 
   return { asymmetricEncryptedString, symmetricEncryptedString }

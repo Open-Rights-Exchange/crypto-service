@@ -22,23 +22,16 @@ export async function decryptWithPasswordResolver(
   const { chain } = chainConnect
   const { logger } = context
 
-  try {
-    const keys = await chain.generateKeyPair()
-    const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
+  const keys = await chain.generateKeyPair()
+  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
 
-    // Decrypt symetrically with password
-    const unencrypted = await decryptSymmetrically(chainConnect, {
-      encrypted,
-      password,
-      options: symmetricEccOptions || symmetricEd25519Options,
-    })
+  // Decrypt symmetrically with password
+  const unencrypted = await decryptSymmetrically(chainConnect, {
+    encrypted,
+    password,
+    options: symmetricEccOptions || symmetricEd25519Options,
+  })
 
-    // Optionally re-encrypt result asymmetrically before returning
-    return optionallyEncryptReturnValue({ chainConnect, unencrypted, returnAsymmetricOptions })
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
-  }
-
-  return { decryptedResult: null, encryptedResult: null }
+  // Optionally re-encrypt result asymmetrically before returning
+  return optionallyEncryptReturnValue({ chainConnect, unencrypted, returnAsymmetricOptions })
 }

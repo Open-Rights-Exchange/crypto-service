@@ -34,36 +34,29 @@ export async function decryptWithPrivateKeysResolver(
   const chainConnect = await getChain(chainType, context)
   const { logger } = context
 
-  try {
-    if (!asymmetricEncryptedPrivateKeys && !symmetricEncryptedPrivateKeys) {
-      const msg = `You can only provide asymmetricEncryptedPrivateKeys OR symmetricEncryptedPrivateKeys - both were provided.`
-      throw new ServiceError(msg, ErrorType.BadParam, 'decryptWithPrivateKeysResolver')
-    }
-
-    // extract encrypted keys
-    const privateKeys = await decryptPrivateKeys({
-      symmetricEncryptedPrivateKeys,
-      asymmetricEncryptedPrivateKeys,
-      symmetricOptions: symmetricOptionsForEncryptedPrivateKeys,
-      password,
-      chainConnect,
-    })
-
-    // wrap encrypted value in an array if not already
-    const encryptedArray = ensureEncryptedAsymIsArrayObject(chainConnect, encrypted) || []
-
-    // Decrypt asymetrically with private keys
-    const unencrypted = await decryptAsymmetrically(chainConnect, {
-      encrypted: encryptedArray,
-      privateKeys,
-    })
-
-    // Optionally re-encrypt result asymmetrically before returning
-    return optionallyEncryptReturnValue({ chainConnect, unencrypted, returnAsymmetricOptions })
-  } catch (error) {
-    const errorMessage = 'Problem encrypting key (or string)'
-    logger.logAndThrowError(errorMessage, error)
+  if (!asymmetricEncryptedPrivateKeys && !symmetricEncryptedPrivateKeys) {
+    const msg = `You can only provide asymmetricEncryptedPrivateKeys OR symmetricEncryptedPrivateKeys - both were provided.`
+    throw new ServiceError(msg, ErrorType.BadParam, 'decryptWithPrivateKeysResolver')
   }
 
-  return { decryptedResult: null, asymmetricEncryptedString: null }
+  // extract encrypted keys
+  const privateKeys = await decryptPrivateKeys({
+    symmetricEncryptedPrivateKeys,
+    asymmetricEncryptedPrivateKeys,
+    symmetricOptions: symmetricOptionsForEncryptedPrivateKeys,
+    password,
+    chainConnect,
+  })
+
+  // wrap encrypted value in an array if not already
+  const encryptedArray = ensureEncryptedAsymIsArrayObject(chainConnect, encrypted) || []
+
+  // Decrypt asymmetrically with private keys
+  const unencrypted = await decryptAsymmetrically(chainConnect, {
+    encrypted: encryptedArray,
+    privateKeys,
+  })
+
+  // Optionally re-encrypt result asymmetrically before returning
+  return optionallyEncryptReturnValue({ chainConnect, unencrypted, returnAsymmetricOptions })
 }

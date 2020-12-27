@@ -17,7 +17,7 @@ export type GenerateKeyResult = {
 }
 
 /**
- *  Creates one or more new public/private key pairs using the curve specified
+ *  Creates one or more new public/private key pairs using the chain specified
  *  Returns: an array of symmetrically and/or asymmetrically encrypted items
  */
 export async function generateKeysResolver(params: GenerateKeysParams, context: Context): Promise<GenerateKeyResult[]> {
