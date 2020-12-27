@@ -1,17 +1,18 @@
 import { Base64 } from "js-base64";
 import { sha256 } from "js-sha256";
-import { Chain, Crypto } from "@open-rights-exchange/chainjs";
+import { Crypto } from "@open-rights-exchange/chainjs";
 
 /** 
  *  Create and encode the authToken needed for each request 
  *  The whole token is encrypted (with the server's publicKey and) and then base64 encoded
  *  We can include secrets here and set an expiration time (in validTo)
 */
-export async function createAuthToken(requestBody: any, publicKey: string, secrets: any) {
+export async function createAuthToken(url: string, requestBody: any, publicKey: string, secrets: any) {
   // hash the body of the request
   const payloadHash = createSha256Hash(JSON.stringify(requestBody));
   const now = new Date();
   const token = {
+    url,
     payloadHash,
     validFrom: now,
     validTo: new Date(now.getTime() + 1000 * 60 * 2), // 2 mins from now

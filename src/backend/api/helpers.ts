@@ -7,6 +7,7 @@ import { rollbar } from '../services/rollbar/connectors'
 import { AnalyticsEvent, AppId, Context, ErrorType, HttpStatusCode } from '../models'
 import { composeErrorResponse, ServiceError } from '../resolvers/errors'
 import { getAppIdFromApiKey } from '../resolvers/appRegistration'
+import { validateAuthTokenAndExtractContents } from '../resolvers/token'
 
 dotenv.config()
 
@@ -158,4 +159,19 @@ export function returnResponse(
   }
   analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
   return res.status(httpStatusCode).json({ processId: context?.processId, ...responseToReturn })
+}
+
+// Validate token helper
+export async function validateAuthToken(req: Request, context: Context) {
+  return validateAuthTokenAndExtractContents(
+    getFullUrlFromRequest(req),
+    req.headers['auth-token'] as string,
+    req?.body,
+    context,
+  )
+}
+
+/** Compose the full url of the request */
+export function getFullUrlFromRequest(req: Request) {
+  return `${req.protocol}://${req.get('host')}${req.originalUrl}`
 }

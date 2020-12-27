@@ -34,7 +34,7 @@ export const setupGlobalConstants = () => {
 
   // General
   global.BASE_PUBLIC_KEY = "042e438c99bd7ded27ed921919e1d5ee1d9b1528bb8a2f6c974362ad1a9ba7a6f59a452a0e4dfbc178ab5c5c090506bd7f0a6659fd3cf0cc769d6c17216d414163"
-  global.BASE_PRIVATE_KEY = "7b0c4bdbc24fd7b6045e9001dbe93f1e46478dedcfcefbc42180ac79fd08ce28"
+  global.BASE_PRIVATE_KEY = "720d62b5dba86d798c4ec200df7d7937451b4d24a7c5227f0e8df1905f6af5c8"
 
   // Algorand
   global.ALGORAND_SERVICE_API_KEY = settings.ALGORAND_SERVICE_API_KEY

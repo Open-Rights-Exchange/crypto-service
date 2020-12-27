@@ -48,6 +48,8 @@ export enum ChainType {
  *  and the request is only executed/authorized once
  *  Optionally includes symmetric password for encryption/decryption */
 export type AuthToken = {
+  /** full url of request (server url and api path) */
+  url: string
   /** hash of stringified JSON object of request body set to function along with this authToken */
   payloadHash: Hash
   validFrom: Date

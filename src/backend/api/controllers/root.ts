@@ -2,12 +2,13 @@ import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
 import { logger as globalLogger } from '../../helpers'
 import {
-  returnResponse,
-  getAppIdAndContextFromApiKey,
   checkBodyForAtLeastOneOfValues,
   checkBodyForOnlyOneOfValues,
   checkBodyForRequiredValues,
   checkHeaderForRequiredValues,
+  getAppIdAndContextFromApiKey,
+  returnResponse,
+  validateAuthToken,
 } from '../helpers'
 import { ErrorSeverity, ErrorType, HttpStatusCode } from '../../models'
 import { BASE_PUBLIC_KEY } from '../../constants'
@@ -19,7 +20,6 @@ import {
   signResolver,
 } from '../../resolvers/crypto'
 import { logError, ServiceError } from '../../resolvers/errors'
-import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
 
 dotenv.config()
 
@@ -55,7 +55,7 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
     checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
+    const authToken = await validateAuthToken(req, context)
     const password = authToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
       { chainType, encrypted, password, symmetricOptions, returnAsymmetricOptions },
@@ -89,7 +89,7 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
     } = req.body
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
+    const authToken = await validateAuthToken(req, context)
     const password = authToken?.secrets?.password
     const response = await decryptWithPrivateKeysResolver(
       {
@@ -124,7 +124,7 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
+    const authToken = await validateAuthToken(req, context)
     const password = authToken?.secrets?.password
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, toEncrypt },
@@ -151,7 +151,7 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
+    const authToken = await validateAuthToken(req, context)
     const password = authToken?.secrets?.password
     const response = await generateKeysResolver(
       { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
@@ -192,7 +192,7 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
     }
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
-    const authToken = await validateAuthTokenAndExtractContents(req.headers['auth-token'] as string, req?.body, context)
+    const authToken = await validateAuthToken(req, context)
     const password = authToken?.secrets?.password
     const response = await signResolver(
       {

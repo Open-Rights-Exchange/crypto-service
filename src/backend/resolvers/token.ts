@@ -13,6 +13,7 @@ import { decryptWithBasePrivateKey } from './crypto'
  *  Returns data extracted from authToken
  */
 export async function validateAuthTokenAndExtractContents(
+  requestUrl: string,
   base64EncodedAuthToken: string,
   requestBody: any,
   context: Context,
@@ -25,7 +26,9 @@ export async function validateAuthTokenAndExtractContents(
   }
 
   // Example Auth Token
-  //   { payloadHash: 'adadasdsad==',
+  //   {
+  //     url: 'https://crypto-service.io/generate-keys'
+  //     payloadHash: 'adadasdsad==',
   //     validFrom: '2020-12-20T00:00:00Z',
   //     validTo: '2020-12-20T23:59:59Z',
   //     secrets: {
@@ -37,10 +40,20 @@ export async function validateAuthTokenAndExtractContents(
   let decryptedAuthToken: any = await decryptWithBasePrivateKey({ encrypted: encryptedAuthToken }, context, appId)
   decryptedAuthToken = convertStringifiedJsonOrObjectToObject(decryptedAuthToken)
 
-  // validate params
-  const { payloadHash, validFrom, validTo, secrets } = decryptedAuthToken
-  if (!payloadHash || !isValidDate(validFrom) || !isValidDate(validTo)) {
-    const msg = `Auth Token is malformed or missing a required value when decrypted.`
+  const { url, payloadHash, validFrom, validTo, secrets } = decryptedAuthToken
+
+  console.log('authToken url:', url)
+  console.log('requestUrl url:', requestUrl)
+
+  // VERIFY: all required fields are in token
+  if (!url || !payloadHash || !isValidDate(validFrom) || !isValidDate(validTo)) {
+    const msg = `Auth Token is malformed or missing a required value.`
+    throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
+  }
+
+  // VERIFY: url in token matches request url
+  if (url !== requestUrl) {
+    const msg = `Auth Token url doesn't match actual request url.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
@@ -66,6 +79,7 @@ export async function validateAuthTokenAndExtractContents(
 
   // Return decoded token
   const authToken: AuthToken = {
+    url,
     payloadHash,
     validFrom: new Date(validFrom),
     validTo: new Date(validTo),
