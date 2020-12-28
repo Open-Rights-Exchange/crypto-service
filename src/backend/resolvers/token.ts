@@ -1,6 +1,6 @@
 import { isNullOrEmpty, isValidDate, tryBase64Decode } from 'aikon-js'
 import { convertStringifiedJsonOrObjectToObject, createSha256Hash } from '../helpers'
-import { AnalyticsEvent, AuthToken, Context, ErrorType, Mongo } from '../models'
+import { AnalyticsEvent, AuthToken, AuthTokenType, Context, ErrorType, Mongo } from '../models'
 import { AuthTokenData } from '../services/mongo/models'
 import { findOneMongo, upsertMongo } from '../services/mongo/resolvers'
 import { ServiceError } from './errors'
@@ -13,6 +13,7 @@ import { decryptWithBasePrivateKey } from './crypto'
  *  Returns data extracted from authToken
  */
 export async function validateAuthTokenAndExtractContents(
+  authTokenType: AuthTokenType,
   requestUrl: string,
   base64EncodedAuthToken: string,
   requestBody: any,
@@ -20,9 +21,12 @@ export async function validateAuthTokenAndExtractContents(
 ): Promise<AuthToken> {
   const { appId } = context
   const encryptedAuthToken = tryBase64Decode(base64EncodedAuthToken)
+  let errMsg = `Missing required parameter in request Header. Must provide auth-token.`
   if (isNullOrEmpty(encryptedAuthToken)) {
-    const msg = `Missing required parameter in request Header. Must provide auth-token.`
-    throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
+    if (AuthTokenType.Password) {
+      errMsg = `Missing required parameter in symmetrical options. Must provide PasswordAuthToken.`
+    }
+    throw new ServiceError(errMsg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
   // Example Auth Token
@@ -42,11 +46,8 @@ export async function validateAuthTokenAndExtractContents(
 
   const { url, payloadHash, validFrom, validTo, secrets } = decryptedAuthToken
 
-  console.log('authToken url:', url)
-  console.log('requestUrl url:', requestUrl)
-
   // VERIFY: all required fields are in token
-  if (!url || !payloadHash || !isValidDate(validFrom) || !isValidDate(validTo)) {
+  if (!url || !isValidDate(validFrom) || !isValidDate(validTo)) {
     const msg = `Auth Token is malformed or missing a required value.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
@@ -70,11 +71,13 @@ export async function validateAuthTokenAndExtractContents(
   }
 
   // VERIFY: payloadHash matches hash of request body
-  const body = JSON.stringify(requestBody || '')
-  const hashOfBody = createSha256Hash(body)
-  if (hashOfBody !== payloadHash) {
-    const msg = `Auth Token payloadHash does not match Sha256Hash of request body.`
-    throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents: ${body}`)
+  if (!isNullOrEmpty(requestBody)) {
+    const body = JSON.stringify(requestBody || '')
+    const hashOfBody = createSha256Hash(body)
+    if (hashOfBody !== payloadHash) {
+      const msg = `Auth Token payloadHash does not match Sha256Hash of request body.`
+      throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents: ${body}`)
+    }
   }
 
   // Return decoded token

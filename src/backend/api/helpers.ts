@@ -4,7 +4,15 @@ import { generateProcessId, Logger, isNullOrEmpty, isAString } from 'aikon-js'
 import dotenv from 'dotenv'
 import { analyticsEvent } from '../services/segment/resolvers'
 import { rollbar } from '../services/rollbar/connectors'
-import { AnalyticsEvent, AppId, Context, ErrorType, HttpStatusCode } from '../models'
+import {
+  AnalyticsEvent,
+  AppId,
+  AuthTokenType,
+  Context,
+  ErrorType,
+  HttpStatusCode,
+  SymmetricOptionsParam,
+} from '../models'
 import { composeErrorResponse, ServiceError } from '../resolvers/errors'
 import { getAppIdFromApiKey } from '../resolvers/appRegistration'
 import { validateAuthTokenAndExtractContents } from '../resolvers/token'
@@ -161,9 +169,28 @@ export function returnResponse(
   return res.status(httpStatusCode).json({ processId: context?.processId, ...responseToReturn })
 }
 
-// Validate token helper
+/** Validate token helper - extacts info from request object */
+export async function validatePasswordAuthToken(
+  req: Request,
+  symmetricOptions: SymmetricOptionsParam,
+  /** principal value of function - e.g. for /sign, it the content toSign */
+  bodyToVerify: any,
+  context: Context,
+) {
+  if (isNullOrEmpty(symmetricOptions)) return null
+  return validateAuthTokenAndExtractContents(
+    AuthTokenType.Password,
+    getFullUrlFromRequest(req),
+    symmetricOptions?.passwordAuthToken, // base64 encoded
+    bodyToVerify,
+    context,
+  )
+}
+
+/** Validate token helper - extacts info from request object */
 export async function validateAuthToken(req: Request, context: Context) {
   return validateAuthTokenAndExtractContents(
+    AuthTokenType.ApiHeader,
     getFullUrlFromRequest(req),
     req.headers['auth-token'] as string,
     req?.body,

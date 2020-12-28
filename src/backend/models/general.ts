@@ -50,7 +50,7 @@ export enum ChainType {
 export type AuthToken = {
   /** full url of request (server url and api path) */
   url: string
-  /** hash of stringified JSON object of request body set to function along with this authToken */
+  /** hash of target for authorization - for am api request, this is the stringified JSON object of request body */
   payloadHash: Hash
   validFrom: Date
   validTo: Date
@@ -90,4 +90,17 @@ export type SymmetricEd25519Options = {
   saltName?: string
   /** salt value - if provided, this is used instead of saltName */
   salt?: string
+}
+
+/** Symmetric encryption options with encrypted password (used by API endpoints)
+ *  passwordAuthToken is base64 encoded authToken */
+export type SymmetricOptionsParam =
+  | ({ passwordAuthToken: string } & SymmetricEccOptions)
+  | ({ passwordAuthToken: string } & SymmetricEd25519Options)
+
+/** Indicator of what an AuthToken is used for */
+export enum AuthTokenType {
+  ApiHeader = 'apiHeader',
+  EncryptedPayload = 'encryptedPayload',
+  Password = 'password',
 }

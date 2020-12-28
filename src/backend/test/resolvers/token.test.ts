@@ -5,6 +5,7 @@ import { createContext, requestBodyEmpty, encodedToken1, requestUrl } from '../d
 import { Mongo } from '../../services/mongo/models'
 import { findMongo } from '../../services/mongo/resolvers'
 import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
+import { AuthTokenType } from '../../models'
 
 declare let global: any
 
@@ -29,7 +30,13 @@ describe('Test token handling and validation', () => {
     const context = createContext()
     it('payloadHash does not match', async () => {
       await expect(
-        validateAuthTokenAndExtractContents(requestUrl, encodedToken1, requestBodyEmpty, context),
+        validateAuthTokenAndExtractContents(
+          AuthTokenType.ApiHeader,
+          requestUrl,
+          encodedToken1,
+          requestBodyEmpty,
+          context,
+        ),
       ).rejects.toThrow(new Error('Auth Token payloadHash does not match Sha256Hash of request body.'))
     })
   })

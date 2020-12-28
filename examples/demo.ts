@@ -29,11 +29,11 @@ const algoPrivateKey = "68c7d4579c891145a23deb3c8393810a5501dd1e41c09be56e23f2be
 
 // options to encrypt 
 const myPassword = "my-secure-password";
-const symmetricAesOptions = {
+const symmetricAesOptions: any = {
   salt: "my-salt",
   iter: 50000,
 };
-const symmetricEd25519Options = {
+const symmetricEd25519Options: any = {
   salt: "my-salt",
 };
 
@@ -47,15 +47,17 @@ const headers = { "api-key": apiKey, "Content-Type": "application/json" };
  */
 async function generateKeys( chain: Chain ) {
   console.log("--------------- generateKeys -------------->");
-    const generateKeyOptions = {
+    const generateKeyParams = {
       chainType: "ethereum",
       symmetricOptions: symmetricAesOptions,
     };
     const apiUrl = `${serviceUrl}/generate-keys`
-    const authToken = await createAuthToken( apiUrl, generateKeyOptions, servicePublicKey, { password: myPassword } );
+    const passwordAuthToken = await createAuthToken( apiUrl, null, servicePublicKey, { password: myPassword } )
+    generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
+    const authToken = await createAuthToken( apiUrl, generateKeyParams, servicePublicKey );
     headers["auth-token"] = authToken;
     console.log('sign auth-token:', authToken)
-    const { data } = await axios.post(apiUrl, generateKeyOptions, { headers } );
+    const { data } = await axios.post(apiUrl, generateKeyParams, { headers } );
     console.log("generate-keys results:", data);
     // The new keys are encrypted with your password, decrypt and display them
     const newPublicKey = data[0].publicKey;
@@ -73,7 +75,7 @@ async function generateKeys( chain: Chain ) {
  */
 async function encryptAndDecryptString( chain: Chain, stringToEncrypt: string ) {
   console.log("--------------- encryptAndDecryptString -------------->");
-  const encryptOptions = {
+  const encryptParams = {
     chainType: "ethereum",
     toEncrypt: stringToEncrypt,
     asymmetricOptions: {
@@ -81,9 +83,9 @@ async function encryptAndDecryptString( chain: Chain, stringToEncrypt: string ) 
     }
   }
   const apiUrl = `${serviceUrl}/encrypt`
-  const authToken = await createAuthToken( apiUrl, encryptOptions, servicePublicKey, null );
+  const authToken = await createAuthToken( apiUrl, encryptParams, servicePublicKey, null );
   headers["auth-token"] = authToken;
-  const { data } = await axios.post(apiUrl, encryptOptions, { headers } );
+  const { data } = await axios.post(apiUrl, encryptParams, { headers } );
   console.log("encrypted results:", data);
   
   // results are encrypted with our public key, so we can decrypt it with the matching private key
@@ -102,7 +104,7 @@ async function encryptAndDecryptString( chain: Chain, stringToEncrypt: string ) 
  */
 async function decryptWithPrivateKey( chain: Chain, stringToEncrypt: string ) {
   console.log("--------------- decryptWithPrivateKey -------------->");
-  const decryptWPrivateKeyOptions: any = {
+  const decryptWPrivateKeyParams: any = {
     chainType: "algorand",
     symmetricOptionsForEncryptedPrivateKeys: symmetricAesOptions,
     returnAsymmetricOptions: {
@@ -110,16 +112,19 @@ async function decryptWithPrivateKey( chain: Chain, stringToEncrypt: string ) {
     }
   }
   // encrypt our private key symmetrically (using our password)
-  decryptWPrivateKeyOptions.symmetricEncryptedPrivateKeys = [chain.encryptWithPassword(algoPrivateKey, myPassword, symmetricAesOptions)]
-  console.log('decryptWPrivateKeyOptions.symmetricEncryptedPrivateKeys:', decryptWPrivateKeyOptions.symmetricEncryptedPrivateKeys)
+  decryptWPrivateKeyParams.symmetricEncryptedPrivateKeys = [chain.encryptWithPassword(algoPrivateKey, myPassword, symmetricAesOptions)]
+  console.log('decryptWPrivateKeyOptions.symmetricEncryptedPrivateKeys:', decryptWPrivateKeyParams.symmetricEncryptedPrivateKeys)
   // encrypt a payload using our associated public key
-  decryptWPrivateKeyOptions.encrypted = await chain.encryptWithPublicKey(stringToEncrypt, algoPubKey)
+  const encrypted = await chain.encryptWithPublicKey(stringToEncrypt, algoPubKey)
+  decryptWPrivateKeyParams.encrypted = encrypted
 
   // use service to demonstrate decrypting the payload with our encryptedPrivateKey (which the service will decrypt with our password)
   const apiUrl = `${serviceUrl}/decrypt-with-private-keys`
-  const authToken = await createAuthToken(apiUrl, decryptWPrivateKeyOptions, servicePublicKey,  { password: myPassword } );
+  const passwordAuthToken = await createAuthToken( apiUrl, encrypted, servicePublicKey, { password: myPassword } )
+  decryptWPrivateKeyParams.symmetricOptionsForEncryptedPrivateKeys.passwordAuthToken = passwordAuthToken
+  const authToken = await createAuthToken(apiUrl, decryptWPrivateKeyParams, servicePublicKey );
   headers["auth-token"] = authToken;
-  const { data } = await axios.post(apiUrl, decryptWPrivateKeyOptions, { headers } );
+  const { data } = await axios.post(apiUrl, decryptWPrivateKeyParams, { headers } );
   console.log('data:', data)
   // results are encrypted with our public key, so we can decrypt it with the matching private key
   // TODO: Handle if passing in bad value to chain.decryptWithPrivateKey
@@ -136,17 +141,19 @@ async function sign( chain: Chain, toSign: string, privateKey: string ) {
   console.log(`--------------- sign for chain ${chain.chainType}-------------->`);
   // encrypt our private key with our password - the service will decrypt it (and sign with it) using the same password (sent via the authToken)
   const encryptedPrivateKey = chain.encryptWithPassword(privateKey, myPassword, symmetricAesOptions)
-  const signOptions = {
+  const signParams = {
     chainType: chain.chainType,
     toSign,
     symmetricOptions: symmetricAesOptions,
     symmetricEncryptedPrivateKeys: [encryptedPrivateKey],
   }
   const apiUrl = `${serviceUrl}/sign`
-  const authToken = await createAuthToken(apiUrl, signOptions, servicePublicKey, { password: myPassword } );
+  const passwordAuthToken = await createAuthToken( apiUrl, toSign, servicePublicKey, { password: myPassword } )
+  signParams.symmetricOptions.passwordAuthToken = passwordAuthToken
+  const authToken = await createAuthToken(apiUrl, signParams, servicePublicKey );
   headers["auth-token"] = authToken;
   console.log('sign auth-token:', authToken)
-  const { data } = await axios.post(apiUrl, signOptions, { headers } );
+  const { data } = await axios.post(apiUrl, signParams, { headers } );
   console.log("sign results:", data);
 }
 
