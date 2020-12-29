@@ -1,48 +1,70 @@
-import { isNullOrEmpty, isValidDate, tryBase64Decode } from 'aikon-js'
+import { base64Decode, isNullOrEmpty, isValidDate, tryBase64Decode } from 'aikon-js'
 import { convertStringifiedJsonOrObjectToObject, createSha256Hash } from '../helpers'
 import { AnalyticsEvent, AuthToken, AuthTokenType, Context, ErrorType, Mongo } from '../models'
 import { AuthTokenData } from '../services/mongo/models'
 import { findOneMongo, upsertMongo } from '../services/mongo/resolvers'
 import { ServiceError } from './errors'
 import { analyticsEvent } from '../services/segment/resolvers'
-import { decryptWithBasePrivateKey } from './crypto'
+import { decryptWithBasePrivateKey, encryptAsymmetrically } from './crypto'
+
+/** Decrypt and decode authToken
+ *  Returns AuthToken object
+ */
+export async function decodeAuthToken(
+  authTokenType: AuthTokenType,
+  base64EncodedAuthToken?: string,
+): Promise<AuthToken> {
+  const encryptedAuthToken = tryBase64Decode(base64EncodedAuthToken)
+
+  // throw if missing
+  let errMsg = `Missing or corrupted parameter in request Header. Must provide auth-token.`
+  if (isNullOrEmpty(encryptedAuthToken)) {
+    if (authTokenType === AuthTokenType.Password) {
+      errMsg = `Missing or corrupted auth token parameter in symmetrical options. Must provide base64-encoded PasswordAuthToken param.`
+    } else if (authTokenType === AuthTokenType.EncryptedPayload) {
+      errMsg = `Missing or corrupted auth token parameter in encryptedAndAuthToken. Must provide base64-encoded authToken wrapped in encryptedAndAuthToken param.`
+    }
+    throw new ServiceError(errMsg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
+  }
+  // decrypt
+  const decryptedAuthToken = await decryptWithBasePrivateKey({ encrypted: encryptedAuthToken })
+  return convertStringifiedJsonOrObjectToObject(decryptedAuthToken)
+}
+
+export type ValidateAuthTokenAndExtractContents = {
+  authTokenType: AuthTokenType
+  encryptedAuthToken?: string
+  authToken?: AuthToken
+  requestBody: any
+  requestUrl: string
+  context: Context
+}
 
 /** Extract auth-token from header of request and verifies that it is valid
  *  Checks that it was signed by the public key in encryptedKey, hasn't expired, and has not been used
  *  hashOfPayload - the hash of the stringified JSON object of all params set to called function along with this authToken
  *  Returns data extracted from authToken
+ *  Example Auth Token: 
+    {
+      url: 'https://crypto-service.io/generate-keys'
+      payloadHash: 'adadasdsad==',
+      validFrom: '2020-12-20T00:00:00Z',
+      validTo: '2020-12-20T23:59:59Z',
+      secrets: {
+        password: 'mypassword'
+      }
+    }
  */
 export async function validateAuthTokenAndExtractContents(
-  authTokenType: AuthTokenType,
-  requestUrl: string,
-  base64EncodedAuthToken: string,
-  requestBody: any,
-  context: Context,
+  params: ValidateAuthTokenAndExtractContents,
 ): Promise<AuthToken> {
-  const { appId } = context
-  const encryptedAuthToken = tryBase64Decode(base64EncodedAuthToken)
-  let errMsg = `Missing required parameter in request Header. Must provide auth-token.`
-  if (isNullOrEmpty(encryptedAuthToken)) {
-    if (AuthTokenType.Password) {
-      errMsg = `Missing required parameter in symmetrical options. Must provide PasswordAuthToken.`
-    }
-    throw new ServiceError(errMsg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
+  const { authTokenType, encryptedAuthToken, authToken, requestBody, requestUrl, context } = params
+
+  // decrypt if necessary
+  let decryptedAuthToken = authToken
+  if (encryptedAuthToken) {
+    decryptedAuthToken = await decodeAuthToken(authTokenType, encryptedAuthToken)
   }
-
-  // Example Auth Token
-  //   {
-  //     url: 'https://crypto-service.io/generate-keys'
-  //     payloadHash: 'adadasdsad==',
-  //     validFrom: '2020-12-20T00:00:00Z',
-  //     validTo: '2020-12-20T23:59:59Z',
-  //     secrets: {
-  //        password: 'mypassword'
-  //     }
-  //   }
-
-  // decrypt
-  let decryptedAuthToken: any = await decryptWithBasePrivateKey({ encrypted: encryptedAuthToken }, context, appId)
-  decryptedAuthToken = convertStringifiedJsonOrObjectToObject(decryptedAuthToken)
 
   const { url, payloadHash, validFrom, validTo, secrets } = decryptedAuthToken
 
@@ -64,7 +86,9 @@ export async function validateAuthTokenAndExtractContents(
   const now = new Date()
   const nowUtc = now.getTime()
   const isValidNow = nowUtc >= validFromDate && nowUtc <= validToDate
+
   // TODO: confirm validToDate is not too far in future - i.e. <= AUTH_TOKEN_MAX_EXPIRATION_IN_SECONDS
+
   if (!isValidNow) {
     const msg = `Auth Token has expired or is not valid at the current time: ${now}.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
@@ -80,19 +104,13 @@ export async function validateAuthTokenAndExtractContents(
     }
   }
 
-  // Return decoded token
-  const authToken: AuthToken = {
-    url,
-    payloadHash,
-    validFrom: new Date(validFrom),
-    validTo: new Date(validTo),
-    secrets,
-  }
+  // TODO: Check authTokens table to make sure this token hasn't already been used
 
   // Save authToken to prevent replay
-  await saveAuthToken({ authToken, context, base64EncodedAuthToken })
+  const base64EncodedAuthToken = encryptedAuthToken || Base64.encode(JSON.stringify(decryptedAuthToken))
+  await saveAuthToken({ authToken: decryptedAuthToken, context, base64EncodedAuthToken })
 
-  return authToken
+  return decryptedAuthToken
 }
 
 type SaveAuthTokenParam = {
