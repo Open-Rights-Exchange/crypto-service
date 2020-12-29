@@ -30,13 +30,13 @@ describe('Test token handling and validation', () => {
     const context = createContext()
     it('payloadHash does not match', async () => {
       await expect(
-        validateAuthTokenAndExtractContents(
-          AuthTokenType.ApiHeader,
+        validateAuthTokenAndExtractContents({
+          authTokenType: AuthTokenType.ApiHeader,
           requestUrl,
-          encodedToken1,
-          requestBodyEmpty,
+          encryptedAuthToken: encodedToken1,
+          requestBody: requestBodyEmpty,
           context,
-        ),
+        }),
       ).rejects.toThrow(new Error('Auth Token payloadHash does not match Sha256Hash of request body.'))
     })
   })
