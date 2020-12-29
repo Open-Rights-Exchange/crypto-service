@@ -48,12 +48,9 @@ export async function decryptWithPrivateKeysResolver(
     chainConnect,
   })
 
-  // wrap encrypted value in an array if not already
-  const encryptedArray = ensureEncryptedAsymIsArrayObject(chainConnect, encrypted) || []
-
   // Decrypt asymmetrically with private keys
   const unencrypted = await decryptAsymmetrically(chainConnect, {
-    encrypted: encryptedArray,
+    encrypted,
     privateKeys,
   })
 
