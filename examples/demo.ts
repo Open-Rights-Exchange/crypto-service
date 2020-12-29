@@ -1,12 +1,14 @@
 // This example demonstrates common patterns of how a client would use the cryto service
 
 import axios from "axios";
+import { Base64 } from "js-base64";
 import {
   Chain,
   ChainFactory,
   ChainType,
+  Crypto,
 } from "@open-rights-exchange/chainjs";
-import { createAuthToken } from './helpers';
+import { createAuthToken, createEncryptedAndAuthToken } from './helpers';
 
 require("dotenv").config();
 
@@ -15,7 +17,7 @@ const serviceUrl = "https://staging.api.crypto-service.io";
 // a well-known public key of the serivce you trust
 const servicePublicKey = "042e438c99bd7ded27ed921919e1d5ee1d9b1528bb8a2f6c974362ad1a9ba7a6f59a452a0e4dfbc178ab5c5c090506bd7f0a6659fd3cf0cc769d6c17216d414163";
 
-// // Localhost
+// Localhost
 // const serviceUrl = "http://localhost:8080";
 // const servicePublicKey = "04cea2c951504b5bfefa78480ae632da2c7889561325f9d76ca7b0a1e62f7a8cd52ce313c8b3fd3c7ffe2f588322e5be331c64b31b256a8769e92f947ae712b761";
 
@@ -106,7 +108,7 @@ async function decryptWithPrivateKey( chain: Chain, stringToEncrypt: string ) {
   console.log("--------------- decryptWithPrivateKey -------------->");
   const decryptWPrivateKeyParams: any = {
     chainType: "algorand",
-    symmetricOptionsForEncryptedPrivateKeys: symmetricAesOptions,
+    symmetricOptionsForEncryptedPrivateKeys: symmetricEd25519Options,
     returnAsymmetricOptions: {
       "publicKeys" : [ algoPubKey ]
     }
@@ -132,6 +134,52 @@ async function decryptWithPrivateKey( chain: Chain, stringToEncrypt: string ) {
   const decryptedString = await chain.decryptWithPrivateKey( encryptedString, algoPrivateKey );
   console.log("Decrypted string:", decryptedString);
 }
+
+/** 
+ *  Use the service to decrypt a payload using private keys that are encrypted with the service's public key
+ *  and then have it re-encrypt the payload using new symmetric and/or asymmetric options
+ *  The encrypted payload can be wrapped with an authToken governing its use
+ *  ...encryptedAndAuthTokenObject is an object that includes encrypted value and authToken - and is encrypted with the service's key
+ */
+async function recoverAndReencrypt( chain: Chain, prviateKeyToEncrypt: string ) {
+  console.log("--------------- recoverAndReencrypt -------------->");
+
+  const recoverAndReencryptParams: any = {
+    chainType: "algorand",
+    symmetricOptionsForEncryptedPrivateKeys: symmetricEd25519Options,
+    asymmetricOptionsForReencrypt: {
+      "publicKeys" : [ algoPubKey ]
+    }
+  }
+
+  // Encrypt a private key asymmetrically
+  // encrypt a payload using our associated public key
+  const privateKeyToRecover = await chain.encryptWithPublicKey(prviateKeyToEncrypt, algoPubKey)
+  // Encrypt the private keys we'll use to decrypt the privateKeyToRecover
+  const encryptedPrivateKey = Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, algoPrivateKey)
+  recoverAndReencryptParams.asymmetricEncryptedPrivateKeys = encryptedPrivateKey
+
+  // use service to demonstrate decrypting the payload with our encryptedPrivateKey and then reencrypt 
+  const apiUrl = `${serviceUrl}/recover-and-reencrypt`
+  // const encryptedPayloadAuthToken = await createAuthToken(apiUrl, privateKeyToRecover, servicePublicKey, {}, true )
+  // const encryptedAndAuthTokenObject = JSON.stringify({encrypted: privateKeyToRecover, authToken: encryptedPayloadAuthToken})
+  // console.log('encryptedPayloadAuthToken:', encryptedPayloadAuthToken)
+  // recoverAndReencryptParams.encryptedAndAuthToken = Base64.encode(JSON.stringify(Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, encryptedAndAuthTokenObject)));
+  recoverAndReencryptParams.encryptedAndAuthToken = await createEncryptedAndAuthToken(apiUrl, privateKeyToRecover, servicePublicKey, {})
+  console.log('encryptedPayloadAuthToken:', recoverAndReencryptParams.encryptedAndAuthToken)
+
+  // create api auth token
+  const authToken = await createAuthToken(apiUrl, recoverAndReencryptParams, servicePublicKey )
+  headers["auth-token"] = authToken;
+  const { data } = await axios.post(apiUrl, recoverAndReencryptParams, { headers } );
+  console.log('data:', data)
+  // results are encrypted with our public key, so we can decrypt it with the matching private key
+  // TODO: Handle if passing in bad value to chain.decryptWithPrivateKey
+  const encryptedString = chain.toAsymEncryptedDataString(JSON.stringify(JSON.parse(data.asymmetricEncryptedString)[0]))
+  const decryptedString = await chain.decryptWithPrivateKey( encryptedString, algoPrivateKey );
+  console.log("Decrypted string:", decryptedString);
+}
+
 
 /**
  *  Use the service to generate a signature from a string.
@@ -181,6 +229,7 @@ async function run() {
     // Use /encrypt to encrypt on the server
     await encryptAndDecryptString(ethChain, 'encrypt-this-string')
     await decryptWithPrivateKey(algoChain, 'private-message-decrypted-by-service' )
+    await recoverAndReencrypt(algoChain, 'private-key-to-recover' )
     await sign(ethChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', ethPrivateKey)
     await sign(eosChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', eosPrivateKey)
     await sign(algoChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', algoPrivateKey)
