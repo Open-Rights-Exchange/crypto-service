@@ -1,5 +1,5 @@
 import { Logger } from 'aikon-js'
-import { Crypto } from './chainjs'
+import { PublicKey, SymmetricPassword } from './chain'
 
 export interface Lookup {
   [key: string]: any
@@ -17,31 +17,7 @@ export type Context = {
 export const DEFAULT_SIGNATURE_ENCODING = 'utf8'
 
 export type Hash = string
-export type PublicKey = string
-export type PrivateKey = string
 export type SaltName = string
-export type AsymmetricEncryptedString = Crypto.Asymmetric.AsymmetricEncryptedDataString
-export type AsymmetricEncryptionOptions = Crypto.Asymmetric.EciesOptions
-export type AsymmetricEncryptedData = Crypto.Asymmetric.AsymmetricEncryptedData
-export type SymmetricEncryptedString =
-  | Crypto.AesCrypto.AesEncryptedDataString
-  | Crypto.Ed25519Crypto.Ed25519EncryptedDataString
-export type SymmetricEncryptedData = Crypto.AesCrypto.AesEncryptedData | Crypto.Ed25519Crypto.Ed25519EncryptedData
-export type SymmetricPassword = string
-
-/** Flavor of chain network */
-export enum ChainPlatformType {
-  Algorand = 'algorand',
-  Eos = 'eos',
-  Ethereum = 'ethereum',
-}
-
-/** Supported chain types */
-export enum ChainType {
-  AlgorandV1 = 'algorand',
-  EosV2 = 'eos',
-  EthereumV1 = 'ethereum',
-}
 
 /** Decrypted Athorization token sent (encrypted) by caller
  *  Ensures that the request is coming from an authorized called

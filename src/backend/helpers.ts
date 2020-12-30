@@ -1,9 +1,8 @@
 import { createGuidWithoutDashes, isAString, tryParseJSON, isAnObject, Logger, isNullOrEmpty } from 'aikon-js'
 import { sha256 } from 'js-sha256'
-import { ChainType } from './models/general'
 import { DEFAULT_PROCESS_ID } from './constants'
 import { rollbar } from './services/rollbar/connectors'
-import { ErrorType } from './models'
+import { ChainType, ErrorType } from './models'
 import { ServiceError } from './resolvers/errors'
 
 const loggerDefaults = {
@@ -52,7 +51,7 @@ export function toEnumValue<T>(e: T, value: any, throwIfInvalid = false): T[keyo
   return null
 }
 
-// todo chainjs - move to aikon-js
+/** convert a string number to int or 0 */
 export function stringToIntOrZero(value: string) {
   let result = parseInt(value, 10)
   if (Number.isNaN(result)) result = 0

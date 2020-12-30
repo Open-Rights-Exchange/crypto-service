@@ -1,5 +1,4 @@
 import { isAString, isNullOrEmpty } from 'aikon-js'
-import { Chain, Crypto } from '../../models/chainjs'
 import { BASE_PUBLIC_KEY, BASE_PRIVATE_KEY } from '../../constants'
 import {
   AppConfigType,
@@ -8,8 +7,10 @@ import {
   AsymmetricEncryptedString,
   AsymmetricEncryptionOptions,
   AsymmetricOptions,
+  Chain,
   ChainType,
   Context,
+  Crypto,
   DecryptAsymmetricallyParams,
   DecryptPrivateKeysParams,
   DecryptSymmetricallyParams,
