@@ -1,12 +1,10 @@
-import { Crypto } from './index'
+import { Asymmetric, AesCrypto, Ed25519Crypto } from './index'
 
-type AsymmetricEncryptedString = Crypto.Asymmetric.AsymmetricEncryptedDataString
-type AsymmetricEncryptionOptions = Crypto.Asymmetric.EciesOptions
-type AsymmetricEncryptedData = Crypto.Asymmetric.AsymmetricEncryptedData
-type SymmetricEncryptedString =
-  | Crypto.AesCrypto.AesEncryptedDataString
-  | Crypto.Ed25519Crypto.Ed25519EncryptedDataString
-type SymmetricEncryptedData = Crypto.AesCrypto.AesEncryptedData | Crypto.Ed25519Crypto.Ed25519EncryptedData
+type AsymmetricEncryptedString = Asymmetric.AsymmetricEncryptedDataString
+type AsymmetricEncryptionOptions = Asymmetric.EciesOptions
+type AsymmetricEncryptedData = Asymmetric.AsymmetricEncryptedData
+type SymmetricEncryptedString = AesCrypto.AesEncryptedDataString | Ed25519Crypto.Ed25519EncryptedDataString
+type SymmetricEncryptedData = AesCrypto.AesEncryptedData | Ed25519Crypto.Ed25519EncryptedData
 type SymmetricPassword = string
 
 /** Flavor of chain network */

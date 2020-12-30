@@ -15,7 +15,13 @@ export {
   SignatureBrand,
 } from '@open-rights-exchange/chainjs/dist/models'
 // export * from '@open-rights-exchange/chainjs/dist/interfaces'
-export * as Crypto from '@open-rights-exchange/chainjs/dist/crypto'
+export {
+  AesCrypto,
+  Asymmetric,
+  EccCrypto,
+  Ed25519Crypto,
+  GenericCrypto,
+} from '@open-rights-exchange/chainjs/dist/crypto'
 export * from './chain'
 export { Chain, ChainError } from '@open-rights-exchange/chainjs' // TODO: remove Chain
 // eslint-disable-next-line import/export

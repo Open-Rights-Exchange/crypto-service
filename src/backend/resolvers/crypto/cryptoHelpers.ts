@@ -3,6 +3,7 @@ import { BASE_PUBLIC_KEY, BASE_PRIVATE_KEY } from '../../constants'
 import {
   AppConfigType,
   AppId,
+  Asymmetric,
   AsymmetricEncryptedData,
   AsymmetricEncryptedString,
   AsymmetricEncryptionOptions,
@@ -10,7 +11,6 @@ import {
   Chain,
   ChainType,
   Context,
-  Crypto,
   DecryptAsymmetricallyParams,
   DecryptPrivateKeysParams,
   DecryptSymmetricallyParams,
@@ -190,7 +190,7 @@ export async function decryptWithBasePrivateKey(params: DecryptWithBasePrivateKe
   // decrypt payload asymmetrically - assumes using BASE_PUBLIC_KEY - which is an uncompressed public key
   const encryptedObject = convertStringifiedJsonOrObjectToObject(encrypted)
   const [privateKey] = await getPrivateKeysForAsymEncryptedPayload(null, encryptedObject)
-  const decrypted = Crypto.Asymmetric.decryptWithPrivateKey(encryptedObject, privateKey)
+  const decrypted = Asymmetric.decryptWithPrivateKey(encryptedObject, privateKey)
   return decrypted
 }
 
@@ -279,7 +279,7 @@ export function assertIsValidAsymEncrypted(encrypted: any, chainConnect?: ChainC
   if (chain) {
     isValid = chain.isAsymEncryptedDataString(encryptedString)
   } else {
-    isValid = Crypto.Asymmetric.isAsymEncryptedDataString(encryptedString)
+    isValid = Asymmetric.isAsymEncryptedDataString(encryptedString)
   }
   if (!isValid) {
     const msg = `Invalid value provided as asymmetrically encrypted item.`
