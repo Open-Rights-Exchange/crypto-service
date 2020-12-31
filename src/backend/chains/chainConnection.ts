@@ -1,10 +1,10 @@
 import { ChainFactory, Chain } from '@open-rights-exchange/chainjs'
 import { AppId, ChainPlatformType, Context, ChainType, ErrorType } from '../models'
 import { ServiceError } from '../resolvers/errors'
-import { ChainFunctions as AlgorandCustomFunctions } from './algorand'
-import { ChainFunctions as EthereumCustomFunctions } from './ethereum'
-import { ChainFunctions as EosChainFunctions } from './eos'
-import { IChainFunctions } from './IChainFunctions'
+import { ChainFunctionsAlgorand } from './algorand'
+import { ChainFunctionsEthereum } from './ethereum'
+import { ChainFunctionsEos } from './eos'
+import { ChainFunctions } from './ChainFunctions'
 /** A stateful wrapper for a blockchain connection
  *  Includes context and appRegistation settings */
 export class ChainConnection {
@@ -12,19 +12,17 @@ export class ChainConnection {
 
   private _context: Context
 
-  private _chainFunctions: IChainFunctions
+  private _chainFunctions: ChainFunctions
 
   private _chainType: ChainType
-
-  private _chain: Chain
 
   private _chainPlatform: ChainPlatformType
 
   constructor(chainType: ChainType) {
     this._chainType = chainType
-    this._chainFunctions = ChainConnection.getChainFunctions(chainType)
     this._chainPlatform = ChainConnection.getChainPlatformFromType(chainType)
-    this._chain = new ChainFactory().create(this._chainType, null, {})
+    const chain = new ChainFactory().create(this._chainType, null, {})
+    this._chainFunctions = ChainConnection.getChainFunctions(chainType, chain)
   }
 
   /** Load app setings and (by default) connect to the chain to confirm the endpoint is up */
@@ -36,11 +34,6 @@ export class ChainConnection {
   /** AppId for active app */
   get appId() {
     return this._appId
-  }
-
-  /** Access to underlying chain funcitons */
-  get chain() {
-    return this._chain
   }
 
   /** Custom oreid code for this chain */
@@ -88,15 +81,15 @@ export class ChainConnection {
   }
 
   /** Determines the custom oreid code to use for each ChainNetwork */
-  static getChainFunctions(chainType: ChainType): IChainFunctions {
+  static getChainFunctions(chainType: ChainType, chain: Chain): ChainFunctions {
     if (chainType === ChainType.AlgorandV1) {
-      return AlgorandCustomFunctions
+      return new ChainFunctionsAlgorand(chain)
     }
     if (chainType === ChainType.EthereumV1) {
-      return EthereumCustomFunctions
+      return new ChainFunctionsEthereum(chain)
     }
     if (chainType === ChainType.EosV2) {
-      return EosChainFunctions
+      return new ChainFunctionsEos(chain)
     }
     const msg = `getChainFunctions: Chaintype ${chainType} not implemented`
     throw new ServiceError(msg, ErrorType.ChainConfig, 'getChainFunctions')

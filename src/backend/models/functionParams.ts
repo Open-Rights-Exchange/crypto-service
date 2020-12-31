@@ -9,7 +9,6 @@ import {
 } from './index'
 import {
   AsymmetricEncryptedData,
-  Crypto,
   ModelsCryptoAsymmetric,
   ModelsCryptoEcc,
   ModelsCryptoEd25519,

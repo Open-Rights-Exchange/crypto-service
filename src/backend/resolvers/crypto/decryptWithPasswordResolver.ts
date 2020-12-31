@@ -19,10 +19,7 @@ export async function decryptWithPasswordResolver(
   assertValidChainType(params?.chainType)
   const { password, returnAsymmetricOptions, chainType, encrypted, symmetricOptions } = params
   const chainConnect = await getChain(chainType, context)
-  const { chain } = chainConnect
-  const { logger } = context
 
-  const keys = await chain.generateKeyPair()
   const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
 
   // Decrypt symmetrically with password
