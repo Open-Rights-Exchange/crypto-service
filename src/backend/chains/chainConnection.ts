@@ -1,10 +1,12 @@
-import { ChainFactory, Chain } from '@open-rights-exchange/chainjs'
+import { ChainFactory, Chain, ChainType as ChainTypeChainJs } from '@open-rights-exchange/chainjs'
 import { AppId, ChainPlatformType, Context, ChainType, ErrorType } from '../models'
 import { ServiceError } from '../resolvers/errors'
-import { ChainFunctions as AlgorandCustomFunctions } from './algorand'
-import { ChainFunctions as EthereumCustomFunctions } from './ethereum'
-import { ChainFunctions as EosChainFunctions } from './eos'
-import { IChainFunctions } from './IChainFunctions'
+import { ChainFunctionsAlgorand } from './algorand'
+import { ChainFunctionsEthereum } from './ethereum'
+import { ChainFunctionsNoChain } from './_noChain'
+import { ChainFunctionsEos } from './eos'
+import { ChainFunctions } from './ChainFunctions'
+import { toEnumValue } from '../helpers'
 /** A stateful wrapper for a blockchain connection
  *  Includes context and appRegistation settings */
 export class ChainConnection {
@@ -12,19 +14,20 @@ export class ChainConnection {
 
   private _context: Context
 
-  private _chainFunctions: IChainFunctions
+  private _chainFunctions: ChainFunctions
 
   private _chainType: ChainType
-
-  private _chain: Chain
 
   private _chainPlatform: ChainPlatformType
 
   constructor(chainType: ChainType) {
     this._chainType = chainType
-    this._chainFunctions = ChainConnection.getChainFunctions(chainType)
     this._chainPlatform = ChainConnection.getChainPlatformFromType(chainType)
-    this._chain = new ChainFactory().create(this._chainType, null, {})
+    const chain =
+      chainType !== ChainType.NoChain
+        ? new ChainFactory().create(toEnumValue(ChainTypeChainJs, this._chainType), null, {})
+        : null
+    this._chainFunctions = ChainConnection.getChainFunctions(chainType, chain)
   }
 
   /** Load app setings and (by default) connect to the chain to confirm the endpoint is up */
@@ -36,11 +39,6 @@ export class ChainConnection {
   /** AppId for active app */
   get appId() {
     return this._appId
-  }
-
-  /** Access to underlying chain funcitons */
-  get chain() {
-    return this._chain
   }
 
   /** Custom oreid code for this chain */
@@ -83,20 +81,26 @@ export class ChainConnection {
     if (chainType === ChainType.EthereumV1) {
       return ChainPlatformType.Ethereum
     }
+    if (chainType === ChainType.NoChain) {
+      return ChainPlatformType.NoPlatform
+    }
     const msg = `Chain type ${chainType} not implemented`
     throw new ServiceError(msg, ErrorType.ChainConfig, 'getChainPlatformFromType')
   }
 
   /** Determines the custom oreid code to use for each ChainNetwork */
-  static getChainFunctions(chainType: ChainType): IChainFunctions {
+  static getChainFunctions(chainType: ChainType, chain: Chain): ChainFunctions {
     if (chainType === ChainType.AlgorandV1) {
-      return AlgorandCustomFunctions
+      return new ChainFunctionsAlgorand(chain)
     }
     if (chainType === ChainType.EthereumV1) {
-      return EthereumCustomFunctions
+      return new ChainFunctionsEthereum(chain)
     }
     if (chainType === ChainType.EosV2) {
-      return EosChainFunctions
+      return new ChainFunctionsEos(chain)
+    }
+    if (chainType === ChainType.NoChain) {
+      return new ChainFunctionsNoChain(chain)
     }
     const msg = `getChainFunctions: Chaintype ${chainType} not implemented`
     throw new ServiceError(msg, ErrorType.ChainConfig, 'getChainFunctions')

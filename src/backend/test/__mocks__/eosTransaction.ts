@@ -17,7 +17,7 @@ import {
   DEFAULT_TRANSACTION_EXPIRY_IN_SECONDS,
 } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosConstants'
 
-import { ConfirmType, EosModels } from '../../models/chainjs'
+import { EosModels } from '../../models/chain'
 
 const throwNewError = (error: any) => {
   throw Error(error)
@@ -32,6 +32,14 @@ export type PublicKeyMapCache = {
   accountName: EosModels.EosEntityName
   permissionName: EosModels.EosEntityName
   publicKey: EosModels.EosPublicKey
+}
+
+/** Specifies how many block confirmations should be received before considering transaction is complete */
+enum ConfirmType {
+  /** Don't wait for any block confirmations */
+  None = 0,
+  /** After first block */
+  After001 = 1,
 }
 
 export class EosTransaction {

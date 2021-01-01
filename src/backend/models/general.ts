@@ -1,5 +1,5 @@
 import { Logger } from 'aikon-js'
-import { Crypto } from './chainjs'
+import { PublicKey, SymmetricPassword } from './chain'
 
 export interface Lookup {
   [key: string]: any
@@ -17,38 +17,16 @@ export type Context = {
 export const DEFAULT_SIGNATURE_ENCODING = 'utf8'
 
 export type Hash = string
-export type PublicKey = string
-export type PrivateKey = string
 export type SaltName = string
-export type AsymmetricEncryptedString = Crypto.Asymmetric.AsymmetricEncryptedDataString
-export type AsymmetricEncryptionOptions = Crypto.Asymmetric.EciesOptions
-export type AsymmetricEncryptedData = Crypto.Asymmetric.AsymmetricEncryptedData
-export type SymmetricEncryptedString =
-  | Crypto.AesCrypto.AesEncryptedDataString
-  | Crypto.Ed25519Crypto.Ed25519EncryptedDataString
-export type SymmetricEncryptedData = Crypto.AesCrypto.AesEncryptedData | Crypto.Ed25519Crypto.Ed25519EncryptedData
-export type SymmetricPassword = string
-
-/** Flavor of chain network */
-export enum ChainPlatformType {
-  Algorand = 'algorand',
-  Eos = 'eos',
-  Ethereum = 'ethereum',
-}
-
-/** Supported chain types */
-export enum ChainType {
-  AlgorandV1 = 'algorand',
-  EosV2 = 'eos',
-  EthereumV1 = 'ethereum',
-}
 
 /** Decrypted Athorization token sent (encrypted) by caller
  *  Ensures that the request is coming from an authorized called
  *  and the request is only executed/authorized once
  *  Optionally includes symmetric password for encryption/decryption */
 export type AuthToken = {
-  /** hash of stringified JSON object of request body set to function along with this authToken */
+  /** full url of request (server url and api path) */
+  url: string
+  /** hash of target for authorization - for am api request, this is the stringified JSON object of request body */
   payloadHash: Hash
   validFrom: Date
   validTo: Date
@@ -88,4 +66,17 @@ export type SymmetricEd25519Options = {
   saltName?: string
   /** salt value - if provided, this is used instead of saltName */
   salt?: string
+}
+
+/** Symmetric encryption options with encrypted password (used by API endpoints)
+ *  passwordAuthToken is base64 encoded authToken */
+export type SymmetricOptionsParam =
+  | ({ passwordAuthToken: string } & SymmetricEccOptions)
+  | ({ passwordAuthToken: string } & SymmetricEd25519Options)
+
+/** Indicator of what an AuthToken is used for */
+export enum AuthTokenType {
+  ApiHeader = 'apiHeader',
+  EncryptedPayload = 'encryptedPayload',
+  Password = 'password',
 }

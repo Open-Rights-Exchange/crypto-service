@@ -310,7 +310,7 @@ export async function updateMongo({
 export type UpsertMongoArgs<T> = {
   context: Context
   mongoObject: Model<T & any>
-  newItem: T | any // todo chainjs - should be just T
+  newItem: T | any // todo: should be just T
   mergeFieldsWithExistingObject?: boolean
   returnUpdatedItem?: boolean
   skipUpdatedFields?: boolean
