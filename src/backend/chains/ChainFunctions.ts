@@ -1,4 +1,5 @@
 import { Chain } from '@open-rights-exchange/chainjs'
+import { toEnumValue } from '../helpers'
 import { Asymmetric, ChainType, CryptoCurve, GenericCrypto, KeyPair, PrivateKey, PublicKey } from '../models'
 
 class ChainFunctions {
@@ -16,7 +17,7 @@ class ChainFunctions {
 
   /** Returns chain type enum - resolves to chain family as a string e.g. 'eos' */
   public get chainType(): ChainType {
-    return this._chain.chainType
+    return toEnumValue(ChainType, this._chain.chainType)
   }
 
   /** Decrypts the encrypted value using a password, and optional salt using AES algorithm and SHA256 hash function
