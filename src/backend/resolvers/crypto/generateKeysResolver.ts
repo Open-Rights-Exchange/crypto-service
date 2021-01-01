@@ -17,7 +17,7 @@ export type GenerateKeyResult = {
 }
 
 /**
- *  Creates one or more new public/private key pairs using the curve specified
+ *  Creates one or more new public/private key pairs using the chain specified
  *  Returns: an array of symmetrically and/or asymmetrically encrypted items
  */
 export async function generateKeysResolver(params: GenerateKeysParams, context: Context): Promise<GenerateKeyResult[]> {
@@ -25,12 +25,12 @@ export async function generateKeysResolver(params: GenerateKeysParams, context: 
 
   assertValidChainType(params?.chainType)
   const chainConnect = await getChain(params?.chainType, context)
-  const { chain } = chainConnect
+  const { chainFunctions } = chainConnect
   const count = params?.keyCount ? Math.round(params?.keyCount) : 1
 
   // key n set of public/private keys - encrypting the private keys
   for (let index = 0; index < count; index += 1) {
-    const keys = await chain.generateKeyPair()
+    const keys = await chainFunctions.generateKeyPair()
     const encryptParams: EncryptParams = {
       chainType: params?.chainType,
       asymmetricOptions: params?.asymmetricOptions,

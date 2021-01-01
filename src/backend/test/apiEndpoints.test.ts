@@ -26,7 +26,7 @@ describe('Test api endpoints', () => {
   })
 
   describe('Returns the Base Public Key', () => {
-    it('returns the correct Base Public Key', async () => {
+    xit('returns the correct Base Public Key', async () => {
       const { publicKey }: any = await getPublicKey({ apiKey: global.TEST_APP_API_KEY })
       expect(publicKey).toEqual(global.BASE_PUBLIC_KEY)
     })

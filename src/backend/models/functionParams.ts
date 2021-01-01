@@ -7,15 +7,22 @@ import {
   SymmetricEd25519Options,
   SymmetricEncryptedString,
 } from './index'
-import { ModelsCryptoAsymmetric, ModelsCryptoEcc, ModelsCryptoEd25519, PrivateKey } from './chainjs'
-import { AsymmetricEncryptedData, SymmetricEncryptedData } from './general'
+import {
+  AsymmetricEncryptedData,
+  ModelsCryptoAsymmetric,
+  ModelsCryptoEcc,
+  ModelsCryptoEd25519,
+  PrivateKey,
+  SymmetricEncryptedData,
+} from './chain'
+import { AuthToken } from './general'
 import { ChainConnection } from '../chains/chainConnection'
 
 export type DecryptPrivateKeysParams = {
-  symmetricEncryptedPrivateKeys: SymmetricEncryptedString | SymmetricEncryptedData[] | SymmetricEncryptedData
-  asymmetricEncryptedPrivateKeys: AsymmetricEncryptedString | AsymmetricEncryptedData[] | AsymmetricEncryptedData
-  symmetricOptions: SymmetricEccOptions | SymmetricEd25519Options
-  password: string
+  symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[] | SymmetricEncryptedData
+  asymmetricEncryptedPrivateKeys?: AsymmetricEncryptedString | AsymmetricEncryptedData[] | AsymmetricEncryptedData
+  symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
+  password?: string
   chainConnect: ChainConnection
 }
 
@@ -47,6 +54,21 @@ export type DecryptWithPrivateKeysParams = {
   password: string
   /** (optional) options to re-encrypt result before returning it */
   returnAsymmetricOptions?: AsymmetricOptions
+}
+
+export type RecoverAndReencryptResolverParams = {
+  /** chain/curve used to encrypt */
+  chainType: ChainType
+  /** Stringified JSON of encrypted asym payload - value to decrypt */
+  encrypted: AsymmetricEncryptedString | AsymmetricEncryptedData
+  /** Stringified JSON of encrypted private key(s) */
+  asymmetricEncryptedPrivateKeys?: AsymmetricEncryptedString | AsymmetricEncryptedData[]
+  /** (optional) options used to re-encrypt results symmetrically */
+  symmetricOptionsForReencrypt?: SymmetricEccOptions | SymmetricEd25519Options
+  /** (optional) options used to re-encrypt results asymmetrically */
+  asymmetricOptionsForReencrypt?: AsymmetricOptions
+  /** password used to encrypt symmetrically */
+  password: string
 }
 
 export type SignParams = {
@@ -114,8 +136,4 @@ export type DecryptAsymmetricallyParams = {
     | AsymmetricEncryptedData
     | AsymmetricEncryptedData[]
   privateKeys: PrivateKey[]
-}
-
-export type DecryptWithBasePrivateKey = {
-  encrypted: AsymmetricEncryptedString | string
 }

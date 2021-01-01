@@ -1,4 +1,4 @@
-import { ChainError } from '../models/chainjs'
+import { ChainError } from '../models/chain'
 import { logger as globalLogger } from '../helpers'
 import { Context, ErrorType, ErrorSeverity } from '../models'
 

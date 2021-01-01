@@ -8,8 +8,7 @@ import * as eosTransactionModule from '@open-rights-exchange/chainjs/dist/chains
 import { Mongo } from '../../services/mongo/models'
 import { rollbar } from '../../services/rollbar/connectors'
 import { findOneMongo } from '../../services/mongo/resolvers'
-import { ConfirmType, ChainErrorType } from '../../models/chainjs'
-import { EosModels } from '../../models/chainjs'
+import { EosModels } from '../../models/chain'
 import { logger } from '../../helpers'
 import { Context } from '../../models'
 
