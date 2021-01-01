@@ -9,6 +9,7 @@ type SymmetricPassword = string
 
 /** Flavor of chain network */
 export enum ChainPlatformType {
+  NoPlatform = 'noplatform',
   Algorand = 'algorand',
   Eos = 'eos',
   Ethereum = 'ethereum',
@@ -16,6 +17,7 @@ export enum ChainPlatformType {
 
 /** Supported chain types */
 export enum ChainType {
+  NoChain = 'nochain',
   AlgorandV1 = 'algorand',
   EosV2 = 'eos',
   EthereumV1 = 'ethereum',

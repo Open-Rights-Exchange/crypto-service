@@ -1,10 +1,12 @@
-import { ChainFactory, Chain } from '@open-rights-exchange/chainjs'
+import { ChainFactory, Chain, ChainType as ChainTypeChainJs } from '@open-rights-exchange/chainjs'
 import { AppId, ChainPlatformType, Context, ChainType, ErrorType } from '../models'
 import { ServiceError } from '../resolvers/errors'
 import { ChainFunctionsAlgorand } from './algorand'
 import { ChainFunctionsEthereum } from './ethereum'
+import { ChainFunctionsNoChain } from './_noChain'
 import { ChainFunctionsEos } from './eos'
 import { ChainFunctions } from './ChainFunctions'
+import { toEnumValue } from '../helpers'
 /** A stateful wrapper for a blockchain connection
  *  Includes context and appRegistation settings */
 export class ChainConnection {
@@ -21,7 +23,10 @@ export class ChainConnection {
   constructor(chainType: ChainType) {
     this._chainType = chainType
     this._chainPlatform = ChainConnection.getChainPlatformFromType(chainType)
-    const chain = new ChainFactory().create(this._chainType, null, {})
+    const chain =
+      chainType !== ChainType.NoChain
+        ? new ChainFactory().create(toEnumValue(ChainTypeChainJs, this._chainType), null, {})
+        : null
     this._chainFunctions = ChainConnection.getChainFunctions(chainType, chain)
   }
 
@@ -76,6 +81,9 @@ export class ChainConnection {
     if (chainType === ChainType.EthereumV1) {
       return ChainPlatformType.Ethereum
     }
+    if (chainType === ChainType.NoChain) {
+      return ChainPlatformType.NoPlatform
+    }
     const msg = `Chain type ${chainType} not implemented`
     throw new ServiceError(msg, ErrorType.ChainConfig, 'getChainPlatformFromType')
   }
@@ -90,6 +98,9 @@ export class ChainConnection {
     }
     if (chainType === ChainType.EosV2) {
       return new ChainFunctionsEos(chain)
+    }
+    if (chainType === ChainType.NoChain) {
+      return new ChainFunctionsNoChain(chain)
     }
     const msg = `getChainFunctions: Chaintype ${chainType} not implemented`
     throw new ServiceError(msg, ErrorType.ChainConfig, 'getChainFunctions')
