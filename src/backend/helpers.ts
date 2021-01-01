@@ -136,3 +136,11 @@ export function ensureArray(value: any): any[] {
 export function createGuidWithPrefix(prefix = '') {
   return `${prefix}${createGuidWithoutDashes()}`
 }
+
+export const notImplemented = () => {
+  throw new Error('Not Implemented')
+}
+
+export const notSupported = (description: string) => {
+  throw new Error(`Not Supported ${description}`)
+}
