@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import url from 'url'
-import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode } from 'aikon-js'
+import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode, tryParseJSON } from 'aikon-js'
 import dotenv from 'dotenv'
 import { analyticsEvent } from '../services/segment/resolvers'
 import { rollbar } from '../services/rollbar/connectors'
@@ -213,9 +213,17 @@ export async function validateEncryptedPayloadAuthToken(
     )
   }
 
-  const decodedEncryptedAndAuthToken: EncryptedAndAuthToken = JSON.parse(
+  const decodedEncryptedAndAuthToken: EncryptedAndAuthToken = tryParseJSON(
     await decryptWithBasePrivateKey({ encrypted: decodedAuthToken }),
   )
+
+  if (isNullOrEmpty(decodedEncryptedAndAuthToken)) {
+    throw new ServiceError(
+      `Problem with encryptedAndAuthToken. Expected it to be a stringified JSON object encypted using this service's public key`,
+      ErrorType.BadParam,
+      'validateEncryptedPayloadAuthToken',
+    )
+  }
 
   const authToken = await validateAuthTokenAndExtractContents({
     authTokenType: AuthTokenType.EncryptedPayload,

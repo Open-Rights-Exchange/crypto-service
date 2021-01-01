@@ -147,13 +147,11 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
 
     ;({ context } = await getAppIdAndContextFromApiKey(req))
     await validateApiAuthToken(req, context)
-    console.log('before validatePasswordAuthToken')
     // validate passwordAuthToken and extract password (if provided in sym options)
     if (symmetricOptionsForReencrypt) {
       const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptionsForReencrypt, encrypted, context)
       password = passwordAuthToken?.secrets?.password
     }
-    console.log('after validatePasswordAuthToken')
 
     // validate authToken and extract encrypted payload from encryptedAndAuthToken (if provided)
     if (encryptedAndAuthToken) {
