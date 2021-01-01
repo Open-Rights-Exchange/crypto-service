@@ -23,8 +23,6 @@ export async function encryptResolver(
 }> {
   assertValidChainType(params?.chainType)
   const chainConnect = await getChain(params?.chainType, context)
-  const { chain } = chainConnect
-  const { logger } = context
   let asymmetricEncryptedString: AsymmetricEncryptedString
   let symmetricEncryptedString: SymmetricEncryptedString
 

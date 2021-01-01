@@ -173,13 +173,12 @@ async function recoverAndReencrypt( chain: Chain, prviateKeyToEncrypt: string ) 
   headers["auth-token"] = authToken;
   const { data } = await axios.post(apiUrl, recoverAndReencryptParams, { headers } );
   console.log('data:', data)
-  // results are encrypted with our public key, so we can decrypt it with the matching private key
   // TODO: Handle if passing in bad value to chain.decryptWithPrivateKey
+  // results are encrypted with our public key, so we can decrypt it with the matching private key
   const encryptedString = chain.toAsymEncryptedDataString(JSON.stringify(JSON.parse(data.asymmetricEncryptedString)[0]))
   const decryptedString = await chain.decryptWithPrivateKey( encryptedString, algoPrivateKey );
   console.log("Decrypted string:", decryptedString);
 }
-
 
 /**
  *  Use the service to generate a signature from a string.

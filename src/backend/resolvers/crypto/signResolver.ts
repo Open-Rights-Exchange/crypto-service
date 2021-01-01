@@ -21,7 +21,7 @@ export async function signResolver(params: SignParams, context: Context): Promis
   } = params
   assertValidChainType(chainType)
   const chainConnect = await getChain(chainType, context)
-  const { chain } = chainConnect
+  const { chainFunctions } = chainConnect
   const { logger } = context
   const signatures: string[] = []
 
@@ -37,7 +37,7 @@ export async function signResolver(params: SignParams, context: Context): Promis
   // generate a signature for each privateKey
   await Promise.all(
     privateKeys.map(async pk => {
-      const signature = await chain.sign(toSign, pk, DEFAULT_SIGNATURE_ENCODING)
+      const signature = await chainFunctions.sign(toSign, pk, DEFAULT_SIGNATURE_ENCODING)
       signatures.push(signature)
     }),
   )

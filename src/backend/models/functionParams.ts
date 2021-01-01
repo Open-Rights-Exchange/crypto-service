@@ -7,8 +7,15 @@ import {
   SymmetricEd25519Options,
   SymmetricEncryptedString,
 } from './index'
-import { Crypto, ModelsCryptoAsymmetric, ModelsCryptoEcc, ModelsCryptoEd25519, PrivateKey } from './chainjs'
-import { AsymmetricEncryptedData, AuthToken, SymmetricEncryptedData } from './general'
+import {
+  AsymmetricEncryptedData,
+  ModelsCryptoAsymmetric,
+  ModelsCryptoEcc,
+  ModelsCryptoEd25519,
+  PrivateKey,
+  SymmetricEncryptedData,
+} from './chain'
+import { AuthToken } from './general'
 import { ChainConnection } from '../chains/chainConnection'
 
 export type DecryptPrivateKeysParams = {

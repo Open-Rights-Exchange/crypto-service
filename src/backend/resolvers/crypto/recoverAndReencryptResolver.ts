@@ -1,8 +1,8 @@
 import { isNullOrEmpty } from 'aikon-js'
 import {
   AsymmetricEncryptedString,
+  ChainType,
   Context,
-  ErrorType,
   RecoverAndReencryptResolverParams,
   SymmetricEncryptedString,
 } from '../../models'
@@ -14,7 +14,6 @@ import {
   decryptAsymmetrically,
   encryptAsymmetrically,
   encryptSymmetrically,
-  ensureEncryptedAsymIsArrayObject,
   mapAsymmetricOptionsParam,
   mapSymmetricOptionsParam,
 } from './cryptoHelpers'
@@ -41,14 +40,13 @@ export async function recoverAndReencryptResolver(
     symmetricOptionsForReencrypt,
   } = params
   const chainConnect = await getChain(chainType, context)
+  const chainConnectNoChain = await getChain(ChainType.NoChain, context)
   const { logger } = context
 
-  // TODO: decryptPrivateKeys needs to support no-chain (decrypt using base key)
-
-  // extract encrypted asym keys (that are encrytped with service's base key)
+  // extract encrypted asym keys (that are encrypted with service's base key)
   const privateKeys = await decryptPrivateKeys({
     asymmetricEncryptedPrivateKeys,
-    chainConnect,
+    chainConnect: chainConnectNoChain, // use NoChain so it wont expect public keys formatted for a specific chain - base public key is uncompressed
   })
   // Decrypt asymmetrically with private keys
   const decrypted = await decryptAsymmetrically(chainConnect, {
@@ -58,7 +56,6 @@ export async function recoverAndReencryptResolver(
 
   // Reencrypt for return
 
-  console.log('before Encrypt asym')
   // Encrypt asym
   let asymmetricEncryptedString: AsymmetricEncryptedString
   if (!isNullOrEmpty(asymmetricOptionsForReencrypt)) {
@@ -69,7 +66,7 @@ export async function recoverAndReencryptResolver(
       ...options,
     })
   }
-  console.log('before Encrypt sym')
+
   // Encrypt sym
   let symmetricEncryptedString: SymmetricEncryptedString
   if (!isNullOrEmpty(symmetricOptionsForReencrypt)) {
