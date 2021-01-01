@@ -48,6 +48,7 @@ export async function recoverAndReencryptResolver(
     asymmetricEncryptedPrivateKeys,
     chainConnect: chainConnectNoChain, // use NoChain so it wont expect public keys formatted for a specific chain - base public key is uncompressed
   })
+
   // Decrypt asymmetrically with private keys
   const decrypted = await decryptAsymmetrically(chainConnect, {
     encrypted,

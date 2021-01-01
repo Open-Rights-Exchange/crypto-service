@@ -201,13 +201,14 @@ export type EncryptedAndAuthToken = {
 export async function validateEncryptedPayloadAuthToken(
   req: Request,
   encryptedAndAuthToken: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
+  paramName: string,
   context: Context,
 ) {
   if (isNullOrEmpty(encryptedAndAuthToken)) return null
   const decodedAuthToken = tryBase64Decode(encryptedAndAuthToken)
   if (isNullOrEmpty(decodedAuthToken)) {
     throw new ServiceError(
-      `Corrupted authToken in encryptedAndAuthToken. Expecting base64-encoded string`,
+      `Corrupted authToken in ${paramName} value. Expected a base64-encoded string`,
       ErrorType.BadParam,
       'validateEncryptedPayloadAuthToken',
     )
@@ -219,7 +220,7 @@ export async function validateEncryptedPayloadAuthToken(
 
   if (isNullOrEmpty(decodedEncryptedAndAuthToken)) {
     throw new ServiceError(
-      `Problem with encryptedAndAuthToken. Expected it to be a stringified JSON object encypted using this service's public key`,
+      `Problem with ${paramName} value. Expected a stringified JSON object encypted using this service's public key`,
       ErrorType.BadParam,
       'validateEncryptedPayloadAuthToken',
     )
