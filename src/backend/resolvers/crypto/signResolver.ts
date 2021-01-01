@@ -25,7 +25,7 @@ export async function signResolver(params: SignParams, context: Context): Promis
   const { logger } = context
   const signatures: string[] = []
 
-  // extract ecnrypted keys
+  // extract encrypted keys
   const privateKeys = await decryptPrivateKeys({
     symmetricEncryptedPrivateKeys,
     asymmetricEncryptedPrivateKeys,
