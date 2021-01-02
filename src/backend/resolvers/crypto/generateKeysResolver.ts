@@ -4,10 +4,10 @@ import {
   EncryptParams,
   GenerateKeysParams,
   SymmetricEncryptedString,
-} from '../../models'
-import { ServiceError } from '../errors'
+} from '../../../models'
+import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../helpers'
+import { assertValidChainType } from '../../../helpers'
 import { encryptResolver } from './encryptResolver'
 
 export type GenerateKeyResult = {

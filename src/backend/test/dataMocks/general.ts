@@ -1,5 +1,5 @@
-import { Logger } from 'aikon-js'
-import { Context } from '../../models'
+import { Logger } from '../../../helpers'
+import { Context } from '../../../models'
 
 declare let global: any
 

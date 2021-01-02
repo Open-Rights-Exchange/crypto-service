@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import url from 'url'
-import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode } from 'aikon-js'
 import dotenv from 'dotenv'
+import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode, tryParseJSON } from '../../helpers'
 import { analyticsEvent } from '../services/segment/resolvers'
 import { rollbar } from '../services/rollbar/connectors'
 import {
@@ -16,9 +16,9 @@ import {
   ErrorType,
   HttpStatusCode,
   SymmetricOptionsParam,
-} from '../models'
+} from '../../models'
 import { getAppIdFromApiKey } from '../resolvers/appRegistration'
-import { composeErrorResponse, ServiceError } from '../resolvers/errors'
+import { composeErrorResponse, ServiceError } from '../../helpers/errors'
 import { decryptWithBasePrivateKey } from '../resolvers/crypto'
 import { validateAuthTokenAndExtractContents } from '../resolvers/token'
 
@@ -201,21 +201,30 @@ export type EncryptedAndAuthToken = {
 export async function validateEncryptedPayloadAuthToken(
   req: Request,
   encryptedAndAuthToken: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
+  paramName: string,
   context: Context,
 ) {
   if (isNullOrEmpty(encryptedAndAuthToken)) return null
   const decodedAuthToken = tryBase64Decode(encryptedAndAuthToken)
   if (isNullOrEmpty(decodedAuthToken)) {
     throw new ServiceError(
-      `Corrupted authToken in encryptedAndAuthToken. Expecting base64-encoded string`,
+      `Corrupted authToken in ${paramName} value. Expected a base64-encoded string`,
       ErrorType.BadParam,
       'validateEncryptedPayloadAuthToken',
     )
   }
 
-  const decodedEncryptedAndAuthToken: EncryptedAndAuthToken = JSON.parse(
+  const decodedEncryptedAndAuthToken: EncryptedAndAuthToken = tryParseJSON(
     await decryptWithBasePrivateKey({ encrypted: decodedAuthToken }),
   )
+
+  if (isNullOrEmpty(decodedEncryptedAndAuthToken)) {
+    throw new ServiceError(
+      `Problem with ${paramName} value. Expected a stringified JSON object encypted using this service's public key`,
+      ErrorType.BadParam,
+      'validateEncryptedPayloadAuthToken',
+    )
+  }
 
   const authToken = await validateAuthTokenAndExtractContents({
     authTokenType: AuthTokenType.EncryptedPayload,

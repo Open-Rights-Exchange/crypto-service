@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { logger } from '../../helpers'
+import { logger } from '../../../helpers/logger'
 
 require('dotenv').config()
 

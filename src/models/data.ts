@@ -1,6 +1,6 @@
 import { Lookup } from './general'
 
-export * from '../services/mongo/models'
+export * from '../backend/services/mongo/models'
 
 // These classes are the strongly typed equivalents of the Mongo schema
 

@@ -25,4 +25,4 @@ export {
 export * from './chain'
 export { Chain, ChainError } from '@open-rights-exchange/chainjs' // TODO: remove Chain
 // eslint-disable-next-line import/export
-export * from '../../chains/models'
+export * from '../../backend/chains/models'

@@ -1,5 +1,5 @@
 import { ChainError } from '../models/chain'
-import { logger as globalLogger } from '../helpers'
+import { logger as globalLogger } from './logger'
 import { Context, ErrorType, ErrorSeverity } from '../models'
 
 /**

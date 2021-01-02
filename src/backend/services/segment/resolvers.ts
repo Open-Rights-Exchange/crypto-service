@@ -1,6 +1,6 @@
 import Analytics from 'analytics-node'
-import { isAString } from 'aikon-js'
-import { AnalyticsEvent, Context } from '../../models'
+import { isAString } from '../../../helpers'
+import { AnalyticsEvent, Context } from '../../../models'
 import { SEGMENT_WRITE_KEY } from '../../constants'
 
 const analytics = new Analytics(SEGMENT_WRITE_KEY)
