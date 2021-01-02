@@ -25,12 +25,12 @@ describe('Test api endpoints', () => {
     await closeDB()
   })
 
-  describe('Returns the Base Public Key', () => {
-    xit('returns the correct Base Public Key', async () => {
-      const { publicKey }: any = await getPublicKey({ apiKey: global.TEST_APP_API_KEY })
-      expect(publicKey).toEqual(global.BASE_PUBLIC_KEY)
-    })
-  })
+  // XX_describe('Returns the Base Public Key', () => {
+  //   XX_it.skip('returns the correct Base Public Key', async () => {
+  //     const { publicKey }: any = await getPublicKey({ apiKey: global.TEST_APP_API_KEY })
+  //     expect(publicKey).toEqual(global.BASE_PUBLIC_KEY)
+  //   })
+  // })
 
   // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
 })
