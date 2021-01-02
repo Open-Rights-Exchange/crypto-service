@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import fs from 'fs'
 import { returnResponse } from '../helpers'
-import { HttpStatusCode } from '../../models'
+import { HttpStatusCode } from '../../../models'
 
 const someWelknownFile = fs.existsSync('./some-welknown-file.txt')
   ? fs.readFileSync('./some-welknown-file.txt', 'utf8')

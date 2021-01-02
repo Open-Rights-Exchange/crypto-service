@@ -1,12 +1,12 @@
 import { ChainFactory, Chain, ChainType as ChainTypeChainJs } from '@open-rights-exchange/chainjs'
-import { AppId, ChainPlatformType, Context, ChainType, ErrorType } from '../models'
-import { ServiceError } from '../resolvers/errors'
+import { AppId, ChainPlatformType, Context, ChainType, ErrorType } from '../../models'
+import { ServiceError } from '../../helpers/errors'
 import { ChainFunctionsAlgorand } from './algorand'
 import { ChainFunctionsEthereum } from './ethereum'
 import { ChainFunctionsNoChain } from './_noChain'
 import { ChainFunctionsEos } from './eos'
 import { ChainFunctions } from './ChainFunctions'
-import { toEnumValue } from '../helpers'
+import { toEnumValue } from '../../helpers'
 /** A stateful wrapper for a blockchain connection
  *  Includes context and appRegistation settings */
 export class ChainConnection {

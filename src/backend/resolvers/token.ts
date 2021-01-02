@@ -1,9 +1,14 @@
-import { base64Decode, isNullOrEmpty, isValidDate, tryBase64Decode } from 'aikon-js'
-import { convertStringifiedJsonOrObjectToObject, createSha256Hash } from '../helpers'
-import { AnalyticsEvent, AuthToken, AuthTokenType, Context, ErrorType, Mongo } from '../models'
+import {
+  convertStringifiedJsonOrObjectToObject,
+  createSha256Hash,
+  isNullOrEmpty,
+  isValidDate,
+  ServiceError,
+  tryBase64Decode,
+} from '../../helpers'
+import { AnalyticsEvent, AuthToken, AuthTokenType, Context, ErrorType, Mongo } from '../../models'
 import { AuthTokenData } from '../services/mongo/models'
 import { findOneMongo, upsertMongo } from '../services/mongo/resolvers'
-import { ServiceError } from './errors'
 import { analyticsEvent } from '../services/segment/resolvers'
 import { decryptWithBasePrivateKey, encryptAsymmetrically } from './crypto'
 

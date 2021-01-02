@@ -1,10 +1,9 @@
-import { isNullOrEmpty } from 'aikon-js'
 import {
   decryptWithPrivateKeys,
   encryptWithPublicKeys,
 } from '@open-rights-exchange/chainjs/dist/crypto/asymmetricHelpers'
-import { Asymmetric, ChainType, CryptoCurve, GenericCrypto, KeyPair, PrivateKey, PublicKey } from '../../models'
-import { notSupported } from '../../helpers'
+import { Asymmetric, ChainType, CryptoCurve, GenericCrypto, KeyPair, PrivateKey, PublicKey } from '../../../models'
+import { isNullOrEmpty, notSupported } from '../../../helpers'
 import { ChainFunctions } from '../ChainFunctions'
 
 /** Implement Chain Functions for 'NoChain'

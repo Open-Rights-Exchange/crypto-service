@@ -16,7 +16,7 @@ import {
   SymmetricEncryptedData,
 } from './chain'
 import { AuthToken } from './general'
-import { ChainConnection } from '../chains/chainConnection'
+import { ChainConnection } from '../backend/chains/chainConnection'
 
 export type DecryptPrivateKeysParams = {
   symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[] | SymmetricEncryptedData

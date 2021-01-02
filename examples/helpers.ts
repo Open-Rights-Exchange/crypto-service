@@ -2,12 +2,15 @@ import { Base64 } from "js-base64";
 import { sha256 } from "js-sha256";
 import { Crypto } from "@open-rights-exchange/chainjs";
 
+const DEFAULT_TOKEN_EXPIRE_IN_SECONDS = 120 // 2 mins
+
 /** 
- *  Create and encode the authToken needed for each request 
+ *  Create and encode the authToken needed for a request 
+ *  An auth token includes an expiration time (validTo) and can contain secrets
  *  The whole token is encrypted (with the server's publicKey and) and then base64 encoded
- *  We can include secrets here and set an expiration time (in validTo)
+ *  if dontEncryptToken = true, the token is returned as a JSON object (not encypted and encoded)
 */
-export async function createAuthToken(url: string, payloadBody: any, publicKey: string, secrets?: any, returnRawAuthToken = false) {
+export async function createAuthToken(url: string, payloadBody: any, publicKey: string, secrets?: any, dontEncryptToken = false) {
   // hash the body of the request
   const payloadHash = payloadBody ? createSha256Hash(JSON.stringify(payloadBody)): null;
   const now = new Date();
@@ -15,11 +18,11 @@ export async function createAuthToken(url: string, payloadBody: any, publicKey: 
     url,
     payloadHash,
     validFrom: now,
-    validTo: new Date(now.getTime() + 1000 * 60 * 2), // 2 mins from now
+    validTo: new Date(now.getTime() + 1000 * DEFAULT_TOKEN_EXPIRE_IN_SECONDS),
     secrets: secrets || {}, 
   };
   
-  if(returnRawAuthToken) return token
+  if(dontEncryptToken) return token
 
   // encrypt with public key of service
   const encrypted = Crypto.Asymmetric.encryptWithPublicKey(

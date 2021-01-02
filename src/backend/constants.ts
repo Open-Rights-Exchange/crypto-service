@@ -1,7 +1,7 @@
 /* eslint-disable prefer-destructuring */
 // Environment settings - stored in a .env file in the root of the app (not stored in GitHub)
 
-import { ServiceError } from './resolvers/errors'
+import { ServiceError } from '../helpers/errors'
 
 require('dotenv').config()
 

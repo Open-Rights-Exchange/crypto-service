@@ -5,7 +5,7 @@ import { createContext, requestBodyEmpty, encodedToken1, requestUrl } from '../d
 import { Mongo } from '../../services/mongo/models'
 import { findMongo } from '../../services/mongo/resolvers'
 import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
-import { AuthTokenType } from '../../models'
+import { AuthTokenType } from '../../../models'
 
 declare let global: any
 

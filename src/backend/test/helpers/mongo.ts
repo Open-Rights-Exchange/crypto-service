@@ -3,7 +3,7 @@ import { Mongo } from '../../services/mongo/models'
 import { connect } from '../../services/mongo/connectors'
 import { countMongo, upsertMongo } from '../../services/mongo/resolvers'
 import * as dbMocks from '../dbMocks'
-import { Context } from '../../models'
+import { Context } from '../../../models'
 import { ContextTest } from '../config/globalMocks'
 
 export const clearDB = async () => {

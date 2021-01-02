@@ -21,7 +21,7 @@ import bodyParser from 'body-parser'
 import { connect } from '../backend/services/mongo/connectors'
 import { addCorsMiddlware, errorHandler, logger } from './server_auth'
 import { router as apiRouter } from '../backend/api/_routes'
-import { initLogger } from '../backend/helpers'
+import { initLogger } from '../helpers'
 
 /* eslint-enable */
 
