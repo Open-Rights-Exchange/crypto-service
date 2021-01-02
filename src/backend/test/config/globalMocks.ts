@@ -1,4 +1,3 @@
-import { Logger } from 'aikon-js'
 import { Transaction } from '@open-rights-exchange/chainjs'
 import { EosAccount } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosAccount'
 import { toEosEntityName } from '@open-rights-exchange/chainjs/dist/chains/eos_2/helpers'
@@ -8,9 +7,9 @@ import * as eosTransactionModule from '@open-rights-exchange/chainjs/dist/chains
 import { Mongo } from '../../services/mongo/models'
 import { rollbar } from '../../services/rollbar/connectors'
 import { findOneMongo } from '../../services/mongo/resolvers'
-import { EosModels } from '../../models/chain'
-import { logger } from '../../helpers'
-import { Context } from '../../models'
+import { EosModels } from '../../../models/chain'
+import { logger, Logger } from '../../../helpers'
+import { Context } from '../../../models'
 
 import { EosTransaction } from '../__mocks__/eosTransaction'
 

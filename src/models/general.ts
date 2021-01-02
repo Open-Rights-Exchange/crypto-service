@@ -1,4 +1,4 @@
-import { Logger } from 'aikon-js'
+import { Logger } from '../helpers/logger'
 import { PublicKey, SymmetricPassword } from './chain'
 
 export interface Lookup {

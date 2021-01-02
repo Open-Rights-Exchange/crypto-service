@@ -1,7 +1,7 @@
 import { Api, JsonRpc } from 'eosjs'
 import { TextDecoder, TextEncoder } from 'text-encoding'
 import { JsSignatureProvider } from 'eosjs/dist/eosjs-jssig'
-import { isNullOrEmpty } from 'aikon-js'
+import { isNullOrEmpty } from '../../../helpers'
 
 /**
  * Utilities

@@ -1,14 +1,12 @@
-import { isNullOrEmpty } from 'aikon-js'
 import {
   AsymmetricEncryptedString,
   ChainType,
   Context,
   RecoverAndReencryptResolverParams,
   SymmetricEncryptedString,
-} from '../../models'
-import { ServiceError } from '../errors'
+} from '../../../models'
+import { assertValidChainType, isNullOrEmpty, ServiceError } from '../../../helpers'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../helpers'
 import {
   decryptPrivateKeys,
   decryptAsymmetrically,
@@ -48,6 +46,7 @@ export async function recoverAndReencryptResolver(
     asymmetricEncryptedPrivateKeys,
     chainConnect: chainConnectNoChain, // use NoChain so it wont expect public keys formatted for a specific chain - base public key is uncompressed
   })
+
   // Decrypt asymmetrically with private keys
   const decrypted = await decryptAsymmetrically(chainConnect, {
     encrypted,

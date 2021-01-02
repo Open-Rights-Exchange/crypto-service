@@ -1,5 +1,4 @@
 import { hexToUint8Array } from 'eosjs/dist/eosjs-serialize'
-import { isAString, isAnObject, isNullOrEmpty } from 'aikon-js'
 import { Transaction } from '@open-rights-exchange/chainjs'
 import { EosAccount } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosAccount'
 import { getUniqueValues } from '@open-rights-exchange/chainjs/dist/helpers'
@@ -17,7 +16,8 @@ import {
   DEFAULT_TRANSACTION_EXPIRY_IN_SECONDS,
 } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosConstants'
 
-import { EosModels } from '../../models/chain'
+import { EosModels } from '../../../models/chain'
+import { isAnObject, isNullOrEmpty, isAString } from '../../../helpers'
 
 const throwNewError = (error: any) => {
   throw Error(error)

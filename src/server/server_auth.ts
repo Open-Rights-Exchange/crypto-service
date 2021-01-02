@@ -1,12 +1,8 @@
-import { Logger, stringifySafe } from 'aikon-js'
 import { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
+import { stringifySafe } from '../helpers'
 
 // Auth
-const jwt = require('express-jwt')
-const jwtAuthz = require('express-jwt-authz')
-const jwksRsa = require('jwks-rsa')
-const { Base64 } = require('js-base64')
 require('dotenv').config()
 
 // CORS configuration - returns options for cors() middleware

@@ -1,8 +1,8 @@
 import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
 import { getAppIdAndContextFromApiKey, checkForRequiredParams, returnResponse } from '../helpers'
-import { ErrorSeverity, HttpStatusCode } from '../../models'
-import { logError } from '../../resolvers/errors'
+import { ErrorSeverity, HttpStatusCode } from '../../../models'
+import { logError } from '../../../helpers/errors'
 
 dotenv.config()
 
