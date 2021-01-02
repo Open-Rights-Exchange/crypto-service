@@ -1,6 +1,6 @@
 import { Chain } from '@open-rights-exchange/chainjs'
-import { toEnumValue } from '../helpers'
-import { Asymmetric, ChainType, CryptoCurve, GenericCrypto, KeyPair, PrivateKey, PublicKey } from '../models'
+import { toEnumValue } from '../../helpers'
+import { Asymmetric, ChainType, CryptoCurve, GenericCrypto, KeyPair, PrivateKey, PublicKey } from '../../models'
 
 class ChainFunctions {
   private _chain: Chain

@@ -1,6 +1,6 @@
-import { Logger, stringifySafe } from 'aikon-js'
 import { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
+import { stringifySafe } from '../helpers'
 
 // Auth
 const jwt = require('express-jwt')

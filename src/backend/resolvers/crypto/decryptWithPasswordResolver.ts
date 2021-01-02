@@ -1,7 +1,7 @@
-import { AsymmetricEncryptedString, Context, DecryptWithPasswordParams } from '../../models'
-import { ServiceError } from '../errors'
+import { AsymmetricEncryptedString, Context, DecryptWithPasswordParams } from '../../../models'
+import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../helpers'
+import { assertValidChainType } from '../../../helpers'
 import { decryptSymmetrically, mapSymmetricOptionsParam, optionallyEncryptReturnValue } from './cryptoHelpers'
 
 /**

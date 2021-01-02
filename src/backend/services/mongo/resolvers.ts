@@ -1,7 +1,15 @@
-import { copyObject, createGuid, isNullOrEmpty, now, tryParseJSON, tryParseDate, flattenMongooseObject } from 'aikon-js'
 import { Model } from 'mongoose'
-import { Context } from '../../models'
-import { ObjectId } from '../../models/data'
+import {
+  copyObject,
+  createGuid,
+  isNullOrEmpty,
+  now,
+  tryParseJSON,
+  tryParseDate,
+  flattenMongooseObject,
+} from '../../../helpers'
+import { Context } from '../../../models'
+import { ObjectId } from '../../../models/data'
 import { MONGO_TIMEOUT } from '../../constants'
 
 type HandleMongoErrorParams = {
@@ -300,7 +308,6 @@ export async function updateMongo({
         clearTimeout(timeout)
       })
       .catch((error: Error) => {
-        logger?.error(timeout)
         logger?.error('There was an error updating the object (updateMongo)', error)
         handleMongoError({ context, error, reject })
       })
@@ -394,7 +401,9 @@ export async function upsertMongo<T>({
 }
 
 export function handleMongoTimeout(reject: any) {
-  reject(`MongoDB timeout when fetching from MongoDB (timeout is ${MONGO_TIMEOUT}ms)`)
+  const errMsg = `MongoDB timeout when fetching from MongoDB (timeout is ${MONGO_TIMEOUT}ms)`
+  console.log(errMsg)
+  reject(errMsg)
 }
 
 // This function limits mongo keywords that can be passed in args to: sort, limit, select, skip

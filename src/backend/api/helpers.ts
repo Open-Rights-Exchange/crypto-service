@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import url from 'url'
-import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode, tryParseJSON } from 'aikon-js'
 import dotenv from 'dotenv'
+import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode, tryParseJSON } from '../../helpers'
 import { analyticsEvent } from '../services/segment/resolvers'
 import { rollbar } from '../services/rollbar/connectors'
 import {
@@ -16,9 +16,9 @@ import {
   ErrorType,
   HttpStatusCode,
   SymmetricOptionsParam,
-} from '../models'
+} from '../../models'
 import { getAppIdFromApiKey } from '../resolvers/appRegistration'
-import { composeErrorResponse, ServiceError } from '../resolvers/errors'
+import { composeErrorResponse, ServiceError } from '../../helpers/errors'
 import { decryptWithBasePrivateKey } from '../resolvers/crypto'
 import { validateAuthTokenAndExtractContents } from '../resolvers/token'
 

@@ -1,14 +1,12 @@
-import { isNullOrEmpty } from 'aikon-js'
 import {
   AsymmetricEncryptedString,
   ChainType,
   Context,
   RecoverAndReencryptResolverParams,
   SymmetricEncryptedString,
-} from '../../models'
-import { ServiceError } from '../errors'
+} from '../../../models'
+import { assertValidChainType, isNullOrEmpty, ServiceError } from '../../../helpers'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../helpers'
 import {
   decryptPrivateKeys,
   decryptAsymmetrically,

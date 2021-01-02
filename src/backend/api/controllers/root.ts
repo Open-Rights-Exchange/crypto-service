@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
-import { logger as globalLogger } from '../../helpers'
+import { logger as globalLogger } from '../../../helpers/logger'
 import {
   checkBodyForAtLeastOneOfValues,
   checkBodyForOnlyOneOfValues,
@@ -12,7 +12,7 @@ import {
   validateEncryptedPayloadAuthToken,
   validatePasswordAuthToken,
 } from '../helpers'
-import { ErrorSeverity, ErrorType, HttpStatusCode } from '../../models'
+import { ErrorSeverity, ErrorType, HttpStatusCode } from '../../../models'
 import { BASE_PUBLIC_KEY } from '../../constants'
 import {
   decryptWithPasswordResolver,
@@ -22,7 +22,7 @@ import {
   recoverAndReencryptResolver,
   signResolver,
 } from '../../resolvers/crypto'
-import { logError, ServiceError } from '../../resolvers/errors'
+import { logError, ServiceError } from '../../../helpers/errors'
 
 dotenv.config()
 

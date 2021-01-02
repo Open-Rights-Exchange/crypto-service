@@ -1,7 +1,6 @@
-import { Context, DEFAULT_SIGNATURE_ENCODING, SignParams } from '../../models'
-import { ServiceError } from '../errors'
+import { Context, DEFAULT_SIGNATURE_ENCODING, SignParams } from '../../../models'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../helpers'
+import { assertValidChainType, ServiceError } from '../../../helpers'
 import { decryptPrivateKeys } from './cryptoHelpers'
 
 /**

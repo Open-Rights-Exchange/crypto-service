@@ -1,4 +1,3 @@
-import { isNullOrEmpty } from 'aikon-js'
 import { BASE_PUBLIC_KEY, BASE_PRIVATE_KEY } from '../../constants'
 import {
   AppConfigType,
@@ -21,15 +20,16 @@ import {
   SymmetricEd25519Options,
   SymmetricEncryptedData,
   SymmetricEncryptedString,
-} from '../../models'
-import { ServiceError } from '../errors'
+} from '../../../models'
 import { ChainConnection, getChain } from '../../chains/chainConnection'
 import {
   ensureArray,
   asyncForEach,
+  isNullOrEmpty,
   convertStringifiedJsonOrObjectToObject,
   convertObjectToStringifiedJson,
-} from '../../helpers'
+  ServiceError,
+} from '../../../helpers'
 import { getAppConfig } from '../appConfig'
 
 export type EncryptReturnValueParams = {
