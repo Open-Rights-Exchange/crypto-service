@@ -9,9 +9,9 @@
   "scripts": {
     "build": "CI=false && npm run build-backend",
     "build-backend": "./node_modules/.bin/tsc --project tsconfig.json --pretty",
-    "dev": "concurrently --kill-others \"NODE_ENV=dev ./node_modules/.bin/ts-node --files server/server.ts\"",
+    "dev": "concurrently --kill-others \"NODE_ENV=dev ./node_modules/.bin/ts-node --files server/startServer.ts\"",
     "lint": "./node_modules/.bin/eslint --ext .ts,.js ./backend ./server",
-    "server": "node dist/server/server.js",
+    "server": "node dist/server/startServer.js",
     "start": "concurrently --kill-others \"NODE_ENV=production npm run server\"",
     "test": "jest --runInBand --forceExit --coverage --detectOpenHandles -u"
   },
@@ -37,12 +37,13 @@
     "js-sha256": "^0.9.0",
     "lodash": "^4.17.10",
     "mongoose": "5.10.11",
-    "newrelic": "^4.11.0",
+    "newrelic": "^7.0.2",
     "rollbar": "^2.16.2",
     "ts-jest": "^25.5.1",
     "ts-node": "^8.10.1"
   },
   "devDependencies": {
+    "@types/supertest": "^2.0.10",
     "@typescript-eslint/eslint-plugin": "^4.11.0",
     "@typescript-eslint/parser": "^4.11.0",
     "eslint": "^7.16.0",
@@ -53,6 +54,7 @@
     "eslint-plugin-prettier": "^3.3.0",
     "jest": "^26.6.3",
     "prettier": "^2.2.1",
+    "supertest": "^6.0.1",
     "ts-node": "^8.10.1",
     "typescript": "^4.1.3"
   },
