@@ -3,9 +3,9 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import { addCorsMiddlware, errorHandler } from './serverAuth'
 import { addRoutesToExpressServer } from '../backend/api/routes'
-import { Constants } from '../models'
+import { Config } from '../models'
 
-export async function createExpressServer(constants: Constants) {
+export async function createExpressServer(config: Config) {
   const server = express()
 
   // enable CORS - Cross Origin Resource Sharing
@@ -17,7 +17,7 @@ export async function createExpressServer(constants: Constants) {
   server.use(helmet())
 
   // /healthcheck, and other api endpoints
-  addRoutesToExpressServer(server, constants)
+  addRoutesToExpressServer(server, config)
   // this should be after middleware that can throw errors
   server.use(errorHandler)
 

@@ -5,12 +5,6 @@ import { getRollbar } from '../backend/services/rollbar/connectors'
 import { toBool } from './conversion'
 import { stringifySafe } from './parsing'
 
-const loggerDefaults = {
-  rollbar: getRollbar(CONSTANTS), // fallback to service constants
-  tracingEnabled: false,
-  processId: CONSTANTS.DEFAULT_PROCESS_ID,
-}
-
 type LoggerParams = {
   tracingEnabled?: boolean
   rollbar: Rollbar
@@ -86,16 +80,13 @@ export class Logger {
   }
 }
 
-// Initialize without TRACING_ENABLED to avoid errors
-export let logger = new Logger({ ...loggerDefaults, tracingEnabled: false })
+// ==== Global logger ====
 
-export const ContextGlobal = {
+const globalloggerSettings = {
+  rollbar: getRollbar(CONSTANTS), // fallback to service constants
+  tracingEnabled: false,
   processId: CONSTANTS.DEFAULT_PROCESS_ID,
-  logger,
 }
 
-// Re-initialize once settings are loaded
-export const initLogger = () => {
-  logger = new Logger({ ...loggerDefaults })
-  ContextGlobal.logger = logger
-}
+/** Logger that runs before a request context is created */
+export const globalLogger = new Logger({ ...globalloggerSettings })

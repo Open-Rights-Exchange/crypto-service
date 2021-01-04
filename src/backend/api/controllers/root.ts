@@ -1,17 +1,17 @@
 import { NextFunction, Request, Response } from 'express'
-import { logger as globalLogger } from '../../../helpers/logger'
+import { globalLogger } from '../../../helpers/logger'
+import { addAppIdToContextFromApiKey, createContext } from '../context'
 import {
   checkBodyForAtLeastOneOfValues,
   checkBodyForOnlyOneOfValues,
   checkBodyForRequiredValues,
   checkHeaderForRequiredValues,
-  getAppIdAndContextFromApiKey,
   returnResponse,
   validateApiAuthToken,
   validateEncryptedPayloadAuthToken,
   validatePasswordAuthToken,
 } from '../helpers'
-import { Constants, Context, ErrorSeverity, ErrorType, HttpStatusCode } from '../../../models'
+import { Config, Context, ErrorSeverity, ErrorType, HttpStatusCode } from '../../../models'
 import {
   decryptWithPasswordResolver,
   decryptWithPrivateKeysResolver,
@@ -24,12 +24,12 @@ import {
 import { logError, ServiceError } from '../../../helpers/errors'
 
 // Root-level routes
-async function v1Root(req: Request, res: Response, next: NextFunction, constants: Constants) {
+async function v1Root(req: Request, res: Response, next: NextFunction, config: Config) {
   const now = new Date()
   const { action } = req.params
-  let context
+  const context = createContext(req, config)
   try {
-    ;({ context } = await getAppIdAndContextFromApiKey(req, constants))
+    await addAppIdToContextFromApiKey(req, context)
   } catch (error) {
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, null, error)
   }

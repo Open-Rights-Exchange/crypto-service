@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
-import { Constants } from '../../models'
-import { ContextGlobal } from '../../helpers'
+import { Config } from '../../models'
+import { ContextGlobal } from './context'
 
 const { performance } = require('perf_hooks')
 
@@ -13,7 +13,8 @@ const timed = (f: (...args: any[]) => any) => async (...args: any) => {
   return { ...result, timeElapsed }
 }
 
-export async function healthCheckHandler(req: Request, res: Response, next: NextFunction, constants: Constants) {
+export async function healthCheckHandler(req: Request, res: Response, next: NextFunction, config: Config) {
+  const { constants } = config
   const { logger } = ContextGlobal
 
   const response: any = {
