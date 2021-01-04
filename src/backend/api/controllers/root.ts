@@ -21,6 +21,7 @@ import {
   generateKeysResolver,
   recoverAndReencryptResolver,
   signResolver,
+  verifyPublicKeyResolver,
 } from '../../resolvers/crypto'
 import { logError, ServiceError } from '../../../helpers/errors'
 
@@ -38,8 +39,8 @@ async function v1Root(req: Request, res: Response, next: NextFunction) {
       return handleEncrypt(req, res, next)
     case 'generate-keys':
       return handleGenerateKeys(req, res, next)
-    case 'public-key':
-      return handlePublicKey(req, res, next)
+    case 'verify-public-key':
+      return handleVerifyPublicKey(req, res, next)
     case 'recover-and-reencrypt':
       return handleRecoverAndReencrypt(req, res, next)
     case 'sign':
@@ -332,14 +333,17 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
 
 // api/public-key
 /** Returns the public key for which all incoming secrets should be asymmetrically encrypted */
-export async function handlePublicKey(req: Request, res: Response, next: NextFunction) {
+export async function handleVerifyPublicKey(req: Request, res: Response, next: NextFunction) {
   const funcName = 'api/public-key'
   let context
   try {
     globalLogger.trace('called handlePublicKey')
     ;({ context } = await getAppIdAndContextFromApiKey(req))
+    checkBodyForRequiredValues(req, ['nonce'], funcName)
     checkHeaderForRequiredValues(req, ['api-key'], funcName)
-    return returnResponse(req, res, HttpStatusCode.OK_200, { publicKey: BASE_PUBLIC_KEY }, context)
+    const { nonce } = req.body
+    const response = await verifyPublicKeyResolver({ nonce }, context)
+    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Critical, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context)
