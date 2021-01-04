@@ -29,29 +29,30 @@ dotenv.config()
 
 // Root-level routes
 async function v1Root(req: Request, res: Response, next: NextFunction) {
+  const now = new Date()
   const { action } = req.params
   switch (action) {
     case 'decrypt-with-password':
-      return handleDecryptWithPassword(req, res, next)
+      return handleDecryptWithPassword(req, res, next, now)
     case 'decrypt-with-private-keys':
-      return handleDecryptWithPrivateKeys(req, res, next)
+      return handleDecryptWithPrivateKeys(req, res, next, now)
     case 'encrypt':
-      return handleEncrypt(req, res, next)
+      return handleEncrypt(req, res, next, now)
     case 'generate-keys':
-      return handleGenerateKeys(req, res, next)
+      return handleGenerateKeys(req, res, next, now)
     case 'verify-public-key':
-      return handleVerifyPublicKey(req, res, next)
+      return handleVerifyPublicKey(req, res, next, now)
     case 'recover-and-reencrypt':
-      return handleRecoverAndReencrypt(req, res, next)
+      return handleRecoverAndReencrypt(req, res, next, now)
     case 'sign':
-      return handleSign(req, res, next)
+      return handleSign(req, res, next, now)
     default:
       return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, null)
   }
 }
 // api/decrypt-with-password
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleDecryptWithPassword(req: Request, res: Response, next: NextFunction) {
+export async function handleDecryptWithPassword(req: Request, res: Response, next: NextFunction, now: Date) {
   const funcName = 'api/decrypt-with-password'
   let context
   try {
@@ -60,8 +61,8 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, encrypted, context)
+    await validateApiAuthToken(req, now, context)
+    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, encrypted, now, context)
     const password = passwordAuthToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
       { chainType, encrypted, password, symmetricOptions, returnAsymmetricOptions },
@@ -77,7 +78,7 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
 
 // api/decrypt-with-private-keys
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleDecryptWithPrivateKeys(req: Request, res: Response, next: NextFunction) {
+export async function handleDecryptWithPrivateKeys(req: Request, res: Response, next: NextFunction, now: Date) {
   const funcName = 'api/decrypt-with-private-keys'
   let context
   let asymmetricEncryptedPrivateKeys
@@ -100,11 +101,12 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
       returnAsymmetricOptions,
     } = req.body
 
-    await validateApiAuthToken(req, context)
+    await validateApiAuthToken(req, now, context)
     const passwordAuthToken = await validatePasswordAuthToken(
       req,
       symmetricOptionsForEncryptedPrivateKeys,
       encrypted,
+      now,
       context,
     )
     const password = passwordAuthToken?.secrets?.password
@@ -114,6 +116,7 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
       req,
       asymmetricEncryptedPrivateKeysAndAuthToken,
       'asymmetricEncryptedPrivateKeysAndAuthToken',
+      now,
       context,
     )
     asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
@@ -140,7 +143,7 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
 
 // api/recover-and-reencrypt
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleRecoverAndReencrypt(req: Request, res: Response, next: NextFunction) {
+export async function handleRecoverAndReencrypt(req: Request, res: Response, next: NextFunction, now: Date) {
   const funcName = 'api/recover-and-reencrypt'
   let context
   let encryptedPayload
@@ -163,10 +166,16 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
       asymmetricOptionsForReencrypt,
     } = req.body
 
-    await validateApiAuthToken(req, context)
+    await validateApiAuthToken(req, now, context)
     // validate passwordAuthToken and extract password (if provided in sym options)
     if (symmetricOptionsForReencrypt) {
-      const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptionsForReencrypt, encrypted, context)
+      const passwordAuthToken = await validatePasswordAuthToken(
+        req,
+        symmetricOptionsForReencrypt,
+        encrypted,
+        now,
+        context,
+      )
       password = passwordAuthToken?.secrets?.password
     }
 
@@ -176,6 +185,7 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
         req,
         encryptedAndAuthToken,
         'encryptedAndAuthToken',
+        now,
         context,
       )
       encryptedPayload = encryptedPayloadAuthToken?.encrypted
@@ -188,6 +198,7 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
       req,
       asymmetricEncryptedPrivateKeysAndAuthToken,
       'asymmetricEncryptedPrivateKeysAndAuthToken',
+      now,
       context,
     )
     asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
@@ -213,7 +224,7 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
 
 // api/encrypt
 /** Calls resolver to encrypt the payload using one or more public/private key pairs for a specific blockchain */
-export async function handleEncrypt(req: Request, res: Response, next: NextFunction) {
+export async function handleEncrypt(req: Request, res: Response, next: NextFunction, now: Date) {
   const funcName = 'api/encrypt'
   let context
   try {
@@ -224,8 +235,8 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
     checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, toEncrypt, context)
+    await validateApiAuthToken(req, now, context)
+    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, toEncrypt, now, context)
     const password = passwordAuthToken?.secrets?.password
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, toEncrypt },
@@ -241,7 +252,7 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
 
 // api/generate-keys
 /** Calls resolver to generate one or more public/private key pairs for a specific blockchain */
-export async function handleGenerateKeys(req: Request, res: Response, next: NextFunction) {
+export async function handleGenerateKeys(req: Request, res: Response, next: NextFunction, now: Date) {
   const funcName = 'api/generate-keys'
   let context
   try {
@@ -252,8 +263,8 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
     checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, null, context)
+    await validateApiAuthToken(req, now, context)
+    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, null, now, context)
     const password = passwordAuthToken?.secrets?.password
     const response = await generateKeysResolver(
       { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
@@ -269,7 +280,7 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
 
 // api/sign
 /** Calls resolver to sign a transaction with one or more private key pairs for a specific blockchain */
-export async function handleSign(req: Request, res: Response, next: NextFunction) {
+export async function handleSign(req: Request, res: Response, next: NextFunction, now: Date) {
   const funcName = 'api/sign'
   let context
   let asymmetricEncryptedPrivateKeys
@@ -291,8 +302,8 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       symmetricEncryptedPrivateKeys,
     } = req.body
 
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, toSign, context)
+    await validateApiAuthToken(req, now, context)
+    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, toSign, now, context)
     const password = passwordAuthToken?.secrets?.password
 
     // extract asymmetricEncryptedPrivateKeys and validate its authToken
@@ -300,6 +311,7 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       req,
       asymmetricEncryptedPrivateKeysAndAuthToken,
       'asymmetricEncryptedPrivateKeysAndAuthToken',
+      now,
       context,
     )
     asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
@@ -333,8 +345,8 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
 
 // api/public-key
 /** Returns the public key for which all incoming secrets should be asymmetrically encrypted */
-export async function handleVerifyPublicKey(req: Request, res: Response, next: NextFunction) {
-  const funcName = 'api/public-key'
+export async function handleVerifyPublicKey(req: Request, res: Response, next: NextFunction, _: Date) {
+  const funcName = 'api/verify-public-key'
   let context
   try {
     globalLogger.trace('called handlePublicKey')

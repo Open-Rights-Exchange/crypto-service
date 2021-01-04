@@ -180,6 +180,7 @@ export async function validatePasswordAuthToken(
   symmetricOptions: SymmetricOptionsParam,
   /** principal value of function - e.g. for /sign, it the content toSign */
   bodyToVerify: any,
+  now: Date,
   context: Context,
 ) {
   if (isNullOrEmpty(symmetricOptions)) return null
@@ -188,6 +189,7 @@ export async function validatePasswordAuthToken(
     requestUrl: getFullUrlFromRequest(req),
     encryptedAuthToken: symmetricOptions?.passwordAuthToken, // base64 encoded
     requestBody: bodyToVerify,
+    now,
     context,
   })
 }
@@ -202,6 +204,7 @@ export async function validateEncryptedPayloadAuthToken(
   req: Request,
   encryptedAndAuthToken: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
   paramName: string,
+  now: Date,
   context: Context,
 ) {
   if (isNullOrEmpty(encryptedAndAuthToken)) return null
@@ -231,6 +234,7 @@ export async function validateEncryptedPayloadAuthToken(
     requestBody: decodedEncryptedAndAuthToken?.encrypted,
     requestUrl: getFullUrlFromRequest(req),
     authToken: decodedEncryptedAndAuthToken?.authToken,
+    now,
     context,
   })
   return {
@@ -240,12 +244,13 @@ export async function validateEncryptedPayloadAuthToken(
 }
 
 /** Validate token helper - extracts info from request object */
-export async function validateApiAuthToken(req: Request, context: Context) {
+export async function validateApiAuthToken(req: Request, now: Date, context: Context) {
   return validateAuthTokenAndExtractContents({
     authTokenType: AuthTokenType.ApiHeader,
     requestUrl: getFullUrlFromRequest(req),
     encryptedAuthToken: req.headers['auth-token'] as string,
     requestBody: req?.body,
+    now,
     context,
   })
 }
