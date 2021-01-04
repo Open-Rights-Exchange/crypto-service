@@ -1,8 +1,7 @@
 import { Request, Response } from 'express'
 import url from 'url'
-import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode, tryParseJSON } from '../../helpers'
+import { isNullOrEmpty, tryBase64Decode, tryParseJSON } from '../../helpers'
 import { analyticsEvent } from '../services/segment/resolvers'
-import { getRollbar } from '../services/rollbar/connectors'
 import {
   AnalyticsEvent,
   AppId,
@@ -10,61 +9,17 @@ import {
   AsymmetricEncryptedString,
   AuthToken,
   AuthTokenType,
-  ChainType,
-  Constants,
   Context,
   ErrorType,
   HttpStatusCode,
   SymmetricOptionsParam,
 } from '../../models'
-import { getAppIdFromApiKey } from '../resolvers/appRegistration'
 import { composeErrorResponse, ServiceError } from '../../helpers/errors'
 import { decryptWithBasePrivateKey } from '../resolvers/crypto'
 import { validateAuthTokenAndExtractContents } from '../resolvers/token'
-
-const settingTracingEnabled = true // TODO: Move this to runtime settings
+import { createContext } from './context'
 
 // ---- Helper functions
-
-const getOrCreateProcessId = (req: Request) => {
-  return (req.headers['process-id'] as string) || generateProcessId()
-}
-
-export const getProcessIdAndLogger = (req: Request, constants: Constants) => {
-  const processId = getOrCreateProcessId(req)
-  const rollbar = getRollbar(constants)
-  const logger = new Logger({ rollbar, processId, tracingEnabled: settingTracingEnabled })
-  return { processId, logger }
-}
-
-export function createContext(req: Request, constants: Constants, appId?: AppId): Context {
-  const { logger, processId } = getProcessIdAndLogger(req, constants)
-  const context = { appId, logger, processId, constants }
-  return context
-}
-
-/** use request headers to determine appId, serviceID, and processId
- * also creates a context object from these values */
-export async function getAppIdAndContextFromApiKey(req: Request, constants: Constants) {
-  // this context can be passed to mutations that update the database
-  const context = createContext(req, constants)
-  const { logger } = context
-
-  // appId
-  const appId = await getAppIdFromApiKey(req.headers['api-key'] as string, context)
-  if (isNullOrEmpty(appId)) {
-    throw new ServiceError(
-      'Missing required header parameter: api-key',
-      ErrorType.BadParam,
-      'getAppIdAndContextFromApiKey',
-    )
-  }
-
-  context.appId = appId
-  logger.trace(`getAppIdAndContext got appId ${appId}`)
-
-  return { appId, context, constants }
-}
 
 /** check the url's query params for each required param in paramNames */
 export function checkForRequiredParams(req: Request, paramNames: any[], funcName: string) {

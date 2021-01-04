@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { logger } from '../../../helpers/logger'
+import { globalLogger } from '../../../helpers/logger'
 
 // Mongoose's built in promise library is deprecated, replace it with ES2015 Promise
 mongoose.Promise = global.Promise
@@ -20,11 +20,11 @@ export function connectToMongo(mongoURI: string, mongoTimeout: number | string) 
     mongoose.connect(mongoURI, options)
     mongoose.connection
       .once('open', () => {
-        logger.log('Connected to MongoDB instance.')
+        globalLogger.log('Connected to MongoDB instance.')
         resolve(null)
       })
       .on('error', error => {
-        logger.error('Error connecting to MongoDB:', error)
+        globalLogger.error('Error connecting to MongoDB:', error)
       })
   })
 }

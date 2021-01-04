@@ -8,7 +8,7 @@
 import { getRollbar } from '../../services/rollbar/connectors'
 import { findOneMongo } from '../../services/mongo/resolvers'
 import { EosModels } from '../../../models/chain'
-import { logger, Logger } from '../../../helpers'
+import { globalLogger, Logger } from '../../../helpers'
 import { Context } from '../../../models'
 
 import { EosTransaction } from '../__mocks__/eosTransaction'
