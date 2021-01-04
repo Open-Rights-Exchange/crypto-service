@@ -1,14 +1,14 @@
 import { now } from 'lodash'
 import Rollbar from 'rollbar'
-import { DEFAULT_PROCESS_ID } from '../backend/constants'
-import { rollbar as rollbarInstance } from '../backend/services/rollbar/connectors'
+import { CONSTANTS } from '../backend/constants' // TODO: should be passed in constructor
+import { getRollbar } from '../backend/services/rollbar/connectors'
 import { toBool } from './conversion'
 import { stringifySafe } from './parsing'
 
 const loggerDefaults = {
-  rollbar: rollbarInstance,
-  tracingEnabled: true, // SETTINGS.TRACING_ENABLED TODO: move tracing_enabled tp global settings
-  processId: DEFAULT_PROCESS_ID,
+  rollbar: getRollbar(CONSTANTS), // fallback to service constants
+  tracingEnabled: false,
+  processId: CONSTANTS.DEFAULT_PROCESS_ID,
 }
 
 type LoggerParams = {
@@ -90,7 +90,7 @@ export class Logger {
 export let logger = new Logger({ ...loggerDefaults, tracingEnabled: false })
 
 export const ContextGlobal = {
-  processId: DEFAULT_PROCESS_ID,
+  processId: CONSTANTS.DEFAULT_PROCESS_ID,
   logger,
 }
 

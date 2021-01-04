@@ -1,13 +1,11 @@
-import dotenv from 'dotenv'
 import helmet from 'helmet'
 import express from 'express'
 import bodyParser from 'body-parser'
 import { addCorsMiddlware, errorHandler } from './serverAuth'
-import { router as apiRouter } from '../backend/api/_routes'
+import { addRoutesToExpressServer } from '../backend/api/routes'
+import { Constants } from '../models'
 
-dotenv.config()
-
-export async function createExpressServer() {
+export async function createExpressServer(constants: Constants) {
   const server = express()
 
   // enable CORS - Cross Origin Resource Sharing
@@ -19,7 +17,7 @@ export async function createExpressServer() {
   server.use(helmet())
 
   // /healthcheck, and other api endpoints
-  server.use(apiRouter)
+  addRoutesToExpressServer(server, constants)
   // this should be after middleware that can throw errors
   server.use(errorHandler)
 

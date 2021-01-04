@@ -12,6 +12,27 @@ export type Context = {
   appId?: AppId
   processId: string
   logger: Logger
+  constants: Constants
+}
+
+export type Constants = {
+  ENVIRONMENT: string
+  APP_NAME: string
+  MONGO_TIMEOUT: number
+  DEFAULT_PROCESS_ID: string
+  SEGMENT_WRITE_KEY: string
+  ROLLBAR_POST_WRITE_SERVER_KEY: string
+  BASE_PUBLIC_KEY: string
+  BASE_PRIVATE_KEY: string
+  MINUTES_FOR_FIRST_LOCK: number
+  MINUTES_FOR_SECOND_LOCK: number
+  MINUTES_FOR_MORE_LOCK: number
+  HOURS_FOR_TIMEOUT_LOCK: number
+  APP_ACCESS_TOKEN_EXPIRATION_IN_SECONDS: number
+  ENV_VERSION?: string
+  BUILD_VERSION?: string
+  DEPLOY_DATE?: string
+  ENV_HASH?: string
 }
 
 export const DEFAULT_SIGNATURE_ENCODING = 'utf8'

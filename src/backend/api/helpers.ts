@@ -1,9 +1,8 @@
 import { Request, Response } from 'express'
 import url from 'url'
-import dotenv from 'dotenv'
 import { generateProcessId, Logger, isNullOrEmpty, tryBase64Decode, tryParseJSON } from '../../helpers'
 import { analyticsEvent } from '../services/segment/resolvers'
-import { rollbar } from '../services/rollbar/connectors'
+import { getRollbar } from '../services/rollbar/connectors'
 import {
   AnalyticsEvent,
   AppId,
@@ -12,6 +11,7 @@ import {
   AuthToken,
   AuthTokenType,
   ChainType,
+  Constants,
   Context,
   ErrorType,
   HttpStatusCode,
@@ -22,8 +22,6 @@ import { composeErrorResponse, ServiceError } from '../../helpers/errors'
 import { decryptWithBasePrivateKey } from '../resolvers/crypto'
 import { validateAuthTokenAndExtractContents } from '../resolvers/token'
 
-dotenv.config()
-
 const settingTracingEnabled = true // TODO: Move this to runtime settings
 
 // ---- Helper functions
@@ -32,23 +30,24 @@ const getOrCreateProcessId = (req: Request) => {
   return (req.headers['process-id'] as string) || generateProcessId()
 }
 
-export const getProcessIdAndLogger = (req: Request) => {
+export const getProcessIdAndLogger = (req: Request, constants: Constants) => {
   const processId = getOrCreateProcessId(req)
+  const rollbar = getRollbar(constants)
   const logger = new Logger({ rollbar, processId, tracingEnabled: settingTracingEnabled })
   return { processId, logger }
 }
 
-export function createContext(req: Request, appId?: AppId): Context {
-  const { logger, processId } = getProcessIdAndLogger(req)
-  const context = { appId, logger, processId }
+export function createContext(req: Request, constants: Constants, appId?: AppId): Context {
+  const { logger, processId } = getProcessIdAndLogger(req, constants)
+  const context = { appId, logger, processId, constants }
   return context
 }
 
 /** use request headers to determine appId, serviceID, and processId
  * also creates a context object from these values */
-export async function getAppIdAndContextFromApiKey(req: Request) {
+export async function getAppIdAndContextFromApiKey(req: Request, constants: Constants) {
   // this context can be passed to mutations that update the database
-  const context = createContext(req)
+  const context = createContext(req, constants)
   const { logger } = context
 
   // appId
@@ -64,7 +63,7 @@ export async function getAppIdAndContextFromApiKey(req: Request) {
   context.appId = appId
   logger.trace(`getAppIdAndContext got appId ${appId}`)
 
-  return { appId, context }
+  return { appId, context, constants }
 }
 
 /** check the url's query params for each required param in paramNames */
@@ -168,7 +167,7 @@ export function returnResponse(
   }
   // if no context provided, create one (in part, to get processId from request header)
   if (!context) {
-    context = createContext(req)
+    context = createContext(req, null)
   }
   analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
   return res.status(httpStatusCode).json({ processId: context?.processId, ...responseToReturn })
@@ -218,7 +217,7 @@ export async function validateEncryptedPayloadAuthToken(
   }
 
   const decodedEncryptedAndAuthToken: EncryptedAndAuthToken = tryParseJSON(
-    await decryptWithBasePrivateKey({ encrypted: decodedAuthToken }),
+    await decryptWithBasePrivateKey({ encrypted: decodedAuthToken }, context),
   )
 
   if (isNullOrEmpty(decodedEncryptedAndAuthToken)) {

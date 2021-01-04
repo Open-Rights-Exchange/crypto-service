@@ -1,7 +1,7 @@
 import { Request as ExpressRequest } from 'express'
 import { openDB, closeDB, clearDB, initializeDB } from '../helpers'
 import { getPublicKey } from '../api'
-import { createContext, decodedAuthToken, requestBodyEmpty, encodedToken1, requestUrl, nowDate } from '../dataMocks'
+import { createContext, decodedAuthToken, requestBodyEmpty, encodedToken1, requestUrl } from '../dataMocks'
 import { Mongo } from '../../services/mongo/models'
 import { findMongo } from '../../services/mongo/resolvers'
 import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
@@ -38,7 +38,7 @@ describe('Test token handling and validation', () => {
           requestUrl,
           encryptedAuthToken: 'abcdefg', // bad value
           requestBody: requestBodyEmpty,
-          now: nowDate,
+          now: global.NOW_DATE,
           context,
         }),
       ).rejects.toThrow(new Error('Invalid value provided as asymmetrically encrypted item.'))
@@ -50,7 +50,7 @@ describe('Test token handling and validation', () => {
         requestUrl,
         encryptedAuthToken: encodedToken1,
         requestBody: requestBodyEmpty,
-        now: nowDate,
+        now: global.NOW_DATE,
         context,
       })
       expect(token).toStrictEqual(decodedAuthToken)
@@ -63,7 +63,7 @@ describe('Test token handling and validation', () => {
           requestUrl,
           encryptedAuthToken: encodedToken1,
           requestBody: requestBodyEmpty,
-          now: nowDate,
+          now: global.NOW_DATE,
           context,
         }),
       ).rejects.toThrow(new Error('Auth token has already been used.'))
