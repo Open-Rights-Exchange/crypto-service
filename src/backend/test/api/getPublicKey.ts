@@ -1,4 +1,4 @@
-import { handlePublicKey } from '../../api/controllers/root'
+import { handleVerifyPublicKey } from '../../api/controllers/root'
 
 declare let global: any
 
@@ -38,5 +38,5 @@ export const getPublicKey = async ({ apiKey = global.TEST_APP_API_KEY }: GetPubl
   }
 
   // Returns the result passed into jsonMock
-  return handlePublicKey(req, res, () => {})
+  return handleVerifyPublicKey(req, res, () => {}, null)
 }

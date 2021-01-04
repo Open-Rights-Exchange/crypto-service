@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express'
 
-import { asyncHandler } from '../../server/server_auth'
+import { asyncHandler } from '../../server/serverAuth'
 import { v1Admin } from './controllers/admin'
 import { v1Root } from './controllers/root'
 import { healthCheckHandler } from './healthCheckHandler'

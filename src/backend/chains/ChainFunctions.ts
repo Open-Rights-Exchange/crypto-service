@@ -1,6 +1,15 @@
 import { Chain } from '@open-rights-exchange/chainjs'
 import { toEnumValue } from '../../helpers'
-import { Asymmetric, ChainType, CryptoCurve, GenericCrypto, KeyPair, PrivateKey, PublicKey } from '../../models'
+import {
+  Asymmetric,
+  ChainType,
+  CryptoCurve,
+  GenericCrypto,
+  KeyPair,
+  PrivateKey,
+  PublicKey,
+  Signature,
+} from '../../models'
 
 class ChainFunctions {
   private _chain: Chain
@@ -135,6 +144,11 @@ class ChainFunctions {
   /** Ensures that the value comforms to a well-formed encrypted stringified JSON object */
   toSymEncryptedDataString(value: any): GenericCrypto.SymmetricEncryptedDataString {
     return this._chain.toSymEncryptedDataString(value)
+  }
+
+  /** Verify that the signed data was signed using the given key (signed with the private key for the provided public key) */
+  verifySignedWithPublicKey(publicKey: string | Buffer, data: string | Buffer, signature: Signature): boolean {
+    return this._chain.verifySignedWithPublicKey(publicKey, data, signature)
   }
 }
 

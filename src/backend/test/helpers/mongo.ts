@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { Mongo } from '../../services/mongo/models'
-import { connect } from '../../services/mongo/connectors'
+import { connectToMongo } from '../../services/mongo/connectors'
 import { countMongo, upsertMongo } from '../../services/mongo/resolvers'
 import * as dbMocks from '../dbMocks'
 import { Context } from '../../../models'
@@ -23,7 +23,7 @@ export const closeDB = async () => {
 }
 
 export const openDB = async (connectionName = 'test') => {
-  await connect(`mongodb://localhost:27017/${connectionName}`)
+  await connectToMongo(`mongodb://localhost:27017/${connectionName}`)
 }
 
 type DatabaseIntializationData = {

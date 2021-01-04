@@ -2,7 +2,7 @@ import {
   decryptWithPrivateKeys,
   encryptWithPublicKeys,
 } from '@open-rights-exchange/chainjs/dist/crypto/asymmetricHelpers'
-import { Asymmetric, ChainType, CryptoCurve, GenericCrypto, KeyPair, PrivateKey, PublicKey } from '../../../models'
+import { Asymmetric, ChainType, GenericCrypto, PrivateKey, PublicKey, Signature } from '../../../models'
 import { isNullOrEmpty, notSupported } from '../../../helpers'
 import { ChainFunctions } from '../ChainFunctions'
 
@@ -90,8 +90,8 @@ export class ChainFunctionsNoChain extends ChainFunctions {
     return notSupported('NoChain.getPublicKeyFromSignature')
   }
 
-  sign(data: string | Buffer, privateKey: string, encoding: string): any {
-    return notSupported('NoChain.sign')
+  sign(data: string, privateKey: PrivateKey): any {
+    return Asymmetric.sign(data, privateKey)
   }
 
   isValidPublicKey(value: string | Buffer): boolean {
@@ -126,5 +126,9 @@ export class ChainFunctionsNoChain extends ChainFunctions {
 
   toSymEncryptedDataString(value: any): GenericCrypto.SymmetricEncryptedDataString {
     return notSupported('NoChain.toSymEncryptedDataString')
+  }
+
+  verifySignedWithPublicKey(publicKey: PublicKey | Buffer, data: string | Buffer, signature: Signature): boolean {
+    return Asymmetric.verifySignedWithPublicKey(publicKey, data, signature)
   }
 }
