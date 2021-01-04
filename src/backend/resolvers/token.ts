@@ -34,7 +34,16 @@ export async function decodeAuthToken(
   }
   // decrypt
   const decryptedAuthToken = await decryptWithBasePrivateKey({ encrypted: encryptedAuthToken })
-  return convertStringifiedJsonOrObjectToObject(decryptedAuthToken)
+  return mapAuthToken(convertStringifiedJsonOrObjectToObject(decryptedAuthToken))
+}
+
+/** Map to fully-typed object */
+export function mapAuthToken(authTokenData: any) {
+  return {
+    ...authTokenData,
+    validFrom: new Date(authTokenData?.validFrom),
+    validTo: new Date(authTokenData?.validTo),
+  }
 }
 
 export type ValidateAuthTokenAndExtractContents = {
@@ -43,6 +52,7 @@ export type ValidateAuthTokenAndExtractContents = {
   authToken?: AuthToken
   requestBody: any
   requestUrl: string
+  now: Date
   context: Context
 }
 
@@ -64,7 +74,7 @@ export type ValidateAuthTokenAndExtractContents = {
 export async function validateAuthTokenAndExtractContents(
   params: ValidateAuthTokenAndExtractContents,
 ): Promise<AuthToken> {
-  const { authTokenType, encryptedAuthToken, authToken, requestBody, requestUrl, context } = params
+  const { authTokenType, encryptedAuthToken, authToken, requestBody, requestUrl, now, context } = params
 
   // decrypt if necessary
   let decryptedAuthToken = authToken
@@ -89,7 +99,6 @@ export async function validateAuthTokenAndExtractContents(
   // VERIFY: valid date/time
   const validFromDate = new Date(validFrom).getTime()
   const validToDate = new Date(validTo).getTime()
-  const now = new Date()
   const nowUtc = now.getTime()
   const isValidNow = nowUtc >= validFromDate && nowUtc <= validToDate
 
@@ -115,7 +124,6 @@ export async function validateAuthTokenAndExtractContents(
   // Save authToken to prevent replay
   const base64EncodedAuthToken = encryptedAuthToken || Base64.encode(JSON.stringify(decryptedAuthToken))
   await saveAuthToken({ authToken: decryptedAuthToken, context, base64EncodedAuthToken })
-
   return decryptedAuthToken
 }
 

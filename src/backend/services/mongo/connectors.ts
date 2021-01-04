@@ -17,7 +17,7 @@ const options: any = {
   useNewUrlParser: true,
 }
 
-export function connect(mongoURI: string) {
+export function connectToMongo(mongoURI: string) {
   return new Promise((resolve, reject) => {
     mongoose.connect(mongoURI, options)
     mongoose.connection

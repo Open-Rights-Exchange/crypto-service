@@ -137,3 +137,8 @@ export type DecryptAsymmetricallyParams = {
     | AsymmetricEncryptedData[]
   privateKeys: PrivateKey[]
 }
+
+export type VerifyPublcKeyParams = {
+  /** string to sign using service's public key */
+  nonce: string
+}
