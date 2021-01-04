@@ -15,6 +15,17 @@ export type Context = {
   constants: Constants
 }
 
+export type Settings = {
+  tracingEnabled: boolean
+}
+
+/** service configuration state */
+export type Config = {
+  constants: Constants
+  /** not yet implemented */
+  settings: any
+}
+
 export type Constants = {
   ENVIRONMENT: string
   APP_NAME: string

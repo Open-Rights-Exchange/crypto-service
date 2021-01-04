@@ -9,7 +9,10 @@ import { setupGlobalConstants, CONSTANTS } from './config/constants'
 
 declare let global: any
 
+const settingTracingEnabled = false
+
 const headers = { 'api-key': global.TEST_APP_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' }
+const config = { constants: CONSTANTS, settings: { tracingEnabled: settingTracingEnabled } }
 
 /**
  * Test API Endpoints
@@ -23,7 +26,7 @@ let server: Express
 beforeAll(async () => {
   await openDB('test_cryptoapi')
   await initializeDB()
-  server = await createExpressServer(CONSTANTS) // TODO: Provide constants
+  server = await createExpressServer(config) // TODO: Provide constants
   setupGlobalConstants()
 })
 
