@@ -20,5 +20,6 @@ export function getRollbar(constants: Constants): Rollbar {
     },
   }
   rollbar = new Rollbar(rollbarConfig)
+  if (constants) currentConstants = constants
   return rollbar
 }
