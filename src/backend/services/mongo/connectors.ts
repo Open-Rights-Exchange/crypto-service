@@ -13,7 +13,7 @@ const options: any = {
   useNewUrlParser: true,
 }
 
-export function connectToMongo(mongoURI: string, mongoTimeout: number) {
+export function connectToMongo(mongoURI: string, mongoTimeout: number | string) {
   options.socketTimeoutMS = mongoTimeout
   options.connectTimeoutMS = mongoTimeout
   return new Promise((resolve, reject) => {

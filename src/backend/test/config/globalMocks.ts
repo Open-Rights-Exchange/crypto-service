@@ -1,10 +1,10 @@
-import { Transaction } from '@open-rights-exchange/chainjs'
-import { EosAccount } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosAccount'
-import { toEosEntityName } from '@open-rights-exchange/chainjs/dist/chains/eos_2/helpers'
-import { mapChainError } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosErrors'
-import * as eosTransactionModule from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosTransaction'
+// import { Transaction } from '@open-rights-exchange/chainjs'
+// import { EosAccount } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosAccount'
+// import { toEosEntityName } from '@open-rights-exchange/chainjs/dist/chains/eos_2/helpers'
+// import { mapChainError } from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosErrors'
+// import * as eosTransactionModule from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosTransaction'
 
-import { Mongo } from '../../services/mongo/models'
+// import { Mongo } from '../../services/mongo/models'
 import { getRollbar } from '../../services/rollbar/connectors'
 import { findOneMongo } from '../../services/mongo/resolvers'
 import { EosModels } from '../../../models/chain'
@@ -15,9 +15,12 @@ import { EosTransaction } from '../__mocks__/eosTransaction'
 import { CONSTANTS } from './constants'
 
 const processId = 'AUTOMATED_TEST_PROCESS_ID'
+
+let rollbar = null // getRollbar(CONSTANTS)  Rollbar disabled for tests
+
 export const ContextTest: Context = {
   processId,
-  logger: new Logger({ processId, rollbar: getRollbar(CONSTANTS), tracingEnabled: false }),
+  logger: new Logger({ processId, rollbar, tracingEnabled: false }),
   constants: CONSTANTS // constants for test
 }
 
