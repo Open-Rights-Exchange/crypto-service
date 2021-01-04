@@ -30,7 +30,7 @@ const { PORT, MONGO_URI, MONGO_TIMEOUT } = process.env
 })()
 
 async function startServer() {
-  await connectToMongo(MONGO_URI, parseInt(MONGO_TIMEOUT, 10))
+  await connectToMongo(MONGO_URI, MONGO_TIMEOUT)
   // await loadDatabaseSettings()
   initLogger()
   console.log('server - isRunningProduction:', isRunningProduction)

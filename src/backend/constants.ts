@@ -34,8 +34,8 @@ export const CONSTANTS: Constants = {
   // Misc
   APP_ACCESS_TOKEN_EXPIRATION_IN_SECONDS: 120,
   // Build - ENV vars from deploy_version file created by circle.yml
-  ENV_VERSION: settings.ENV_VERSION,
-  BUILD_VERSION: settings.BUILD_VERSION,
-  DEPLOY_DATE: settings.DEPLOY_DATE,
-  ENV_HASH: settings.ENV_HASH,
+  ENV_VERSION: settings?.ENV_VERSION,
+  BUILD_VERSION: settings?.BUILD_VERSION,
+  DEPLOY_DATE: settings?.DEPLOY_DATE,
+  ENV_HASH: settings?.ENV_HASH,
 }

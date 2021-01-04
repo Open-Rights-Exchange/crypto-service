@@ -23,7 +23,7 @@ declare let global: any
 export const CONSTANTS: Constants = {
   ENVIRONMENT: 'test',
   APP_NAME: 'crypto-service-test',
-  MONGO_TIMEOUT: Number(process.env.MONGO_TIMEOUT) || 15000,
+  MONGO_TIMEOUT: 15000,
   DEFAULT_PROCESS_ID: 'TEST_CONTEXT_PROCESS_ID_MISSING',
   ROLLBAR_POST_WRITE_SERVER_KEY: "b4bbd88834be41ea82c4afeffd2d03be", // staging key
   SEGMENT_WRITE_KEY: "ujit62E4bjl4CNjgRqDcdBAr8gzfJ7k1", // staging key
