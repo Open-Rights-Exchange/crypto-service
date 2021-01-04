@@ -6,6 +6,8 @@ import * as dbMocks from '../dbMocks'
 import { Context } from '../../../models'
 import { ContextTest } from '../config/globalMocks'
 
+const MONGO_TIMEOUT = 15000
+
 export const clearDB = async () => {
   await mongoose.connection.db.dropDatabase()
   // if you dont connect to the database first, the collection.drop() will return the promise but wont execute the drop until the next connection - causing errors
@@ -23,7 +25,7 @@ export const closeDB = async () => {
 }
 
 export const openDB = async (connectionName = 'test') => {
-  await connectToMongo(`mongodb://localhost:27017/${connectionName}`)
+  await connectToMongo(`mongodb://localhost:27017/${connectionName}`, MONGO_TIMEOUT)
 }
 
 type DatabaseIntializationData = {

@@ -1,14 +1,11 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jest/no-done-callback */
-import path from 'path'
 import supertest from 'supertest'
 import { Express } from 'express-serve-static-core'
 import { openDB, closeDB, clearDB, initializeDB } from './helpers'
 import { createExpressServer } from '../../server/createServer'
-import { getPublicKey } from './api'
-import { Mongo } from '../services/mongo/models'
-import { findMongo } from '../services/mongo/resolvers'
 import { ContextTest } from './config/globalMocks'
+import { setupGlobalConstants, CONSTANTS } from './config/constants'
 
 declare let global: any
 
@@ -26,8 +23,8 @@ let server: Express
 beforeAll(async () => {
   await openDB('test_cryptoapi')
   await initializeDB()
-  console.log('global.BASE_PRIVATE_KEY:', global.BASE_PRIVATE_KEY)
-  server = await createExpressServer()
+  server = await createExpressServer(CONSTANTS) // TODO: Provide constants
+  setupGlobalConstants()
 })
 
 afterAll(async () => {
@@ -38,7 +35,7 @@ afterAll(async () => {
 describe('Test api endpoints', () => {
   jest.setTimeout(10000)
 
-  it('should return 200 & valid response if request param list is empty', async done => {
+  it('should return 200 & public key and signed nonce signature', async done => {
     supertest(server)
       .post('/verify-public-key')
       .send({ nonce: 'random-nonce' })
