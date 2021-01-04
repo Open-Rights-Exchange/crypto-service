@@ -1,5 +1,4 @@
 import { Asymmetric, Context, PublicKey, Signature, VerifyPublcKeyParams } from '../../../models'
-import { BASE_PUBLIC_KEY, BASE_PRIVATE_KEY } from '../../constants'
 
 /**
  *  Returns this service's base public key along with a proof that it has access to the corresponding private key
@@ -11,10 +10,10 @@ export async function verifyPublicKeyResolver(
   context: Context,
 ): Promise<{ publicKey: PublicKey; signature: Signature }> {
   const { nonce } = params
-  const signature = await Asymmetric.sign(nonce, BASE_PRIVATE_KEY)
+  const signature = await Asymmetric.sign(nonce, context.constants.BASE_PRIVATE_KEY)
 
   return {
-    publicKey: BASE_PUBLIC_KEY,
+    publicKey: context.constants.BASE_PUBLIC_KEY,
     signature,
   }
 }

@@ -1,4 +1,3 @@
-import { BASE_PUBLIC_KEY, BASE_PRIVATE_KEY } from '../../constants'
 import {
   AppConfigType,
   Asymmetric,
@@ -94,7 +93,7 @@ export async function decryptPrivateKeys(params: DecryptPrivateKeysParams): Prom
   if (!isNullOrEmpty(asymmetricEncryptedPrivateKeys)) {
     await Promise.all(
       asymmetricEncryptedPrivateKeys.map(async encPrivKey => {
-        const privateKeysToDecryptWith = await getPrivateKeysForAsymEncryptedPayload(chainType, encPrivKey)
+        const privateKeysToDecryptWith = await getPrivateKeysForAsymEncryptedPayload(chainType, encPrivKey, context)
         const encPrivKeyStr = JSON.stringify(encPrivKey)
 
         const privateKey = await decryptAsymmetrically(chainConnect, {
@@ -118,8 +117,9 @@ export async function decryptPrivateKeys(params: DecryptPrivateKeysParams): Prom
 /** Confirm that all private keys are valid for the chain type
  *  Exempts check for base private key */
 export function assertValidPrivateKeys(chainConnect: ChainConnection, privateKeys: PrivateKey[], funcName: string) {
+  const { constants } = chainConnect.context
   privateKeys.forEach(pk => {
-    if (pk !== BASE_PRIVATE_KEY && !chainConnect.chainFunctions.isValidPrivateKey(pk)) {
+    if (pk !== constants.BASE_PRIVATE_KEY && !chainConnect.chainFunctions.isValidPrivateKey(pk)) {
       const msg = `A value provided as encrypted private key is not a valid private key for chain: ${chainConnect.chainType}. Encrypted value: ${pk}`
       throw new ServiceError(msg, ErrorType.KeyError, funcName)
     }
@@ -134,6 +134,7 @@ export function assertValidPrivateKeys(chainConnect: ChainConnection, privateKey
 export async function getPrivateKeysForAsymEncryptedPayload(
   chainType: ChainType,
   encryptedKey: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
+  context: Context,
 ): Promise<PrivateKey[]> {
   const privateKeys: PrivateKey[] = []
   // convert encryptedKey to object
@@ -151,7 +152,10 @@ export async function getPrivateKeysForAsymEncryptedPayload(
   const blobsReversed = (encryptedObject as AsymmetricEncryptedData[]).sort((a, b) => (a.seq < b.seq ? 1 : -1)) // reverse sort by seq number
   // loop through items in REVERSE order of encryption
   await asyncForEach(blobsReversed, async (encryptedItem: AsymmetricEncryptedData) => {
-    const { chainType: chainTypeForKey, privateKey } = await retrievePrivateKeyForPublicKey(encryptedItem.publicKey)
+    const { chainType: chainTypeForKey, privateKey } = await retrievePrivateKeyForPublicKey(
+      encryptedItem.publicKey,
+      context,
+    )
     // only return keys for the specific chain - since formatting of the key is diff for each chain
     if (chainTypeForKey === null || chainTypeForKey === chainType) {
       privateKeys.push(privateKey)
@@ -168,10 +172,11 @@ export async function getPrivateKeysForAsymEncryptedPayload(
 /** Retrieves a private key from locally held keys - or throw if key unavailable */
 export async function retrievePrivateKeyForPublicKey(
   publicKey: PublicKey,
+  context: Context,
 ): Promise<{ chainType: ChainType; privateKey: PrivateKey }> {
   // currently, we only have one private key
-  if (publicKey === BASE_PUBLIC_KEY) {
-    return { chainType: null, privateKey: BASE_PRIVATE_KEY }
+  if (publicKey === context.constants.BASE_PUBLIC_KEY) {
+    return { chainType: null, privateKey: context.constants.BASE_PRIVATE_KEY }
   }
   // No matching publicKey
   const msg = `Could not retrieve PrivateKey for PublicKey: ${publicKey}. Service does not have access to it.`
@@ -186,12 +191,12 @@ export type DecryptWithBasePrivateKeyParams = {
  *  Currently, only the BASE_PUBLIC_KEY and BASE_PRIVATE_KEY key pair is managed/known by this service
  *  The BASE_PUBLIC_KEY must be in an uncompressed format - not in a chain-specific format like eth, eos, etc.
  */
-export async function decryptWithBasePrivateKey(params: DecryptWithBasePrivateKeyParams) {
+export async function decryptWithBasePrivateKey(params: DecryptWithBasePrivateKeyParams, context: Context) {
   const { encrypted } = params
   assertIsValidAsymEncrypted(encrypted)
   // decrypt payload asymmetrically - assumes using BASE_PUBLIC_KEY - which is an uncompressed public key
   const encryptedObject = convertStringifiedJsonOrObjectToObject(encrypted)
-  const [privateKey] = await getPrivateKeysForAsymEncryptedPayload(null, encryptedObject)
+  const [privateKey] = await getPrivateKeysForAsymEncryptedPayload(null, encryptedObject, context)
   const decrypted = Asymmetric.decryptWithPrivateKey(encryptedObject, privateKey)
   return decrypted
 }
@@ -288,7 +293,7 @@ export async function encryptAsymmetrically(
   const { options, publicKeys, unencrypted } = params
   let { chainFunctions } = chainConnect
   // if we are encrypting only using the base public key, we use the 'NoChain' functions instead
-  if (!isNullOrEmpty(publicKeys) && publicKeys[0] === BASE_PUBLIC_KEY) {
+  if (!isNullOrEmpty(publicKeys) && publicKeys[0] === chainConnect.context.constants.BASE_PUBLIC_KEY) {
     const chainConnectNoChain = await getChain(ChainType.NoChain, null)
     chainFunctions = chainConnectNoChain.chainFunctions
   }
@@ -324,7 +329,7 @@ export async function decryptAsymmetrically(
   const { encrypted, privateKeys } = params
   let { chainFunctions } = chainConnect
   // if we are decrypting only using the base private key, we use the 'NoChain' functions instead
-  if (!isNullOrEmpty(privateKeys) && privateKeys[0] === BASE_PRIVATE_KEY) {
+  if (!isNullOrEmpty(privateKeys) && privateKeys[0] === chainConnect.context.constants.BASE_PRIVATE_KEY) {
     const chainConnectNoChain = await getChain(ChainType.NoChain, null)
     chainFunctions = chainConnectNoChain.chainFunctions
   }

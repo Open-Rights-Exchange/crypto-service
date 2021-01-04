@@ -1,9 +1,9 @@
 import Analytics from 'analytics-node'
 import { isAString } from '../../../helpers'
 import { AnalyticsEvent, Context } from '../../../models'
-import { SEGMENT_WRITE_KEY } from '../../constants'
+import { CONSTANTS } from '../../constants' // TODO: should be passed in constructor
 
-const analytics = new Analytics(SEGMENT_WRITE_KEY)
+const analytics = new Analytics(CONSTANTS.SEGMENT_WRITE_KEY)
 
 /**
  * Sends AnalyticsEvents

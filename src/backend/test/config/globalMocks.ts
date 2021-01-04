@@ -5,18 +5,20 @@ import { mapChainError } from '@open-rights-exchange/chainjs/dist/chains/eos_2/e
 import * as eosTransactionModule from '@open-rights-exchange/chainjs/dist/chains/eos_2/eosTransaction'
 
 import { Mongo } from '../../services/mongo/models'
-import { rollbar } from '../../services/rollbar/connectors'
+import { getRollbar } from '../../services/rollbar/connectors'
 import { findOneMongo } from '../../services/mongo/resolvers'
 import { EosModels } from '../../../models/chain'
 import { logger, Logger } from '../../../helpers'
 import { Context } from '../../../models'
 
 import { EosTransaction } from '../__mocks__/eosTransaction'
+import { CONSTANTS } from './constants'
 
 const processId = 'AUTOMATED_TEST_PROCESS_ID'
 export const ContextTest: Context = {
   processId,
-  logger: new Logger({ processId, rollbar, tracingEnabled: false }),
+  logger: new Logger({ processId, rollbar: getRollbar(CONSTANTS), tracingEnabled: false }),
+  constants: CONSTANTS // constants for test
 }
 
 // /**

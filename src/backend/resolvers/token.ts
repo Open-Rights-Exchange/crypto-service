@@ -18,7 +18,8 @@ import { decryptWithBasePrivateKey, encryptAsymmetrically } from './crypto'
  */
 export async function decodeAuthToken(
   authTokenType: AuthTokenType,
-  base64EncodedAuthToken?: string,
+  base64EncodedAuthToken: string,
+  context: Context,
 ): Promise<AuthToken> {
   const encryptedAuthToken = tryBase64Decode(base64EncodedAuthToken)
 
@@ -33,7 +34,7 @@ export async function decodeAuthToken(
     throw new ServiceError(errMsg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
   // decrypt
-  const decryptedAuthToken = await decryptWithBasePrivateKey({ encrypted: encryptedAuthToken })
+  const decryptedAuthToken = await decryptWithBasePrivateKey({ encrypted: encryptedAuthToken }, context)
   return mapAuthToken(convertStringifiedJsonOrObjectToObject(decryptedAuthToken))
 }
 
@@ -79,7 +80,7 @@ export async function validateAuthTokenAndExtractContents(
   // decrypt if necessary
   let decryptedAuthToken = authToken
   if (encryptedAuthToken) {
-    decryptedAuthToken = await decodeAuthToken(authTokenType, encryptedAuthToken)
+    decryptedAuthToken = await decodeAuthToken(authTokenType, encryptedAuthToken, context)
   }
 
   const { url, payloadHash, validFrom, validTo, secrets } = decryptedAuthToken
