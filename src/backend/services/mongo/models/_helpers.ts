@@ -1,11 +1,12 @@
 /* eslint-disable no-multi-spaces */
-import { now } from '../../../../helpers';
 import { Convert, createSchema, Definition, DefinitionField, Type, typedModel, ExtractDoc } from '../../../libraries/ts-mongoose';
 import { ObjectId } from 'bson';
 import { ExtractData } from './_extractData';
+
+const now = new Date()
 /** adds timestamps and creator/updater fields */
 const timestampSchema = {
-  createdOn: Type.date({ default: now() as any }),
+  createdOn: Type.date({ default: now as any }),
   createdBy: Type.string({ required: true }),
   updatedOn: Type.date({ required: true }),
   updatedBy: Type.string({ required: true }),

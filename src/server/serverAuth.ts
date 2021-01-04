@@ -3,7 +3,6 @@ import cors from 'cors'
 import { stringifySafe } from '../helpers'
 
 // Auth
-require('dotenv').config()
 
 // CORS configuration - returns options for cors() middleware
 function getCorsOptions(req: Request, callback: (error: Error, options: any) => void) {

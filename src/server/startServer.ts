@@ -8,6 +8,7 @@ import dotenv from 'dotenv'
 import { connectToMongo } from '../backend/services/mongo/connectors'
 import { initLogger } from '../helpers'
 import { createExpressServer } from './createServer'
+import { CONSTANTS } from '../backend/constants'
 
 dotenv.config()
 
@@ -18,7 +19,7 @@ process.on('unhandledRejection', (error, p) => {
   console.log('Unhandled Rejection at: Promise', p, 'error:', error)
 })
 
-const { PORT } = process.env
+const { PORT, MONGO_URI, MONGO_TIMEOUT } = process.env
 
 ;(() => {
   try {
@@ -29,11 +30,11 @@ const { PORT } = process.env
 })()
 
 async function startServer() {
-  await connectToMongo(process.env.MONGO_URI)
+  await connectToMongo(MONGO_URI, parseInt(MONGO_TIMEOUT, 10))
   // await loadDatabaseSettings()
   initLogger()
   console.log('server - isRunningProduction:', isRunningProduction)
-  const expressServer = await createExpressServer()
+  const expressServer = await createExpressServer(CONSTANTS)
   expressServer.listen(PORT, () => {
     console.log(`crypto-service is now running on {server}:${PORT}`)
   })

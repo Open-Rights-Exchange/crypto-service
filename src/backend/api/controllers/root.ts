@@ -1,4 +1,3 @@
-import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
 import { logger as globalLogger } from '../../../helpers/logger'
 import {
@@ -12,8 +11,7 @@ import {
   validateEncryptedPayloadAuthToken,
   validatePasswordAuthToken,
 } from '../helpers'
-import { ErrorSeverity, ErrorType, HttpStatusCode } from '../../../models'
-import { BASE_PUBLIC_KEY } from '../../constants'
+import { Constants, Context, ErrorSeverity, ErrorType, HttpStatusCode } from '../../../models'
 import {
   decryptWithPasswordResolver,
   decryptWithPrivateKeysResolver,
@@ -25,39 +23,47 @@ import {
 } from '../../resolvers/crypto'
 import { logError, ServiceError } from '../../../helpers/errors'
 
-dotenv.config()
-
 // Root-level routes
-async function v1Root(req: Request, res: Response, next: NextFunction) {
+async function v1Root(req: Request, res: Response, next: NextFunction, constants: Constants) {
   const now = new Date()
   const { action } = req.params
+  let context
+  try {
+    ;({ context } = await getAppIdAndContextFromApiKey(req, constants))
+  } catch (error) {
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, null, error)
+  }
   switch (action) {
     case 'decrypt-with-password':
-      return handleDecryptWithPassword(req, res, next, now)
+      return handleDecryptWithPassword(req, res, next, now, context)
     case 'decrypt-with-private-keys':
-      return handleDecryptWithPrivateKeys(req, res, next, now)
+      return handleDecryptWithPrivateKeys(req, res, next, now, context)
     case 'encrypt':
-      return handleEncrypt(req, res, next, now)
+      return handleEncrypt(req, res, next, now, context)
     case 'generate-keys':
-      return handleGenerateKeys(req, res, next, now)
+      return handleGenerateKeys(req, res, next, now, context)
     case 'verify-public-key':
-      return handleVerifyPublicKey(req, res, next, now)
+      return handleVerifyPublicKey(req, res, next, now, context)
     case 'recover-and-reencrypt':
-      return handleRecoverAndReencrypt(req, res, next, now)
+      return handleRecoverAndReencrypt(req, res, next, now, context)
     case 'sign':
-      return handleSign(req, res, next, now)
+      return handleSign(req, res, next, now, context)
     default:
       return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, null)
   }
 }
 // api/decrypt-with-password
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleDecryptWithPassword(req: Request, res: Response, next: NextFunction, now: Date) {
+export async function handleDecryptWithPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  now: Date,
+  context: Context,
+) {
   const funcName = 'api/decrypt-with-password'
-  let context
   try {
     globalLogger.trace('called handleDecryptWithPassword')
-    ;({ context } = await getAppIdAndContextFromApiKey(req))
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
@@ -78,13 +84,17 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
 
 // api/decrypt-with-private-keys
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleDecryptWithPrivateKeys(req: Request, res: Response, next: NextFunction, now: Date) {
+export async function handleDecryptWithPrivateKeys(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  now: Date,
+  context: Context,
+) {
   const funcName = 'api/decrypt-with-private-keys'
-  let context
   let asymmetricEncryptedPrivateKeys
   try {
     globalLogger.trace('called handleDecryptWithPrivateKeys')
-    ;({ context } = await getAppIdAndContextFromApiKey(req))
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'encrypted'], funcName)
     checkBodyForOnlyOneOfValues(
@@ -143,15 +153,19 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
 
 // api/recover-and-reencrypt
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleRecoverAndReencrypt(req: Request, res: Response, next: NextFunction, now: Date) {
+export async function handleRecoverAndReencrypt(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  now: Date,
+  context: Context,
+) {
   const funcName = 'api/recover-and-reencrypt'
-  let context
   let encryptedPayload
   let asymmetricEncryptedPrivateKeys
   let password
   try {
     globalLogger.trace('called handleRecoverAndReencrypt')
-    ;({ context } = await getAppIdAndContextFromApiKey(req))
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'asymmetricEncryptedPrivateKeysAndAuthToken'], funcName)
     checkBodyForOnlyOneOfValues(req, ['encrypted', 'encryptedAndAuthToken'], funcName)
@@ -224,12 +238,10 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
 
 // api/encrypt
 /** Calls resolver to encrypt the payload using one or more public/private key pairs for a specific blockchain */
-export async function handleEncrypt(req: Request, res: Response, next: NextFunction, now: Date) {
+export async function handleEncrypt(req: Request, res: Response, next: NextFunction, now: Date, context: Context) {
   const funcName = 'api/encrypt'
-  let context
   try {
     globalLogger.trace('called handleEncrypt')
-    ;({ context } = await getAppIdAndContextFromApiKey(req))
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'toEncrypt'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
@@ -252,12 +264,10 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
 
 // api/generate-keys
 /** Calls resolver to generate one or more public/private key pairs for a specific blockchain */
-export async function handleGenerateKeys(req: Request, res: Response, next: NextFunction, now: Date) {
+export async function handleGenerateKeys(req: Request, res: Response, next: NextFunction, now: Date, context: Context) {
   const funcName = 'api/generate-keys'
-  let context
   try {
     globalLogger.trace('called handleGenerateKeys')
-    ;({ context } = await getAppIdAndContextFromApiKey(req))
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
@@ -280,13 +290,11 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
 
 // api/sign
 /** Calls resolver to sign a transaction with one or more private key pairs for a specific blockchain */
-export async function handleSign(req: Request, res: Response, next: NextFunction, now: Date) {
+export async function handleSign(req: Request, res: Response, next: NextFunction, now: Date, context: Context) {
   const funcName = 'api/sign'
-  let context
   let asymmetricEncryptedPrivateKeys
   try {
     globalLogger.trace('called handleSign')
-    ;({ context } = await getAppIdAndContextFromApiKey(req))
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'toSign'], funcName)
     checkBodyForAtLeastOneOfValues(
@@ -345,12 +353,16 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
 
 // api/public-key
 /** Returns the public key for which all incoming secrets should be asymmetrically encrypted */
-export async function handleVerifyPublicKey(req: Request, res: Response, next: NextFunction, _: Date) {
+export async function handleVerifyPublicKey(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  _: Date,
+  context: Context,
+) {
   const funcName = 'api/verify-public-key'
-  let context
   try {
     globalLogger.trace('called handlePublicKey')
-    ;({ context } = await getAppIdAndContextFromApiKey(req))
     checkBodyForRequiredValues(req, ['nonce'], funcName)
     checkHeaderForRequiredValues(req, ['api-key'], funcName)
     const { nonce } = req.body

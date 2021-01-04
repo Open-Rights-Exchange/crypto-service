@@ -1,13 +1,6 @@
-import path from 'path'
-import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
-import { APP_NAME } from '../constants'
+import { Constants } from '../../models'
 import { ContextGlobal } from '../../helpers'
-
-dotenv.config()
-// read the deploy_version file and add to process.env
-// deploy_version is created by build script
-dotenv.config({ path: path.resolve(process.cwd(), 'deploy-version') })
 
 const { performance } = require('perf_hooks')
 
@@ -20,17 +13,17 @@ const timed = (f: (...args: any[]) => any) => async (...args: any) => {
   return { ...result, timeElapsed }
 }
 
-export async function healthCheckHandler(req: Request, res: Response, next: NextFunction) {
+export async function healthCheckHandler(req: Request, res: Response, next: NextFunction, constants: Constants) {
   const { logger } = ContextGlobal
 
   const response: any = {
-    service: APP_NAME,
+    service: constants.APP_NAME,
     datetime: new Date().toISOString(),
-    envVersion: process.env.ENV_VERSION,
+    envVersion: constants.ENV_VERSION,
     // ENV vars from deploy_version file created by circle.yml
-    buildVersion: process.env.BUILD_VERSION,
-    deployDate: process.env.DEPLOY_DATE,
-    envHash: process.env.ENV_HASH,
+    buildVersion: constants.BUILD_VERSION,
+    deployDate: constants.DEPLOY_DATE,
+    envHash: constants.ENV_HASH,
   }
 
   try {

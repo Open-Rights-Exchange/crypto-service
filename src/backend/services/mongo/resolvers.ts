@@ -10,7 +10,8 @@ import {
 } from '../../../helpers'
 import { Context } from '../../../models'
 import { ObjectId } from '../../../models/data'
-import { MONGO_TIMEOUT } from '../../constants'
+
+const DEFAULT_MONGO_TIMEOUT_FALLBACK = 10000
 
 type HandleMongoErrorParams = {
   context: Context
@@ -64,8 +65,9 @@ type AggregateMongoArgs = {
 
 // TODO - Consider whether response from aggregateMongo can be strongly typed
 export async function aggregateMongo({ context, mongoObject, aggregation }: AggregateMongoArgs): Promise<any> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     mongoObject.aggregate(aggregation, (err: Error, result: any) => {
       clearTimeout(timeout)
       if (err) {
@@ -85,10 +87,11 @@ type DeleteMongoArgs = {
 }
 
 export async function deleteMongo<T>({ filter, context, mongoObject }: DeleteMongoArgs): Promise<Result> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   // TODO: Limit by logged-in userId
   return new Promise((resolve, reject) => {
     const { argsOptions = {}, argsFiltered } = argsToMongoOptions(filter)
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     mongoObject.findOneAndRemove(argsFiltered, (err: Error, result: any) => {
       clearTimeout(timeout)
       if (err) {
@@ -121,13 +124,14 @@ export async function findMongo<T>({
   mongoObject,
   searchableFields = null,
 }: FindMongoArgs): Promise<T[]> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   const { logger } = context
   return new Promise((resolve, reject) => {
     let { argsOptions, argsFiltered } = argsToMongoOptions(filter)
     argsFiltered = convertSelectedArgsToSearchableWildcards(argsFiltered, searchableFields) // convert some fields into wildcard searches
     argsOptions = argsOptions || {}
     logger?.trace('findMongo', { table: mongoObject.modelName, argsOptions, argsFiltered })
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     mongoObject
       .find(argsFiltered)
       .select(argsOptions.select)
@@ -154,6 +158,7 @@ export async function findMongoWithCount<T>({
   mongoObject,
   searchableFields = null,
 }: FindMongoArgs): Promise<[T[], any]> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   const { logger } = context
   const data: T[] = await findMongo<T>({ filter, context, mongoObject, searchableFields })
 
@@ -161,7 +166,7 @@ export async function findMongoWithCount<T>({
     const { argsOptions, argsFiltered } = argsToMongoOptions(filter)
     const argsFilteredConverted = convertSelectedArgsToSearchableWildcards(argsFiltered, searchableFields) // convert some fields into wildcard searches
     logger?.trace('findMongoWCount', { table: mongoObject.modelName, argsOptions, argsFiltered: argsFilteredConverted })
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     mongoObject
       .find(argsFilteredConverted)
       .count()
@@ -184,12 +189,13 @@ export type CountMongoArgs = {
 
 // use the ResultInt graphql type as the return type for this count
 export async function countMongo({ filter, context, mongoObject }: CountMongoArgs): Promise<number> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   const { logger } = context
 
   // TODO: Limit by logged-in userId
   return new Promise((resolve, reject) => {
     const { argsOptions, argsFiltered } = argsToMongoOptions(filter) // remove any non-fields
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     mongoObject
       .count(argsFiltered)
       .then((data: number) => {
@@ -220,13 +226,14 @@ export async function findOneMongo<T>({
   searchableFields = null,
   filterByLoggedInUserId = false,
 }: FindOneMongoArgs): Promise<T> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   const { logger } = context
 
   return new Promise((resolve, reject) => {
     const { argsOptions, argsFiltered } = argsToMongoOptions(filter) // trims options from args
     const argsFilteredConverted = convertSelectedArgsToSearchableWildcards(argsFiltered, searchableFields) // convert some fields into wildcard searches
     logger?.trace('findOneMongo', { table: mongoObject.modelName, argsOptions, argsFiltered: argsFilteredConverted })
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     mongoObject
       .findOne(argsFilteredConverted)
       .select(argsOptions.select)
@@ -251,11 +258,12 @@ export type InMongoArgs = {
 
 // find all records that have an _id that is present in the passed-in array
 export async function inMongo<T>({ context, mongoObject, valuesArray }: InMongoArgs): Promise<T[]> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   const { logger } = context
 
   // TODO: Limit by logged-in userId
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     mongoObject
       .find()
       .in('_id', valuesArray)
@@ -287,18 +295,17 @@ export async function updateMongo({
   skipUpdatedFields = false,
   updatedBy = null,
 }: UpdateMongoArgs): Promise<Result> {
-  // TODO: Limit by logged-in userId
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   const { logger } = context
   const recordId = newValues._id
   delete newValues._id
 
-  // removed _id field from newValues to update
   return new Promise((resolve, reject) => {
     if (!skipUpdatedFields) {
       newValues.updatedBy = updatedBy
       newValues.updatedOn = now()
     }
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     logger?.trace('updateMongo new updated record', { newValues })
     mongoObject
       .update({ _id: recordId }, newValues, { multi: false })
@@ -332,6 +339,7 @@ export async function upsertMongo<T>({
   mergeFieldsWithExistingObject = false,
   skipUpdatedFields = false,
 }: UpsertMongoArgs<T>): Promise<ResultRecord<T>> {
+  const MONGO_TIMEOUT = context?.constants?.MONGO_TIMEOUT || DEFAULT_MONGO_TIMEOUT_FALLBACK
   const { logger } = context
 
   return new Promise((resolve, reject) => {
@@ -350,7 +358,7 @@ export async function upsertMongo<T>({
       newItem.createdOn = now()
     }
 
-    const timeout = setTimeout(() => handleMongoTimeout(reject), MONGO_TIMEOUT)
+    const timeout = setTimeout(() => handleMongoTimeout(reject, MONGO_TIMEOUT), MONGO_TIMEOUT)
     const recordToUpdateIdFilter = newItem._id ? { _id: newItem._id } : { _id: createGuid() } // if new record doesn't have an id, generate a guid
 
     const afterUpdate = (response: any) => {
@@ -400,8 +408,8 @@ export async function upsertMongo<T>({
   })
 }
 
-export function handleMongoTimeout(reject: any) {
-  const errMsg = `MongoDB timeout when fetching from MongoDB (timeout is ${MONGO_TIMEOUT}ms)`
+export function handleMongoTimeout(reject: any, timeout: number) {
+  const errMsg = `MongoDB timeout when fetching from MongoDB (timeout is ${timeout}ms)`
   console.log(errMsg)
   reject(errMsg)
 }
