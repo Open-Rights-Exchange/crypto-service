@@ -1,3 +1,5 @@
+/* eslint-disable consistent-return */
+/* eslint-disable jest/no-done-callback */
 import path from 'path'
 import supertest from 'supertest'
 import { Express } from 'express-serve-static-core'
