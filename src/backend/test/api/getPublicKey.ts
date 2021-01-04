@@ -38,5 +38,5 @@ export const getPublicKey = async ({ apiKey = global.TEST_APP_API_KEY }: GetPubl
   }
 
   // Returns the result passed into jsonMock
-  return handleVerifyPublicKey(req, res, () => {})
+  return handleVerifyPublicKey(req, res, () => {}, null)
 }
