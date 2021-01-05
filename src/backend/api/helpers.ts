@@ -194,7 +194,6 @@ export async function validateEncryptedPayloadAuthToken(
 
 /** Validate token helper - extracts info from request object */
 export async function validateApiAuthToken(req: Request, context: Context) {
-  context.logger.log('validateApiAuthToken request:', req)
   return validateAuthTokenAndExtractContents({
     authTokenType: AuthTokenType.ApiHeader,
     requestUrl: getFullUrlFromRequest(req),
