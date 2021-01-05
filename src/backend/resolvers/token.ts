@@ -91,7 +91,7 @@ export async function validateAuthTokenAndExtractContents(
 
   // VERIFY: url in token matches request url
   if (url !== requestUrl) {
-    const msg = `Auth Token url doesn't match actual request url.`
+    const msg = `Auth Token url doesn't match actual request url ${requestUrl}.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 

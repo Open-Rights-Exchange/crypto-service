@@ -13,14 +13,14 @@ import { Asymmetric } from "@open-rights-exchange/chainjs/dist/crypto";
 
 require("dotenv").config();
 
-// // address of a service you trust
-// const serviceUrl = "https://staging.api.crypto-service.io";
-// // a well-known public key of the serivce you trust
-// const servicePublicKey = "042e438c99bd7ded27ed921919e1d5ee1d9b1528bb8a2f6c974362ad1a9ba7a6f59a452a0e4dfbc178ab5c5c090506bd7f0a6659fd3cf0cc769d6c17216d414163";
+// address of a service you trust
+const serviceUrl = "https://api.crypto-service.io";
+// a well-known public key of the serivce you trust
+const servicePublicKey = "042e438c99bd7ded27ed921919e1d5ee1d9b1528bb8a2f6c974362ad1a9ba7a6f59a452a0e4dfbc178ab5c5c090506bd7f0a6659fd3cf0cc769d6c17216d414163";
 
 // Localhost
-const serviceUrl = "http://localhost:8080";
-const servicePublicKey = "042e438c99bd7ded27ed921919e1d5ee1d9b1528bb8a2f6c974362ad1a9ba7a6f59a452a0e4dfbc178ab5c5c090506bd7f0a6659fd3cf0cc769d6c17216d414163";
+// const serviceUrl = "http://localhost:8080";
+// const servicePublicKey = "04cea2c951504b5bfefa78480ae632da2c7889561325f9d76ca7b0a1e62f7a8cd52ce313c8b3fd3c7ffe2f588322e5be331c64b31b256a8769e92f947ae712b761";
 
 // sample key paira used for having the service asymetrically encrypt a result before returning it (and signing with)
 const ethPubKey = "0xc68e0f87e57569a1a053bba68ecde6a55c19d93a3e1ab845be60b2828991b3de30d74a9fdd9602d30434376ef1e922ffdbc61b4ea31a8c8c7427b935337e82d6";
