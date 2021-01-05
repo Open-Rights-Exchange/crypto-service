@@ -2,10 +2,9 @@
 /* eslint-disable jest/no-done-callback */
 import supertest from 'supertest'
 import { Express } from 'express-serve-static-core'
-import { openDB, closeDB, clearDB, initializeDB } from './helpers'
-import { createExpressServer } from '../../server/createServer'
-import { ContextTest } from './config/globalMocks'
-import { setupGlobalConstants, CONSTANTS } from './config/constants'
+import { openDB, closeDB, clearDB, initializeDB } from '../helpers'
+import { createExpressServer } from '../../../server/createServer'
+import { setupGlobalConstants, CONSTANTS } from '../config/constants'
 
 declare let global: any
 

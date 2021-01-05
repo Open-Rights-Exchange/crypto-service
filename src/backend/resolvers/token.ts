@@ -10,7 +10,6 @@ import {
 import { AnalyticsEvent, AuthToken, AuthTokenType, Context, ErrorType, Mongo } from '../../models'
 import { AuthTokenData } from '../services/mongo/models'
 import { findOneMongo, upsertMongo } from '../services/mongo/resolvers'
-import { analyticsEvent } from '../services/segment/resolvers'
 import { decryptWithBasePrivateKey, encryptAsymmetrically } from './crypto'
 
 /** Decrypt and decode authToken
@@ -53,7 +52,6 @@ export type ValidateAuthTokenAndExtractContents = {
   authToken?: AuthToken
   requestBody: any
   requestUrl: string
-  now: Date
   context: Context
 }
 
@@ -75,7 +73,7 @@ export type ValidateAuthTokenAndExtractContents = {
 export async function validateAuthTokenAndExtractContents(
   params: ValidateAuthTokenAndExtractContents,
 ): Promise<AuthToken> {
-  const { authTokenType, encryptedAuthToken, authToken, requestBody, requestUrl, now, context } = params
+  const { authTokenType, encryptedAuthToken, authToken, requestBody, requestUrl, context } = params
 
   // decrypt if necessary
   let decryptedAuthToken = authToken
@@ -100,13 +98,13 @@ export async function validateAuthTokenAndExtractContents(
   // VERIFY: valid date/time
   const validFromDate = new Date(validFrom).getTime()
   const validToDate = new Date(validTo).getTime()
-  const nowUtc = now.getTime()
+  const nowUtc = context.requestDateTime.getTime()
   const isValidNow = nowUtc >= validFromDate && nowUtc <= validToDate
 
   // TODO: confirm validToDate is not too far in future - i.e. <= AUTH_TOKEN_MAX_EXPIRATION_IN_SECONDS
 
   if (!isValidNow) {
-    const msg = `Auth Token has expired or is not valid at the current time: ${now}.`
+    const msg = `Auth Token has expired or is not valid at the current time: ${context.requestDateTime}.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
@@ -138,7 +136,7 @@ type SaveAuthTokenParam = {
  * Save authToken until it expires - when it expires, it will be automatically deleted from the table
  */
 export async function saveAuthToken({ authToken, context, base64EncodedAuthToken }: SaveAuthTokenParam) {
-  const { appId, logger } = context
+  const { analytics, appId } = context
 
   // check if token is already saved - if, we cant use it again
   const existingAuthToken = await findOneMongo<AuthTokenData>({
@@ -163,5 +161,6 @@ export async function saveAuthToken({ authToken, context, base64EncodedAuthToken
     newItem,
     skipUpdatedFields: true,
   })
-  analyticsEvent('api', AnalyticsEvent.AuthTokenCreated, { appId }, context)
+
+  analytics.event('api', AnalyticsEvent.AuthTokenCreated, { appId })
 }

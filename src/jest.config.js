@@ -22,6 +22,7 @@ module.exports = {
     '^axios$': '<rootDir>/backend/test/__mocks__/axios.js',
   },
   moduleFileExtensions: ['web.js', 'js', 'json', 'web.jsx', 'jsx', 'node', 'ts', 'tsx'],
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
   modulePaths: ['<rootDir>/backend/', '<rootDir>/server/'],
   globals: {
     'ts-jest': {
