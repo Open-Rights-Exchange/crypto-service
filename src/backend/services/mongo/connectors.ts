@@ -9,8 +9,8 @@ mongoose.set('useCreateIndex', true)
 const options: any = {
   poolSize: 20,
   keepAlive: true, // contains type discrepancy in the docs (boolean vs number)?
-  reconnectTries: 30,
   useNewUrlParser: true,
+  useUnifiedTopology: true,
 }
 
 export function connectToMongo(mongoURI: string, mongoTimeout: number | string) {
@@ -20,7 +20,7 @@ export function connectToMongo(mongoURI: string, mongoTimeout: number | string) 
     mongoose.connect(mongoURI, options)
     mongoose.connection
       .once('open', () => {
-        globalLogger.log('Connected to MongoDB instance.')
+        // globalLogger.log('Connected to MongoDB instance.')
         resolve(null)
       })
       .on('error', error => {

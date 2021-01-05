@@ -2,17 +2,22 @@
 
 ## Structure
   The backend tests are present under src/backend/test. It has following partitions:
-  - __ mocks __ : contains mocks for requests sent to any external libraries (e.g. segment etc.)
-  - dbMocks: contains the sample data for the mongo tables
-  - dataMocks: reusable data structures used in tests
-  - api: mocks for the api /routes
-  - resolvers: one test file for each code file in backend/resolvers
+  - `__ mocks __` : contains mocks for requests sent to any external libraries (e.g. segment etc.)
+  - `config`: test setup config
+    - `constants.ts`: contains all the global constants AND the .env / constants for the test server 
+    - `.env.test`: contains secrets that should not be commited to Github 
+  - `dbMocks`: contains the sample data for the mongo tables
+  - `dataMocks`: reusable data structures used in tests
+  - `testsApis`: integration tests for the api /routes - one file named after each endpoint (e.g. verify-public-key.test.ts)
+  - `testsResolvers`: unit tests - one test file for each code file in backend/resolvers (e.g. token.test.ts)
+
 
 ## Setup
-1. Copy test env values from lastpass named `env.test cryptoservice` and paste in `/backend/test/config/.env.test`
+1. Copy test env values (from your password manager) named `env.test cryptoservice` and paste in `/backend/test/config/.env.test`
+2. The API endpoint tests expect a Mongo service to be running on localhost:27017 - install it using [these](https://stackoverflow.com/questions/57856809/installing-mongodb-with-homebrew/57881349#57881349) instructions
 
 ## Unit tests
-* Every resolver file under web/backend/resolver has a test file under web/backend/test/resolver
+* Every resolver file under web/backend/resolver has a test file under web/backend/test/testsResolver
 
 * Structure of a test file can be like this:
   - Higher level describe block named same as the file name
@@ -25,18 +30,26 @@
        it('encrypts the credential with password') // understandable description
   ```
 
-Run these commands from the `/src` directory
+## API endpoint tests
+* Every API endpoints has one test named after the endpoint in web/backend/test/testsApis 
+* One each run, an entire Express server is instantiated using config defined in config/constants.ts
+* A local MongoDB database is created and populated with sample data via: /test/helpers/mongo.ts initializeDB()
+* The API endpoint tests expect a Mongo service to be running on localhost:27017  (see Setup above)
 
-All tests in the folder
+<br>
+
+Run these tests from the `/src` directory
+
+All tests
 
 ```
-./node_modules/.bin/jest ./backend/test
+npm run test
 ```
 
-A specific file
+A specific test file
 
 ```
-./node_modules/.bin/jest ./backend/test/{{TEST_NAME}}.test.ts
+npm run test -n {{TEST_NAME}}.test.ts
 ```
 
 #### Notes

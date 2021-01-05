@@ -10,7 +10,8 @@ import { logError } from '../../../helpers/errors'
 // e.g. http://localhost:8080/api/admin?action=refresh
 async function v1Admin(req: Request, res: Response, next: NextFunction, config: Config) {
   const funcName = 'api/admin'
-  const context = createContext(req, config)
+  const now = new Date()
+  const context = createContext(req, config, now)
   try {
     await addAppIdToContextFromApiKey(req, context)
     checkForRequiredParams(req, ['action'], funcName)
@@ -31,7 +32,8 @@ async function v1Admin(req: Request, res: Response, next: NextFunction, config: 
 // Reload settings and flush cache(s)
 async function handleAdminRefresh(req: Request, res: Response, next: NextFunction, config: Config) {
   const funcName = 'api/admin?action=refresh'
-  const context = createContext(req, config)
+  const now = new Date()
+  const context = createContext(req, config, now)
   await addAppIdToContextFromApiKey(req, context)
   // clearAllCaches()
   // await loadDatabaseSettings(context)
