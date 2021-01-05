@@ -208,5 +208,5 @@ export async function validateApiAuthToken(req: Request, context: Context) {
 export function getFullUrlFromRequest(req: Request) {
   // if hosted behind a proxy, check the incoming protocol first
   const protocol = req.headers['x-forwarded-proto'] || req.protocol
-  return `${req.protocol}://${req.get('host')}${req.originalUrl}`
+  return `${protocol}://${req.get('host')}${req.originalUrl}`
 }
