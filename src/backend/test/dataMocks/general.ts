@@ -9,8 +9,9 @@ export const createContext = (appId?: string): Context => {
   return {
     analytics: new Analytics(CONSTANTS.SEGMENT_WRITE_KEY, global.processId),
     appId: appId || global.TEST_APP_APPID,
+    constants: CONSTANTS,
     logger: new Logger({ rollbar: null, processId: global.processId, tracingEnabled: false }),
     processId: global.processId,
-    constants: CONSTANTS,
+    requestDateTime: global.NOW_DATE,
   }
 }

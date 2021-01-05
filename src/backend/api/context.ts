@@ -11,11 +11,11 @@ import { ServiceError } from '../../helpers/errors'
  *  Create a statefull context for each request
  *  This context will be passed to mutations that update the database
  * */
-export function createContext(req: Request, config: Config, appId?: AppId): Context {
+export function createContext(req: Request, config: Config, requestDateTime: Date, appId?: AppId): Context {
   const { constants } = config || {}
   const { logger, processId } = getProcessIdAndLogger(req, config)
   const analytics = new Analytics(constants?.SEGMENT_WRITE_KEY, processId)
-  const context: Context = { appId, analytics, logger, processId, constants }
+  const context: Context = { analytics, appId, constants, logger, processId, requestDateTime }
   if (appId) context.appId = appId
   return context
 }

@@ -36,7 +36,6 @@ describe('Test token handling and validation', () => {
           requestUrl,
           encryptedAuthToken: 'abcdefg', // bad value
           requestBody: requestBodyEmpty,
-          now: global.NOW_DATE,
           context,
         }),
       ).rejects.toThrow(new Error('Invalid value provided as asymmetrically encrypted item.'))
@@ -48,7 +47,6 @@ describe('Test token handling and validation', () => {
         requestUrl,
         encryptedAuthToken: encodedToken1,
         requestBody: requestBodyEmpty,
-        now: global.NOW_DATE,
         context,
       })
       expect(token).toStrictEqual(decodedAuthToken)
@@ -61,7 +59,6 @@ describe('Test token handling and validation', () => {
           requestUrl,
           encryptedAuthToken: encodedToken1,
           requestBody: requestBodyEmpty,
-          now: global.NOW_DATE,
           context,
         }),
       ).rejects.toThrow(new Error('Auth token has already been used.'))

@@ -15,15 +15,18 @@ import { EosTransaction } from '../__mocks__/eosTransaction'
 import { CONSTANTS } from './constants'
 import { Analytics } from '../../services/segment/resolvers'
 
+declare let global: any
+
 const processId = 'AUTOMATED_TEST_PROCESS_ID'
 
 let rollbar = null // getRollbar(CONSTANTS)  Rollbar disabled for tests
 
 export const ContextTest: Context = {
-  processId,
   analytics: new Analytics(CONSTANTS.SEGMENT_WRITE_KEY, processId),
+  constants: CONSTANTS, // constants for test
   logger: new Logger({ processId, rollbar, tracingEnabled: false }),
-  constants: CONSTANTS // constants for test
+  processId,
+  requestDateTime: global.NOW_DATE
 }
 
 // /**

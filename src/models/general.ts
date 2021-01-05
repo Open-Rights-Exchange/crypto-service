@@ -12,9 +12,10 @@ export type Context = {
   /** appId of authenticated user or agent */
   appId?: AppId
   analytics: Analytics
-  processId: string
-  logger: Logger
   constants: Constants
+  logger: Logger
+  processId: string
+  requestDateTime: Date
 }
 
 export type Settings = {
