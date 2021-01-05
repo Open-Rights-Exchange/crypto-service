@@ -1,6 +1,7 @@
 import { Request } from 'express'
 import { globalLogger } from '../../helpers/logger'
 import { generateProcessId, Logger, isNullOrEmpty, objectHasProperty } from '../../helpers'
+import { Analytics } from '../services/segment/resolvers'
 import { getRollbar } from '../services/rollbar/connectors'
 import { AppId, Config, Context, ErrorType } from '../../models'
 import { getAppIdFromApiKey } from '../resolvers/appRegistration'
@@ -13,7 +14,8 @@ import { ServiceError } from '../../helpers/errors'
 export function createContext(req: Request, config: Config, appId?: AppId): Context {
   const { constants } = config || {}
   const { logger, processId } = getProcessIdAndLogger(req, config)
-  const context: Context = { appId, logger, processId, constants }
+  const analytics = new Analytics(constants?.SEGMENT_WRITE_KEY, processId)
+  const context: Context = { appId, analytics, logger, processId, constants }
   if (appId) context.appId = appId
   return context
 }

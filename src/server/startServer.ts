@@ -32,7 +32,6 @@ const { PORT, MONGO_URI, MONGO_TIMEOUT } = process.env
 
 async function startServer() {
   await connectToMongo(MONGO_URI, MONGO_TIMEOUT)
-  // await loadDatabaseSettings()
   console.log('server - isRunningProduction:', isRunningProduction)
   const expressServer = await createExpressServer(config)
   expressServer.listen(PORT, () => {

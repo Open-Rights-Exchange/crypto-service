@@ -10,7 +10,6 @@ import {
 import { AnalyticsEvent, AuthToken, AuthTokenType, Context, ErrorType, Mongo } from '../../models'
 import { AuthTokenData } from '../services/mongo/models'
 import { findOneMongo, upsertMongo } from '../services/mongo/resolvers'
-import { analyticsEvent } from '../services/segment/resolvers'
 import { decryptWithBasePrivateKey, encryptAsymmetrically } from './crypto'
 
 /** Decrypt and decode authToken
@@ -138,7 +137,7 @@ type SaveAuthTokenParam = {
  * Save authToken until it expires - when it expires, it will be automatically deleted from the table
  */
 export async function saveAuthToken({ authToken, context, base64EncodedAuthToken }: SaveAuthTokenParam) {
-  const { appId, logger } = context
+  const { analytics, appId } = context
 
   // check if token is already saved - if, we cant use it again
   const existingAuthToken = await findOneMongo<AuthTokenData>({
@@ -163,5 +162,6 @@ export async function saveAuthToken({ authToken, context, base64EncodedAuthToken
     newItem,
     skipUpdatedFields: true,
   })
-  analyticsEvent('api', AnalyticsEvent.AuthTokenCreated, { appId }, context)
+
+  analytics.event('api', AnalyticsEvent.AuthTokenCreated, { appId })
 }

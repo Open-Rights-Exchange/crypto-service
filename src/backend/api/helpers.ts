@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import url from 'url'
 import { isNullOrEmpty, tryBase64Decode, tryParseJSON } from '../../helpers'
-import { analyticsEvent } from '../services/segment/resolvers'
 import {
   AnalyticsEvent,
   AppId,
@@ -100,8 +99,8 @@ export function checkBodyForOnlyOneOfValues(req: Request, paramNames: any[], fun
 export function analyticsForApi(req: Request, data: any, context: Context) {
   const path = req.baseUrl
   // TODO: Replace depricated api (url.parse)
-  const { query } = url.parse(req.url) // eslint-disable-line
-  analyticsEvent('api', AnalyticsEvent.ApiCalled, { path, query, ...data }, context)
+  const { query } = url.parse(req.url)
+  context?.analytics.event('api', AnalyticsEvent.ApiCalled, { path, query, ...data })
 }
 
 /** Return response and log analytics */

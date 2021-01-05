@@ -1,37 +1,31 @@
-import Analytics from 'analytics-node'
+import Segment from 'analytics-node'
 import { isAString } from '../../../helpers'
-import { AnalyticsEvent, Context } from '../../../models'
-import { CONSTANTS } from '../../constants' // TODO: should be passed in constructor
+import { AnalyticsEvent } from '../../../models'
 
-const analytics = new Analytics(CONSTANTS.SEGMENT_WRITE_KEY)
+export class Analytics {
+  _processId: string
 
-/**
- * Sends AnalyticsEvents
- *
- * The `eventName` param is an AnaylticsEvent or string containing `chain_action_` or `user_action_`
- * processId wil be added to eventMetadata from context (if not already in eventMetadata)
- *
- * @param userId
- * @param eventName
- * @param eventMetadata
- */
-export function analyticsEvent(
-  userId: string,
-  eventName: AnalyticsEvent | string,
-  eventMetadata: any = {},
-  context: Context,
-) {
-  const eventString = isAString(eventName) ? eventName : eventName.toString()
+  _segment: Segment
 
-  // set processId from context (if not provided in metadata)
-  const processIdFromContext = context?.processId
-  if (!eventMetadata?.processId && processIdFromContext) {
-    eventMetadata.processId = processIdFromContext
+  constructor(segmentWriteKey: string, processId: string) {
+    this._segment = new Segment(segmentWriteKey)
+    this._processId = processId
   }
 
-  analytics.track({
-    event: eventString,
-    properties: eventMetadata,
-    userId,
-  })
+  /**
+   * Sends AnalyticsEvents. The `eventName` param is an AnalyticsEvent
+   * processId wil be added to eventMetadata (if not already in eventMetadata)
+   */
+  event(userId: string, eventName: AnalyticsEvent, eventMetadata: any = {}, processId?: string) {
+    const eventString = isAString(eventName) ? eventName : eventName.toString()
+
+    // set processId (if not provided in metadata)
+    eventMetadata.processId = eventMetadata.processId || processId || this._processId
+
+    this._segment.track({
+      event: eventString,
+      properties: eventMetadata,
+      userId,
+    })
+  }
 }

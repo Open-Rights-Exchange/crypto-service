@@ -1,3 +1,4 @@
+import { Analytics } from '../backend/services/segment/resolvers'
 import { Logger } from '../helpers/logger'
 import { PublicKey, SymmetricPassword } from './chain'
 
@@ -10,6 +11,7 @@ export type AppId = string
 export type Context = {
   /** appId of authenticated user or agent */
   appId?: AppId
+  analytics: Analytics
   processId: string
   logger: Logger
   constants: Constants
