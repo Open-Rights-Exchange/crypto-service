@@ -37,6 +37,7 @@ export const CONSTANTS: Constants = {
 }
 
 export function setupGlobalConstants() {
+  global.TEST_EXPRESS_SERVER_PORT = 8085
   // General
   global.BASE_PUBLIC_KEY = CONSTANTS.BASE_PUBLIC_KEY
   global.BASE_PRIVATE_KEY = CONSTANTS.BASE_PRIVATE_KEY
