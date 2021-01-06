@@ -2,6 +2,7 @@
 /* eslint-disable jest/no-done-callback */
 import supertest from 'supertest'
 import { Express } from 'express-serve-static-core'
+import { Server } from 'http'
 import { openDB, closeDB, clearDB, initializeDB } from '../helpers'
 import { createExpressServer } from '../../../server/createServer'
 import { setupGlobalConstants, CONSTANTS } from '../config/constants'
@@ -20,12 +21,16 @@ const config = { constants: CONSTANTS, settings: { tracingEnabled: settingTracin
 // Using supertest - https://github.com/visionmedia/supertest
 // Example: - https://losikov.medium.com/part-4-node-js-express-typescript-unit-tests-with-jest-5204414bf6f0
 
-let server: Express
+let server: Server
 
 beforeAll(async () => {
   await openDB('test_cryptoapi')
   await initializeDB()
-  server = await createExpressServer(config) // TODO: Provide constants
+  // start express server
+  const app = await createExpressServer(config)
+  server = app.listen(global.TEST_EXPRESS_SERVER_PORT, () => {
+    console.log(`Test service listening on port ${global.TEST_EXPRESS_SERVER_PORT}`)
+  })
   setupGlobalConstants()
 })
 
