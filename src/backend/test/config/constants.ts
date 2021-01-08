@@ -37,6 +37,8 @@ export const CONSTANTS: Constants = {
 }
 
 export function setupGlobalConstants() {
+  global.TEST_EXPRESS_SERVER_PORT = 8085
+  global.TEST_SERVER_PATH = `http://127.0.0.1:${global.TEST_EXPRESS_SERVER_PORT}`
   // General
   global.BASE_PUBLIC_KEY = CONSTANTS.BASE_PUBLIC_KEY
   global.BASE_PRIVATE_KEY = CONSTANTS.BASE_PRIVATE_KEY
