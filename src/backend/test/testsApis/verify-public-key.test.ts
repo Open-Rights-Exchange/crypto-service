@@ -1,17 +1,13 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jest/no-done-callback */
 import supertest from 'supertest'
-import { Express } from 'express-serve-static-core'
-import { openDB, closeDB, clearDB, initializeDB } from '../helpers'
-import { createExpressServer } from '../../../server/createServer'
-import { setupGlobalConstants, CONSTANTS } from '../config/constants'
+import { Server } from 'http'
+import { openDB, closeDB, clearDB, initializeDB, createExpressServerForTest } from '../helpers'
+import { setupGlobalConstants } from '../config/constants'
 
 declare let global: any
 
-const settingTracingEnabled = false
-
 const headers = { 'api-key': global.TEST_APP_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' }
-const config = { constants: CONSTANTS, settings: { tracingEnabled: settingTracingEnabled } }
 
 /**
  * Test API Endpoints
@@ -20,16 +16,17 @@ const config = { constants: CONSTANTS, settings: { tracingEnabled: settingTracin
 // Using supertest - https://github.com/visionmedia/supertest
 // Example: - https://losikov.medium.com/part-4-node-js-express-typescript-unit-tests-with-jest-5204414bf6f0
 
-let server: Express
+let server: Server
 
 beforeAll(async () => {
   await openDB('test_cryptoapi')
   await initializeDB()
-  server = await createExpressServer(config) // TODO: Provide constants
+  server = await createExpressServerForTest()
   setupGlobalConstants()
 })
 
 afterAll(async () => {
+  server.close()
   await clearDB()
   await closeDB()
 })
@@ -54,6 +51,5 @@ describe('Test api endpoints', () => {
         done()
       })
   })
-
   // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
 })
