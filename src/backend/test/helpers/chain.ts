@@ -4,7 +4,7 @@ import { ChainType } from '@open-rights-exchange/chainjs/dist/models'
 declare let global: any
 
 export const getChainJsKylin = async () => {
-  const chain = new ChainFactory().create(ChainType.EosV2, [{ url: new URL(global.KYLIN_URL) }], {
+  const chain = new ChainFactory().create(ChainType.EosV2, [{ url: global.KYLIN_URL }], {
     unusedAccountPublicKey: global.UNUSED_ACCOUNT_PUBLIC_KEY,
   })
   await chain.connect()
