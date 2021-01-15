@@ -100,12 +100,9 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
     } = req.body
 
     await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(
-      req,
-      symmetricOptionsForEncryptedPrivateKeys,
-      encrypted,
-      context,
-    )
+    const passwordAuthToken = symmetricEncryptedPrivateKeys
+      ? await validatePasswordAuthToken(req, symmetricOptionsForEncryptedPrivateKeys, encrypted, context)
+      : null
     const password = passwordAuthToken?.secrets?.password
 
     // extract asymmetricEncryptedPrivateKeys and validate its authToken
@@ -161,11 +158,6 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
     } = req.body
 
     await validateApiAuthToken(req, context)
-    // validate passwordAuthToken and extract password (if provided in sym options)
-    if (symmetricOptionsForReencrypt) {
-      const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptionsForReencrypt, encrypted, context)
-      password = passwordAuthToken?.secrets?.password
-    }
 
     // extract encrypted payload from encryptedAndAuthToken (if provided) and validate authToken
     if (encryptedAndAuthToken) {
@@ -178,6 +170,17 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
       encryptedPayload = encryptedPayloadAuthToken?.encrypted
     } else {
       encryptedPayload = encrypted
+    }
+
+    // validate passwordAuthToken and extract password (if provided in sym options)
+    if (symmetricOptionsForReencrypt) {
+      const passwordAuthToken = await validatePasswordAuthToken(
+        req,
+        symmetricOptionsForReencrypt,
+        encryptedPayload,
+        context,
+      )
+      password = passwordAuthToken?.secrets?.password
     }
 
     // extract asymmetricEncryptedPrivateKeys and validate authToken
@@ -220,7 +223,9 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
     await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, toEncrypt, context)
+    const passwordAuthToken = symmetricOptions
+      ? await validatePasswordAuthToken(req, symmetricOptions, toEncrypt, context)
+      : null
     const password = passwordAuthToken?.secrets?.password
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, toEncrypt },
