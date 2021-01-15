@@ -1,7 +1,7 @@
 import { AsymmetricEncryptedString, Context, DecryptWithPrivateKeysParams, ErrorType } from '../../../models'
 import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../../helpers'
+import { assertValidChainType, isNullOrEmpty } from '../../../helpers'
 import {
   decryptPrivateKeys,
   decryptAsymmetrically,
@@ -34,8 +34,15 @@ export async function decryptWithPrivateKeysResolver(
   const chainConnect = await getChain(chainType, context)
   const { logger } = context
 
+  // might also need to check for symmetric options
+  if (!isNullOrEmpty(symmetricEncryptedPrivateKeys) && isNullOrEmpty(password)) {
+    const msg = `Password is required to decrypt private key.`
+    throw new ServiceError(msg, ErrorType.BadParam, 'decryptWithPrivateKeysResolver')
+  }
+
+  // This is error might not be accurate
   if (!asymmetricEncryptedPrivateKeys && !symmetricEncryptedPrivateKeys) {
-    const msg = `You can only provide asymmetricEncryptedPrivateKeys OR symmetricEncryptedPrivateKeys - both were provided.`
+    const msg = `You should provide asymmetricEncryptedPrivateKeys OR symmetricEncryptedPrivateKeys - Neither were provided.`
     throw new ServiceError(msg, ErrorType.BadParam, 'decryptWithPrivateKeysResolver')
   }
 

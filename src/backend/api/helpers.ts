@@ -135,11 +135,14 @@ export async function validatePasswordAuthToken(
   bodyToVerify: any,
   context: Context,
 ) {
-  if (isNullOrEmpty(symmetricOptions)) return null
+  if (isNullOrEmpty(symmetricOptions?.passwordAuthToken)) {
+    const msg = `Symmetric options were provided but passwordAuthToken is missing.`
+    throw new ServiceError(msg, ErrorType.BadParam, 'validatePasswordAuthToken')
+  }
   return validateAuthTokenAndExtractContents({
     authTokenType: AuthTokenType.Password,
     requestUrl: getFullUrlFromRequest(req),
-    encryptedAuthToken: symmetricOptions?.passwordAuthToken, // base64 encoded
+    encryptedAuthToken: symmetricOptions.passwordAuthToken, // base64 encoded
     requestBody: bodyToVerify,
     context,
   })
@@ -179,6 +182,12 @@ export async function validateEncryptedPayloadAuthToken(
     )
   }
 
+  if (!decodedEncryptedAndAuthToken?.authToken || !decodedEncryptedAndAuthToken?.encrypted) {
+    const msg1 = !decodedEncryptedAndAuthToken?.authToken ? `EncryptedAndAuthToken is missing authToken property.` : ''
+    const msg2 = !decodedEncryptedAndAuthToken?.encrypted ? `EncryptedAndAuthToken is missing encrypted property.` : ''
+    throw new ServiceError(`${msg1} ${msg2}`, ErrorType.BadParam, 'validateEncryptedPayloadAuthToken')
+  }
+
   const authToken = await validateAuthTokenAndExtractContents({
     authTokenType: AuthTokenType.EncryptedPayload,
     requestBody: decodedEncryptedAndAuthToken?.encrypted,
@@ -194,7 +203,6 @@ export async function validateEncryptedPayloadAuthToken(
 
 /** Validate token helper - extracts info from request object */
 export async function validateApiAuthToken(req: Request, context: Context) {
-  context.logger.log('validateApiAuthToken request:', req)
   return validateAuthTokenAndExtractContents({
     authTokenType: AuthTokenType.ApiHeader,
     requestUrl: getFullUrlFromRequest(req),

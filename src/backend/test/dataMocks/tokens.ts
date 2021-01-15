@@ -6,7 +6,7 @@ export const requestBody1 = {}
 export const requestBodyEmpty = {}
 export const requestUrl = 'http://localhost:8080/sign'
 
-export const decodedAuthToken: AuthToken = {
+export const decodedAuthToken1: AuthToken = {
   url: requestUrl,
   payloadHash: 'c16ca8def1ace010593c1f23e1d598b65fc2193a563a6cdd0ce94ac8e18847fc',
   validFrom: new Date('2021-01-04T05:31:39.208Z'),
