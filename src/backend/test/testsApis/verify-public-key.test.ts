@@ -1,18 +1,13 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jest/no-done-callback */
 import supertest from 'supertest'
-import { Express } from 'express-serve-static-core'
 import { Server } from 'http'
-import { openDB, closeDB, clearDB, initializeDB } from '../helpers'
-import { createExpressServer } from '../../../server/createServer'
-import { setupGlobalConstants, CONSTANTS } from '../config/constants'
+import { openDB, closeDB, clearDB, initializeDB, createExpressServerForTest } from '../helpers'
+import { setupGlobalConstants } from '../config/constants'
 
 declare let global: any
 
-const settingTracingEnabled = false
-
 const headers = { 'api-key': global.TEST_APP_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' }
-const config = { constants: CONSTANTS, settings: { tracingEnabled: settingTracingEnabled } }
 
 /**
  * Test API Endpoints
@@ -26,15 +21,12 @@ let server: Server
 beforeAll(async () => {
   await openDB('test_cryptoapi')
   await initializeDB()
-  // start express server
-  const app = await createExpressServer(config)
-  server = app.listen(global.TEST_EXPRESS_SERVER_PORT, () => {
-    console.log(`Test service listening on port ${global.TEST_EXPRESS_SERVER_PORT}`)
-  })
+  server = await createExpressServerForTest()
   setupGlobalConstants()
 })
 
 afterAll(async () => {
+  server.close()
   await clearDB()
   await closeDB()
 })
@@ -60,5 +52,17 @@ describe('Test api endpoints', () => {
       })
   })
 
-  // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
+  // eslint-disable-next-line jest/expect-expect
+  it('should throw an error for missign nonce', async done => {
+    supertest(server)
+      .post('/verify-public-key')
+      .send({})
+      .set(headers)
+      .expect('Content-Type', /json/)
+      .expect(400)
+      .end((err, res) => {
+        if (err) return done(err)
+        done()
+      })
+  })
 })

@@ -38,6 +38,21 @@ export const CONSTANTS: Constants = {
 
 export function setupGlobalConstants() {
   global.TEST_EXPRESS_SERVER_PORT = 8085
+  global.TEST_SERVER_PATH = `http://127.0.0.1:${global.TEST_EXPRESS_SERVER_PORT}`
+  global.ETH_PUB_KEY = "0xc68e0f87e57569a1a053bba68ecde6a55c19d93a3e1ab845be60b2828991b3de30d74a9fdd9602d30434376ef1e922ffdbc61b4ea31a8c8c7427b935337e82d6";
+  global.ETH_PPRIVATE_KEY = "5f8b66eea19b59c7a477142fb7204d762e2d446e98334101e851fd0e1ccff318";
+  global.EOS_PUB_KEY = "EOS7s6kUmgMjDSekrUiB9ynZEMb8qxaBNTAZMaUCyZ1n939aa6RcK";
+  global.EOS_PRIVATE_KEY = "5JWN61TdVxQMpBzW1oCeQhFxC7DAm62feXcKXHcipHwGU7Xj36W";
+  global.ALGO_PUB_KEY = "1e36f5b07eab1c326de0218ea5bf9c68ce5a9d4bcfbe40ffe0b96ee81fb98fab";
+  global.ALGO_PRIVATE_KEY = "68c7d4579c891145a23deb3c8393810a5501dd1e41c09be56e23f2bec4e4e9681e36f5b07eab1c326de0218ea5bf9c68ce5a9d4bcfbe40ffe0b96ee81fb98fab";
+  global.MY_PASSWORD = "my-secure-password";
+  global.SYMMETRIC_AES_OPTIONS = {
+    salt: "my-salt",
+    iter: 50000,
+  } as any;
+  global.SYMMETRIC_ED25519_OPTIONS = {
+    salt: "my-salt",
+  } as any;
   // General
   global.BASE_PUBLIC_KEY = CONSTANTS.BASE_PUBLIC_KEY
   global.BASE_PRIVATE_KEY = CONSTANTS.BASE_PRIVATE_KEY

@@ -1,6 +1,6 @@
-import { Context, DEFAULT_SIGNATURE_ENCODING, SignParams } from '../../../models'
+import { Context, DEFAULT_SIGNATURE_ENCODING, ErrorType, SignParams } from '../../../models'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType, ServiceError } from '../../../helpers'
+import { assertValidChainType, isNullOrEmpty, ServiceError } from '../../../helpers'
 import { decryptPrivateKeys } from './cryptoHelpers'
 
 /**
@@ -24,6 +24,10 @@ export async function signResolver(params: SignParams, context: Context): Promis
   const { logger } = context
   const signatures: string[] = []
 
+  if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(password)) {
+    const msg = `Invalid password provided to decrypt private keys symmetrically.`
+    throw new ServiceError(msg, ErrorType.BadParam, 'signResolver')
+  }
   // extract encrypted keys
   const privateKeys = await decryptPrivateKeys({
     symmetricEncryptedPrivateKeys,
