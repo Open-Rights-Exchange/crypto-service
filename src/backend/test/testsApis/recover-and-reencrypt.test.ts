@@ -199,5 +199,4 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
         done()
       })
   })
-  // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
 })

@@ -146,5 +146,4 @@ describe('Test api /generate-keys endpoint', () => {
         done()
       })
   })
-  // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
 })

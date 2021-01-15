@@ -187,5 +187,4 @@ describe('Test api /encrypt endpoint', () => {
         done()
       })
   })
-  // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
 })

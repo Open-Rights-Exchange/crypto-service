@@ -58,8 +58,6 @@ describe('Test api /sign endpoint', () => {
     const encryptedPrivateKey = [
       Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
     ]
-    // Use Symmetrically encrypted private keys
-    // signParams.symmetricEncryptedPrivateKeys = [chain.encryptWithPassword(privateKey, myPassword, symmetricAesOptions)]
     // Use Asymmetrically encrypted private keys
     signParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
       apiUrl,
@@ -195,5 +193,4 @@ describe('Test api /sign endpoint', () => {
         done()
       })
   })
-  // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
 })
