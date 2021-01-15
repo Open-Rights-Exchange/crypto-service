@@ -1,4 +1,4 @@
-import { AsymmetricEncryptedString, Context, EncryptParams, SymmetricEncryptedString } from '../../../models'
+import { AsymmetricEncryptedString, Context, EncryptParams, ErrorType, SymmetricEncryptedString } from '../../../models'
 import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
 import { assertValidChainType, isNullOrEmpty } from '../../../helpers'
@@ -24,6 +24,11 @@ export async function encryptResolver(
   const chainConnect = await getChain(params?.chainType, context)
   let asymmetricEncryptedString: AsymmetricEncryptedString
   let symmetricEncryptedString: SymmetricEncryptedString
+
+  if (!isNullOrEmpty(params?.symmetricOptions) && isNullOrEmpty(params?.password)) {
+    const msg = `Password is required to encrypt.`
+    throw new ServiceError(msg, ErrorType.BadParam, 'encryptResolver')
+  }
 
   const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(
     params?.symmetricOptions,

@@ -2,6 +2,7 @@ import {
   AsymmetricEncryptedString,
   ChainType,
   Context,
+  ErrorType,
   RecoverAndReencryptResolverParams,
   SymmetricEncryptedString,
 } from '../../../models'
@@ -41,6 +42,10 @@ export async function recoverAndReencryptResolver(
   const chainConnectNoChain = await getChain(ChainType.NoChain, context)
   const { logger } = context
 
+  if (!isNullOrEmpty(symmetricOptionsForReencrypt) && isNullOrEmpty(password)) {
+    const msg = `Password is required to re-encrypt.`
+    throw new ServiceError(msg, ErrorType.BadParam, 'recoverAndReencryptResolver')
+  }
   // extract encrypted asym keys (that are encrypted with service's base key)
   const privateKeys = await decryptPrivateKeys({
     asymmetricEncryptedPrivateKeys,

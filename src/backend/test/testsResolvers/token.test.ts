@@ -1,6 +1,6 @@
 import { Request as ExpressRequest } from 'express'
 import { openDB, closeDB, clearDB, initializeDB } from '../helpers'
-import { createContext, decodedAuthToken, requestBodyEmpty, encodedToken1, requestUrl } from '../dataMocks'
+import { createContext, decodedAuthToken1, requestBodyEmpty, encodedToken1, requestUrl } from '../dataMocks'
 import { Mongo } from '../../services/mongo/models'
 import { findMongo } from '../../services/mongo/resolvers'
 import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
@@ -49,7 +49,7 @@ describe('Test token handling and validation', () => {
         requestBody: requestBodyEmpty,
         context,
       })
-      expect(token).toStrictEqual(decodedAuthToken)
+      expect(token).toStrictEqual(decodedAuthToken1)
     })
 
     it('token is already used', async () => {
