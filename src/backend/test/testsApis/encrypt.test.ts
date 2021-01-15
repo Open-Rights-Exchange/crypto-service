@@ -13,9 +13,6 @@ const headers: any = {
   'Content-Type': 'application/json',
   Accept: 'application/json',
 }
-const ethPubKey =
-  '0xc68e0f87e57569a1a053bba68ecde6a55c19d93a3e1ab845be60b2828991b3de30d74a9fdd9602d30434376ef1e922ffdbc61b4ea31a8c8c7427b935337e82d6'
-const ethPrivateKey = '5f8b66eea19b59c7a477142fb7204d762e2d446e98334101e851fd0e1ccff318'
 const apiUrl = `${global.TEST_SERVER_PATH}/encrypt`
 /**
  * Test API Endpoints
@@ -42,12 +39,77 @@ afterAll(async () => {
 describe('Test api /encrypt endpoint', () => {
   jest.setTimeout(10000)
 
-  it('should return 200 & return encrypted string', async done => {
+  it('should return 200 & return asymmetric encrypted string', async done => {
     const encryptParams = {
       chainType: 'ethereum',
       toEncrypt: 'encrypt-this-string',
       asymmetricOptions: {
-        publicKeys: [ethPubKey],
+        publicKeys: [global.ETH_PUB_KEY],
+      },
+    }
+    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    headers['auth-token'] = authToken
+
+    // results are encrypted with our public key, so we can decrypt it with the matching private key
+    const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
+
+    supertest(server)
+      .post('/encrypt')
+      .set(headers)
+      .send(encryptParams)
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(async (err, res) => {
+        if (err) return done(err)
+        const encryptedString = JSON.parse(res.body.asymmetricEncryptedString)[0]
+        const decryptedString = await chain.decryptWithPrivateKey(encryptedString, global.ETH_PPRIVATE_KEY)
+        expect(decryptedString).toMatch('encrypt-this-string')
+        done()
+      })
+  })
+
+  it('should return 200 & return symmetric encrypted string', async done => {
+    const encryptParams = {
+      chainType: 'ethereum',
+      toEncrypt: 'encrypt-this-string',
+      symmetricOptions: global.SYMMETRIC_AES_OPTIONS,
+    }
+    encryptParams.symmetricOptions.passwordAuthToken = await createAuthToken(
+      apiUrl,
+      encryptParams.toEncrypt,
+      global.BASE_PUBLIC_KEY,
+      { password: global.MY_PASSWORD },
+    )
+    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    headers['auth-token'] = authToken
+
+    // results are encrypted with our public key, so we can decrypt it with the matching private key
+    const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
+
+    supertest(server)
+      .post('/encrypt')
+      .set(headers)
+      .send(encryptParams)
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(async (err, res) => {
+        if (err) return done(err)
+        const encryptedString = JSON.parse(res.body.symmetricEncryptedString)
+        const decryptedString = chain.decryptWithPassword(
+          encryptedString,
+          global.MY_PASSWORD,
+          global.SYMMETRIC_AES_OPTIONS,
+        )
+        expect(decryptedString).toMatch('encrypt-this-string')
+        done()
+      })
+  })
+
+  it('should throw an error: api_bad_parameter: toEncrypt', async done => {
+    const encryptParams = {
+      chainType: 'ethereum',
+      asymmetricOptions: {
+        publicKeys: [global.ETH_PUB_KEY],
       },
     }
     const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
@@ -63,10 +125,65 @@ describe('Test api /encrypt endpoint', () => {
       .expect('Content-Type', /json/)
       .expect(200)
       .end(async (err, res) => {
-        if (err) return done(err)
-        const encryptedString = JSON.parse(res.body.asymmetricEncryptedString)[0]
-        const decryptedString = await chain.decryptWithPrivateKey(encryptedString, ethPrivateKey)
-        expect(decryptedString).toMatch('encrypt-this-string')
+        expect(res.body?.errorCode).toMatch('api_bad_parameter')
+        expect(res.body?.errorMessage).toContain('Missing required parameter(s) in request body: toEncrypt')
+        done()
+      })
+  })
+
+  it('should throw an error: api_bad_parameter: asymmetricOptions, symmetricOptions', async done => {
+    const encryptParams = {
+      chainType: 'ethereum',
+      toEncrypt: 'encrypt-this-string',
+    }
+    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    headers['auth-token'] = authToken
+
+    // results are encrypted with our public key, so we can decrypt it with the matching private key
+    const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
+
+    supertest(server)
+      .post('/encrypt')
+      .set(headers)
+      .send({ ...encryptParams })
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(async (err, res) => {
+        expect(res.body?.errorCode).toMatch('api_bad_parameter')
+        expect(res.body?.errorMessage).toContain(
+          'Missing at least one of these parameters in request body: asymmetricOptions, symmetricOptions',
+        )
+        done()
+      })
+  })
+
+  it('should throw an error: api_bad_parameter: missing password', async done => {
+    const encryptParams = {
+      chainType: 'ethereum',
+      toEncrypt: 'encrypt-this-string',
+      symmetricOptions: global.SYMMETRIC_AES_OPTIONS,
+    }
+    encryptParams.symmetricOptions.passwordAuthToken = await createAuthToken(
+      apiUrl,
+      encryptParams.toEncrypt,
+      global.BASE_PUBLIC_KEY,
+      null,
+    )
+    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    headers['auth-token'] = authToken
+
+    // results are encrypted with our public key, so we can decrypt it with the matching private key
+    const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
+
+    supertest(server)
+      .post('/encrypt')
+      .set(headers)
+      .send({ ...encryptParams })
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(async (err, res) => {
+        expect(res.body?.errorCode).toMatch('api_bad_parameter')
+        expect(res.body?.errorMessage).toContain('Password is required to encrypt.')
         done()
       })
   })

@@ -70,5 +70,81 @@ describe('Test api /generate-keys endpoint', () => {
         done()
       })
   })
+
+  it('should return 200 & return 4 generated keys: Check the loop count', async done => {
+    const myPassword = 'my-secure-password'
+    const symmetricAesOptions = {
+      salt: 'my-salt',
+      iter: 50000,
+    }
+    const generateKeyParams: any = {
+      chainType: 'ethereum',
+      symmetricOptions: symmetricAesOptions,
+      keyCount: 4,
+    }
+
+    const passwordAuthToken = await createAuthToken(apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
+    generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
+    const authToken = await createAuthToken(apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
+    headers['auth-token'] = authToken
+    const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
+    supertest(server)
+      .post('/generate-keys')
+      .set(headers)
+      .send({ ...generateKeyParams })
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end((err, res) => {
+        if (err) return done(err)
+        // eslint-disable-next-line no-plusplus
+        for (let a = 0; a < 4; a++) {
+          expect(res.body[a]).toMatchObject({})
+          const encryptedPrivateKey = res.body[a].symmetricEncryptedString
+          const newPrivateKey = chain.decryptWithPassword(encryptedPrivateKey, myPassword, symmetricAesOptions)
+          expect(chain.isValidPublicKey(res.body[0].publicKey).toString()).toMatch('true')
+          expect(chain.isValidPrivateKey(newPrivateKey).toString()).toMatch('true')
+        }
+        done()
+      })
+  })
+
+  it('should return 200 & return generated keys and should contain asym and sym valid options', async done => {
+    const myPassword = 'my-secure-password'
+    const symmetricAesOptions = {
+      salt: 'my-salt',
+      iter: 50000,
+    }
+    const generateKeyParams: any = {
+      chainType: 'ethereum',
+      symmetricOptions: symmetricAesOptions,
+      asymmetricOptions: {
+        publicKeys: [global.ETH_PUB_KEY],
+      },
+      keyCount: 4,
+    }
+
+    const passwordAuthToken = await createAuthToken(apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
+    generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
+    const authToken = await createAuthToken(apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
+    headers['auth-token'] = authToken
+    const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
+    supertest(server)
+      .post('/generate-keys')
+      .set(headers)
+      .send({ ...generateKeyParams })
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(async (err, res) => {
+        if (err) return done(err)
+        const encryptedPrivateKey = res.body[0].symmetricEncryptedString
+        const newPrivateKey = chain.decryptWithPassword(encryptedPrivateKey, myPassword, symmetricAesOptions)
+        const asymEncryptedPrivateKey = JSON.parse(res.body[0].asymmetricEncryptedString)[0]
+        const decryptedPrivateKey = await chain.decryptWithPrivateKey(asymEncryptedPrivateKey, global.ETH_PPRIVATE_KEY)
+        expect(newPrivateKey).toMatch(decryptedPrivateKey)
+        expect(chain.isValidPublicKey(res.body[0].publicKey).toString()).toMatch('true')
+        expect(chain.isValidPrivateKey(newPrivateKey).toString()).toMatch('true')
+        done()
+      })
+  })
   // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
 })

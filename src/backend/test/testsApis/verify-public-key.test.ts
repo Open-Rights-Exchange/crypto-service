@@ -51,5 +51,18 @@ describe('Test api endpoints', () => {
         done()
       })
   })
-  // TODO: Add other API endpoint tests - add sample data to dbmocks as needed
+
+  // eslint-disable-next-line jest/expect-expect
+  it('should throw an error for missign nonce', async done => {
+    supertest(server)
+      .post('/verify-public-key')
+      .send({})
+      .set(headers)
+      .expect('Content-Type', /json/)
+      .expect(400)
+      .end((err, res) => {
+        if (err) return done(err)
+        done()
+      })
+  })
 })
