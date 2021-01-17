@@ -62,7 +62,9 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
     checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
     await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, encrypted, context)
+    const passwordAuthToken = symmetricOptions
+      ? await validatePasswordAuthToken(req, symmetricOptions, encrypted, context)
+      : null
     const password = passwordAuthToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
       { chainType, encrypted, password, symmetricOptions, returnAsymmetricOptions },
@@ -251,7 +253,9 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
     await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, null, context)
+    const passwordAuthToken = symmetricOptions
+      ? await validatePasswordAuthToken(req, symmetricOptions, null, context)
+      : null
     const password = passwordAuthToken?.secrets?.password
     const response = await generateKeysResolver(
       { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
@@ -288,7 +292,9 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
     } = req.body
 
     await validateApiAuthToken(req, context)
-    const passwordAuthToken = await validatePasswordAuthToken(req, symmetricOptions, toSign, context)
+    const passwordAuthToken = symmetricOptions
+      ? await validatePasswordAuthToken(req, symmetricOptions, toSign, context)
+      : null
     const password = passwordAuthToken?.secrets?.password
 
     // extract asymmetricEncryptedPrivateKeys and validate its authToken
