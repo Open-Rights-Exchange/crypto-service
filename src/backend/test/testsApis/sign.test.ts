@@ -31,6 +31,7 @@ const apiUrl = `${global.TEST_SERVER_PATH}/sign`
 // Example: - https://losikov.medium.com/part-4-node-js-express-typescript-unit-tests-with-jest-5204414bf6f0
 
 let server: Server
+const now = new Date()
 
 beforeAll(async () => {
   await openDB('test_cryptoapi')
@@ -60,16 +61,17 @@ describe('Test api /sign endpoint', () => {
     ]
     // Use Asymmetrically encrypted private keys
     signParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
     )
 
-    const passwordAuthToken = await createAuthToken(apiUrl, toSign, global.BASE_PUBLIC_KEY, {
+    const passwordAuthToken = await createAuthToken(now, apiUrl, toSign, global.BASE_PUBLIC_KEY, {
       password: global.MY_PASSWORD,
     })
     signParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-    const authToken = await createAuthToken(apiUrl, signParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, signParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
 
     supertest(server)
@@ -96,16 +98,17 @@ describe('Test api /sign endpoint', () => {
     signParams.chainType = chain.chainType
     const encryptedPrivateKey = [Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.EOS_PRIVATE_KEY)]
     signParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
     )
 
-    const passwordAuthToken = await createAuthToken(apiUrl, toSign, global.BASE_PUBLIC_KEY, {
+    const passwordAuthToken = await createAuthToken(now, apiUrl, toSign, global.BASE_PUBLIC_KEY, {
       password: global.MY_PASSWORD,
     })
     signParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-    const authToken = await createAuthToken(apiUrl, signParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, signParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
 
     supertest(server)
@@ -133,16 +136,17 @@ describe('Test api /sign endpoint', () => {
       Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ETH_PPRIVATE_KEY),
     ]
     signParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
     )
 
-    const passwordAuthToken = await createAuthToken(apiUrl, toSign, global.BASE_PUBLIC_KEY, {
+    const passwordAuthToken = await createAuthToken(now, apiUrl, toSign, global.BASE_PUBLIC_KEY, {
       password: global.MY_PASSWORD,
     })
     signParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-    const authToken = await createAuthToken(apiUrl, signParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, signParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
 
     supertest(server)
@@ -175,9 +179,9 @@ describe('Test api /sign endpoint', () => {
       chain.encryptWithPassword(global.ALGO_PRIVATE_KEY, global.MY_PASSWORD, global.SYMMETRIC_AES_OPTIONS),
     ]
 
-    const passwordAuthToken = await createAuthToken(apiUrl, toSign, global.BASE_PUBLIC_KEY, null)
+    const passwordAuthToken = await createAuthToken(now, apiUrl, toSign, global.BASE_PUBLIC_KEY, null)
     signParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-    const authToken = await createAuthToken(apiUrl, signParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, signParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
 
     supertest(server)
@@ -189,7 +193,9 @@ describe('Test api /sign endpoint', () => {
       .end(async (err, res) => {
         if (err) return done(err)
         expect(res.body?.errorCode).toMatch('api_bad_parameter')
-        expect(res.body?.errorMessage).toContain('Invalid password provided to decrypt private keys symmetrically')
+        expect(res.body?.errorMessage).toContain(
+          'symmetricOptions was provided but password is missing. appId:00000000-0000-0000-0000-0000000000',
+        )
         done()
       })
   })

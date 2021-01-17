@@ -345,8 +345,8 @@ export async function handleVerifyPublicKey(req: Request, res: Response, next: N
     const response = await verifyPublicKeyResolver({ nonce }, context)
     return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
-    logError(context, error, ErrorSeverity.Critical, funcName)
-    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context)
+    logError(context, error, ErrorSeverity.Info, funcName)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
   }
 }
 
