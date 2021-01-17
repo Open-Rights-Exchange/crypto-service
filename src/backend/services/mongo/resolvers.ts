@@ -73,8 +73,8 @@ export async function aggregateMongo({ context, mongoObject, aggregation }: Aggr
       if (err) {
         handleMongoError({ context, error: err, reject })
       } else {
-        resolve(result)
         clearTimeout(timeout)
+        resolve(result)
       }
     })
   })
@@ -102,7 +102,6 @@ export async function deleteMongo<T>({ filter, context, mongoObject }: DeleteMon
         } else {
           resolve({ success: false, modifiedCount: 0 })
         }
-        clearTimeout(timeout)
       }
     })
   })
@@ -315,6 +314,7 @@ export async function updateMongo({
         clearTimeout(timeout)
       })
       .catch((error: Error) => {
+        clearTimeout(timeout)
         logger?.error('There was an error updating the object (updateMongo)', error)
         handleMongoError({ context, error, reject })
       })
@@ -362,6 +362,7 @@ export async function upsertMongo<T>({
     const recordToUpdateIdFilter = newItem._id ? { _id: newItem._id } : { _id: createGuid() } // if new record doesn't have an id, generate a guid
 
     const afterUpdate = (response: any) => {
+      clearTimeout(timeout)
       logger?.trace('upsertMongo new upserted record', { newItem })
       const newRecordId = response.upserted && response.upserted.length > 0 ? response.upserted[0]._id : null
       const returnVals: ResultRecord<T> = { success: response.ok, modifiedCount: response.nModified, _id: newRecordId }
