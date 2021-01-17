@@ -22,6 +22,7 @@ const apiUrl = `${global.TEST_SERVER_PATH}/encrypt`
 // Example: - https://losikov.medium.com/part-4-node-js-express-typescript-unit-tests-with-jest-5204414bf6f0
 
 let server: Server
+const now = new Date()
 
 beforeAll(async () => {
   await openDB('test_cryptoapi')
@@ -47,7 +48,7 @@ describe('Test api /encrypt endpoint', () => {
         publicKeys: [global.ETH_PUB_KEY],
       },
     }
-    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    const authToken = await createAuthToken(now, apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
     headers['auth-token'] = authToken
 
     // results are encrypted with our public key, so we can decrypt it with the matching private key
@@ -75,12 +76,13 @@ describe('Test api /encrypt endpoint', () => {
       symmetricOptions: global.SYMMETRIC_AES_OPTIONS,
     }
     encryptParams.symmetricOptions.passwordAuthToken = await createAuthToken(
+      now,
       apiUrl,
       encryptParams.toEncrypt,
       global.BASE_PUBLIC_KEY,
       { password: global.MY_PASSWORD },
     )
-    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    const authToken = await createAuthToken(now, apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
     headers['auth-token'] = authToken
 
     // results are encrypted with our public key, so we can decrypt it with the matching private key
@@ -112,7 +114,7 @@ describe('Test api /encrypt endpoint', () => {
         publicKeys: [global.ETH_PUB_KEY],
       },
     }
-    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    const authToken = await createAuthToken(now, apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
     headers['auth-token'] = authToken
 
     // results are encrypted with our public key, so we can decrypt it with the matching private key
@@ -136,7 +138,7 @@ describe('Test api /encrypt endpoint', () => {
       chainType: 'ethereum',
       toEncrypt: 'encrypt-this-string',
     }
-    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    const authToken = await createAuthToken(now, apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
     headers['auth-token'] = authToken
 
     // results are encrypted with our public key, so we can decrypt it with the matching private key
@@ -164,12 +166,13 @@ describe('Test api /encrypt endpoint', () => {
       symmetricOptions: global.SYMMETRIC_AES_OPTIONS,
     }
     encryptParams.symmetricOptions.passwordAuthToken = await createAuthToken(
+      now,
       apiUrl,
       encryptParams.toEncrypt,
       global.BASE_PUBLIC_KEY,
       null,
     )
-    const authToken = await createAuthToken(apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
+    const authToken = await createAuthToken(now, apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
     headers['auth-token'] = authToken
 
     // results are encrypted with our public key, so we can decrypt it with the matching private key

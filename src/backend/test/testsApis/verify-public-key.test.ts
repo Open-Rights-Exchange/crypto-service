@@ -53,7 +53,7 @@ describe('Test api endpoints', () => {
   })
 
   // eslint-disable-next-line jest/expect-expect
-  it('should throw an error for missign nonce', async done => {
+  it('should throw an error for missing nonce', async done => {
     supertest(server)
       .post('/verify-public-key')
       .send({})
@@ -61,8 +61,9 @@ describe('Test api endpoints', () => {
       .expect('Content-Type', /json/)
       .expect(400)
       .end((err, res) => {
-        if (err) return done(err)
-        done()
+        expect(res.body?.errorCode).toMatch('api_bad_parameter')
+        expect(res.body?.errorMessage).toContain('Missing required parameter(s) in request body: nonce')
+        done(err)
       })
   })
 })
