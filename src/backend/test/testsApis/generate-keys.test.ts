@@ -22,6 +22,7 @@ const apiUrl = `${global.TEST_SERVER_PATH}/generate-keys`
 // Example: - https://losikov.medium.com/part-4-node-js-express-typescript-unit-tests-with-jest-5204414bf6f0
 
 let server: Server
+const now = new Date()
 
 beforeAll(async () => {
   await openDB('test_cryptoapi')
@@ -50,9 +51,9 @@ describe('Test api /generate-keys endpoint', () => {
       symmetricOptions: symmetricAesOptions,
     }
 
-    const passwordAuthToken = await createAuthToken(apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
+    const passwordAuthToken = await createAuthToken(now, apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
     generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-    const authToken = await createAuthToken(apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
     const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
     supertest(server)
@@ -83,9 +84,9 @@ describe('Test api /generate-keys endpoint', () => {
       keyCount: 4,
     }
 
-    const passwordAuthToken = await createAuthToken(apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
+    const passwordAuthToken = await createAuthToken(now, apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
     generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-    const authToken = await createAuthToken(apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
     const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
     supertest(server)
@@ -123,9 +124,9 @@ describe('Test api /generate-keys endpoint', () => {
       keyCount: 4,
     }
 
-    const passwordAuthToken = await createAuthToken(apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
+    const passwordAuthToken = await createAuthToken(now, apiUrl, null, global.BASE_PUBLIC_KEY, { password: myPassword })
     generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-    const authToken = await createAuthToken(apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, generateKeyParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
     const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
     supertest(server)
