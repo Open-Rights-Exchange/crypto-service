@@ -25,7 +25,7 @@ export async function signResolver(params: SignParams, context: Context): Promis
   const signatures: string[] = []
 
   if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(password)) {
-    const msg = `Invalid password provided to decrypt private keys symmetrically.`
+    const msg = `symmetricOptions was provided but password is missing.`
     throw new ServiceError(msg, ErrorType.BadParam, 'signResolver')
   }
   // extract encrypted keys
