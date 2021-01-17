@@ -109,7 +109,7 @@ export async function validateAuthTokenAndExtractContents(
   }
 
   // VERIFY: payloadHash matches hash of request body
-  if (!isNullOrEmpty(requestBody)) {
+  if (!isNullOrEmpty(payloadHash)) {
     const body = JSON.stringify(requestBody || '')
     const hashOfBody = createSha256Hash(body)
     if (hashOfBody !== payloadHash) {
