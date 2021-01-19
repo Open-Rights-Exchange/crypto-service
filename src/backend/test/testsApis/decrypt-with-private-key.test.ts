@@ -90,13 +90,6 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
   it('asymmetricEncryptedPrivateKeys: should return 200 & decrypted string encrypted with symmetric options', async done => {
     const decryptWPrivateKeyParams: any = {
       chainType: 'algorand',
-      symmetricOptionsForEncryptedPrivateKeys: global.SYMMETRIC_ED25519_OPTIONS,
-      returnAsymmetricOptions: {
-        publicKeys: [global.ALGO_PUB_KEY],
-      },
-    }
-    const decryptWPrivateKeyParamsNew: any = {
-      chainType: 'algorand',
       // symmetricOptionsForEncryptedPrivateKeys: global.SYMMETRIC_ED25519_OPTIONS,
       returnAsymmetricOptions: {
         publicKeys: [global.ALGO_PUB_KEY],
@@ -106,20 +99,20 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     const encryptedPrivateKey = [
       Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
     ]
-    decryptWPrivateKeyParamsNew.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+    decryptWPrivateKeyParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
     )
     // encrypt a payload using our associated public key
     const encrypted = await chain.encryptWithPublicKey(stringToEncrypt, global.ALGO_PUB_KEY)
-    decryptWPrivateKeyParamsNew.encrypted = encrypted
-    headers['auth-token'] = await createAuthToken(apiUrl, decryptWPrivateKeyParamsNew, global.BASE_PUBLIC_KEY)
+    decryptWPrivateKeyParams.encrypted = encrypted
+    headers['auth-token'] = await createAuthToken(apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
 
     supertest(server)
       .post('/decrypt-with-private-keys')
       .set(headers)
-      .send(decryptWPrivateKeyParamsNew)
+      .send(decryptWPrivateKeyParams)
       .expect('Content-Type', /json/)
       .expect(200)
       .end(async (err, res) => {
