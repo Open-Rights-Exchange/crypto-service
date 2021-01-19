@@ -30,6 +30,7 @@ const apiUrl = `${global.TEST_SERVER_PATH}/recover-and-reencrypt`
 // Example: - https://losikov.medium.com/part-4-node-js-express-typescript-unit-tests-with-jest-5204414bf6f0
 
 let server: Server
+const now = new Date()
 
 beforeAll(async () => {
   await openDB('test_cryptoapi')
@@ -61,6 +62,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     const privateKeyToRecover = await chain.encryptWithPublicKey(prviateKeyToEncrypt, global.ALGO_PUB_KEY)
     // wrap the encrypted payload with an authToken that governs how the service can use the payload
     recoverAndReencryptParams.encryptedAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       privateKeyToRecover,
       global.BASE_PUBLIC_KEY,
@@ -69,13 +71,14 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     const encryptedPrivateKey = Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY)
     // wrap the encrypted keys with an authToken
     recoverAndReencryptParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
     )
 
     // create api auth token
-    const authToken = await createAuthToken(apiUrl, recoverAndReencryptParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, recoverAndReencryptParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
 
     supertest(server)
@@ -108,6 +111,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
 
     // wrap the encrypted payload with an authToken that governs how the service can use the payload
     recoverAndReencryptParams.encryptedAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       privateKeyToRecover,
       global.BASE_PUBLIC_KEY,
@@ -116,6 +120,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     const encryptedPrivateKey = Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY)
 
     recoverAndReencryptParams.symmetricOptionsForReencrypt.passwordAuthToken = await createAuthToken(
+      now,
       apiUrl,
       privateKeyToRecover,
       global.BASE_PUBLIC_KEY,
@@ -123,13 +128,14 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     )
     // wrap the encrypted keys with an authToken
     recoverAndReencryptParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
     )
 
     // create api auth token
-    const authToken = await createAuthToken(apiUrl, recoverAndReencryptParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, recoverAndReencryptParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
 
     supertest(server)
@@ -163,6 +169,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
 
     // wrap the encrypted payload with an authToken that governs how the service can use the payload
     recoverAndReencryptParams.encryptedAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       privateKeyToRecover,
       global.BASE_PUBLIC_KEY,
@@ -171,6 +178,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     const encryptedPrivateKey = Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY)
 
     recoverAndReencryptParams.symmetricOptionsForReencrypt.passwordAuthToken = await createAuthToken(
+      now,
       apiUrl,
       privateKeyToRecover,
       global.BASE_PUBLIC_KEY,
@@ -178,13 +186,14 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     )
     // wrap the encrypted keys with an authToken
     recoverAndReencryptParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
     )
 
     // create api auth token
-    const authToken = await createAuthToken(apiUrl, recoverAndReencryptParams, global.BASE_PUBLIC_KEY)
+    const authToken = await createAuthToken(now, apiUrl, recoverAndReencryptParams, global.BASE_PUBLIC_KEY)
     headers['auth-token'] = authToken
 
     supertest(server)

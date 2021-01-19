@@ -104,12 +104,14 @@ export async function validateAuthTokenAndExtractContents(
   // TODO: confirm validToDate is not too far in future - i.e. <= AUTH_TOKEN_MAX_EXPIRATION_IN_SECONDS
 
   if (!isValidNow) {
-    const msg = `Auth Token has expired or is not valid at the current time: ${context.requestDateTime}.`
+    const msg = `Auth Token has expired on ${new Date(validToDate)} or is not valid at the current time: ${
+      context.requestDateTime
+    }.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
   // VERIFY: payloadHash matches hash of request body
-  if (!isNullOrEmpty(requestBody)) {
+  if (payloadHash) {
     const body = JSON.stringify(requestBody || '')
     const hashOfBody = createSha256Hash(body)
     if (hashOfBody !== payloadHash) {

@@ -11,6 +11,8 @@ const DEFAULT_TOKEN_EXPIRE_IN_SECONDS = 120 // 2 mins
  *  if dontEncryptToken = true, the token is returned as a JSON object (not encypted and encoded)
  */
 export async function createAuthToken(
+  /** the date/time for the test - not the current date */
+  currentTime: Date,
   url: string,
   payloadBody: any,
   publicKey: string,
@@ -23,8 +25,8 @@ export async function createAuthToken(
   const token = {
     url,
     payloadHash,
-    validFrom: now,
-    validTo: new Date(now.getTime() + 1000 * DEFAULT_TOKEN_EXPIRE_IN_SECONDS),
+    validFrom: currentTime,
+    validTo: new Date(currentTime.getTime() + 1000 * DEFAULT_TOKEN_EXPIRE_IN_SECONDS),
     secrets: secrets || {},
   }
 
@@ -41,13 +43,14 @@ export async function createAuthToken(
  *  The contents are stringified, encrypted (with the server's publicKey), then that encrypted string is base64 encoded
  */
 export async function createEncryptedAndAuthToken(
+  currentTime: Date,
   url: string,
   encrypted: any,
   servicePublicKey: string,
   secrets?: any,
   returnRawAuthToken = false,
 ) {
-  const encryptedPayloadAuthToken = await createAuthToken(url, encrypted, servicePublicKey, secrets, true)
+  const encryptedPayloadAuthToken = await createAuthToken(currentTime, url, encrypted, servicePublicKey, secrets, true)
   const encryptedAndAuthTokenString = JSON.stringify({ encrypted, authToken: encryptedPayloadAuthToken })
   const encryptedToken = Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, encryptedAndAuthTokenString)
   return Base64.encode(JSON.stringify(encryptedToken))

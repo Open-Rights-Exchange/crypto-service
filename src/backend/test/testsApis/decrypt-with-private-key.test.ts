@@ -32,6 +32,7 @@ const apiUrl = `${global.TEST_SERVER_PATH}/decrypt-with-private-keys`
 // Example: - https://losikov.medium.com/part-4-node-js-express-typescript-unit-tests-with-jest-5204414bf6f0
 
 let server: Server
+const now = new Date()
 
 beforeAll(async () => {
   await openDB('test_cryptoapi')
@@ -48,7 +49,6 @@ afterAll(async () => {
 
 describe('Test api /decrypt-with-private-key endpoint', () => {
   jest.setTimeout(10000)
-
   it('symmetricEncryptedPrivateKeys: should return 200 & return encrypted string encrypted with private key', async done => {
     const decryptWPrivateKeyParams: any = {
       chainType: 'algorand',
@@ -65,11 +65,11 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     const encrypted = await chain.encryptWithPublicKey(stringToEncrypt, global.ALGO_PUB_KEY)
     decryptWPrivateKeyParams.encrypted = encrypted
 
-    const passwordAuthToken = await createAuthToken(apiUrl, encrypted, global.BASE_PUBLIC_KEY, {
+    const passwordAuthToken = await createAuthToken(now, apiUrl, encrypted, global.BASE_PUBLIC_KEY, {
       password: global.MY_PASSWORD,
     })
     decryptWPrivateKeyParams.symmetricOptionsForEncryptedPrivateKeys.passwordAuthToken = passwordAuthToken
-    headers['auth-token'] = await createAuthToken(apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
+    headers['auth-token'] = await createAuthToken(now, apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
 
     supertest(server)
       .post('/decrypt-with-private-keys')
@@ -100,6 +100,7 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
       Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
     ]
     decryptWPrivateKeyParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
@@ -107,7 +108,7 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     // encrypt a payload using our associated public key
     const encrypted = await chain.encryptWithPublicKey(stringToEncrypt, global.ALGO_PUB_KEY)
     decryptWPrivateKeyParams.encrypted = encrypted
-    headers['auth-token'] = await createAuthToken(apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
+    headers['auth-token'] = await createAuthToken(now, apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
 
     supertest(server)
       .post('/decrypt-with-private-keys')
@@ -135,6 +136,7 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
       Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
     ]
     decryptWPrivateKeyParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(
+      now,
       apiUrl,
       encryptedPrivateKey,
       global.BASE_PUBLIC_KEY,
@@ -142,7 +144,7 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     // encrypt a payload using our associated public key
     const encrypted = await chain.encryptWithPublicKey(stringToEncrypt, global.ALGO_PUB_KEY)
     decryptWPrivateKeyParams.encrypted = encrypted
-    headers['auth-token'] = await createAuthToken(apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
+    headers['auth-token'] = await createAuthToken(now, apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
 
     supertest(server)
       .post('/decrypt-with-private-keys')
@@ -174,9 +176,9 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     decryptWPrivateKeyParams.encrypted = encrypted
 
     // not sending a password here
-    const passwordAuthToken = await createAuthToken(apiUrl, encrypted, global.BASE_PUBLIC_KEY, {})
+    const passwordAuthToken = await createAuthToken(now, apiUrl, encrypted, global.BASE_PUBLIC_KEY, {})
     decryptWPrivateKeyParams.symmetricOptionsForEncryptedPrivateKeys.passwordAuthToken = passwordAuthToken
-    headers['auth-token'] = await createAuthToken(apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
+    headers['auth-token'] = await createAuthToken(now, apiUrl, decryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
 
     supertest(server)
       .post('/decrypt-with-private-keys')
@@ -210,11 +212,11 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     newdecryptWPrivateKeyParams.encrypted = encrypted
 
     // not sending a password here
-    const passwordAuthToken = await createAuthToken(apiUrl, encrypted, global.BASE_PUBLIC_KEY, {
+    const passwordAuthToken = await createAuthToken(now, apiUrl, encrypted, global.BASE_PUBLIC_KEY, {
       password: global.MY_PASSWORD,
     })
     newdecryptWPrivateKeyParams.symmetricOptionsForEncryptedPrivateKeys.passwordAuthToken = passwordAuthToken
-    headers['auth-token'] = await createAuthToken(apiUrl, newdecryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
+    headers['auth-token'] = await createAuthToken(now, apiUrl, newdecryptWPrivateKeyParams, global.BASE_PUBLIC_KEY)
 
     supertest(server)
       .post('/decrypt-with-private-keys')
