@@ -133,9 +133,9 @@ async function decryptWithPrivateKey( stringToEncrypt: string ) {
   const decryptWPrivateKeyParams: any = {
     chainType: "algorand",
     symmetricOptionsForEncryptedPrivateKeys: symmetricEd25519Options,
-    returnAsymmetricOptions: {
+    returnAsymmetricOptions: [{
       "publicKeys" : [ algoPubKey ]
-    }
+    }]
   }
   // -- Option 1: encrypt our private key symmetrically (using our password)
   // decryptWPrivateKeyParams.symmetricEncryptedPrivateKeys = [chain.encryptWithPassword(algoPrivateKey, myPassword, symmetricAesOptions)]
@@ -155,7 +155,7 @@ async function decryptWithPrivateKey( stringToEncrypt: string ) {
   const { data } = await axios.post(apiUrl, decryptWPrivateKeyParams, { headers } );
   console.log('data:', data)
   // results are encrypted with our public key, so we can decrypt it with the matching private key
-  const encryptedString = algoChain.toAsymEncryptedDataString(JSON.stringify(JSON.parse(data.asymmetricEncryptedString)[0]))
+  const encryptedString = algoChain.toAsymEncryptedDataString(JSON.stringify(JSON.parse(data.asymmetricEncryptedStrings[0])[0]))
   const decryptedString = await algoChain.decryptWithPrivateKey( encryptedString, algoPrivateKey );
   console.log("Decrypted string:", decryptedString);
 }
@@ -173,9 +173,9 @@ async function recoverAndReencrypt( prviateKeyToEncrypt: string ) {
   const recoverAndReencryptParams: any = {
     chainType: "algorand",
     symmetricOptionsForReencrypt: symmetricEd25519Options,
-    asymmetricOptionsForReencrypt: {
+    asymmetricOptionsForReencrypt: [{
       "publicKeys" : [ algoPubKey ]
-    }
+    }]
   }
 
   // encrypt a payload using our public key - in this example, its a private key we've 'backed-up'
@@ -200,7 +200,7 @@ async function recoverAndReencrypt( prviateKeyToEncrypt: string ) {
   console.log('response from api/recover-and-reencrypt:', data)
 
   // newly encrypted results are encrypted with our public key, so we can decrypt it with the matching private key
-  const encryptedString = algoChain.toAsymEncryptedDataString(JSON.stringify(JSON.parse(data.asymmetricEncryptedString)[0]))
+  const encryptedString = algoChain.toAsymEncryptedDataString(JSON.stringify(JSON.parse(data.asymmetricEncryptedStrings[0])[0]))
   const decryptedString = await algoChain.decryptWithPrivateKey( encryptedString, algoPrivateKey );
   const symDecryptedString = algoChain.decryptWithPassword(data.symmetricEncryptedString, myPassword, symmetricEd25519Options)
   console.log("Decrypted string:", decryptedString);

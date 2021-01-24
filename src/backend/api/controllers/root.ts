@@ -61,6 +61,7 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
     globalLogger.trace('called handleDecryptWithPassword')
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
+    ensureIsArrayIfParamExists(req, ['returnAsymmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
     await validateApiAuthToken(req, context)
     const passwordAuthToken = symmetricOptions
@@ -93,6 +94,7 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
       ['asymmetricEncryptedPrivateKeysAndAuthToken', 'symmetricEncryptedPrivateKeys'],
       funcName,
     )
+    ensureIsArrayIfParamExists(req, ['returnAsymmetricOptions'], funcName)
     const {
       chainType,
       encrypted,
@@ -150,6 +152,7 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
     checkBodyForRequiredValues(req, ['chainType', 'asymmetricEncryptedPrivateKeysAndAuthToken'], funcName)
     checkBodyForOnlyOneOfValues(req, ['encrypted', 'encryptedAndAuthToken'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['symmetricOptionsForReencrypt', 'asymmetricOptionsForReencrypt'], funcName)
+    ensureIsArrayIfParamExists(req, ['asymmetricOptionsForReencrypt'], funcName)
 
     const {
       chainType,

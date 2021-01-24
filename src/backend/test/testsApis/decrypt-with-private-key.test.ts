@@ -53,9 +53,11 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     const decryptWPrivateKeyParams: any = {
       chainType: 'algorand',
       symmetricOptionsForEncryptedPrivateKeys: global.SYMMETRIC_ED25519_OPTIONS,
-      returnAsymmetricOptions: {
-        publicKeys: [global.ALGO_PUB_KEY],
-      },
+      returnAsymmetricOptions: [
+        {
+          publicKeys: [global.ALGO_PUB_KEY],
+        },
+      ],
     }
     // encrypt our private key symmetrically (using our password)
     decryptWPrivateKeyParams.symmetricEncryptedPrivateKeys = [
@@ -80,7 +82,7 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
       .end(async (err, res) => {
         if (err) return done(err)
         const encryptedString = chain.toAsymEncryptedDataString(
-          JSON.stringify(JSON.parse(res.body.asymmetricEncryptedString)[0]),
+          JSON.stringify(JSON.parse(res.body.asymmetricEncryptedStrings[0])[0]),
         )
         const decryptedString = await chain.decryptWithPrivateKey(encryptedString, global.ALGO_PRIVATE_KEY)
         expect(decryptedString).toMatch(stringToEncrypt)
@@ -91,9 +93,11 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
     const decryptWPrivateKeyParams: any = {
       chainType: 'algorand',
       // symmetricOptionsForEncryptedPrivateKeys: global.SYMMETRIC_ED25519_OPTIONS,
-      returnAsymmetricOptions: {
-        publicKeys: [global.ALGO_PUB_KEY],
-      },
+      returnAsymmetricOptions: [
+        {
+          publicKeys: [global.ALGO_PUB_KEY],
+        },
+      ],
     }
     // encrypt our private key symmetrically (using our password)
     const encryptedPrivateKey = [
@@ -119,7 +123,7 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
       .end(async (err, res) => {
         if (err) return done(err)
         const encryptedString = chain.toAsymEncryptedDataString(
-          JSON.stringify(JSON.parse(res.body.asymmetricEncryptedString)[0]),
+          JSON.stringify(JSON.parse(res.body.asymmetricEncryptedStrings[0])[0]),
         )
         const decryptedString = await chain.decryptWithPrivateKey(encryptedString, global.ALGO_PRIVATE_KEY)
         expect(decryptedString).toMatch(stringToEncrypt)
