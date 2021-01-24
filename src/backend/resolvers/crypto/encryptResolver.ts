@@ -20,29 +20,26 @@ export async function encryptResolver(
   symmetricEncryptedString: SymmetricEncryptedString
   asymmetricEncryptedString: AsymmetricEncryptedString
 }> {
-  assertValidChainType(params?.chainType)
-  const chainConnect = await getChain(params?.chainType, context)
+  const { asymmetricOptions, chainType, password, symmetricOptions, toEncrypt } = params
+  assertValidChainType(chainType)
+  const chainConnect = await getChain(chainType, context)
   let asymmetricEncryptedString: AsymmetricEncryptedString
   let symmetricEncryptedString: SymmetricEncryptedString
 
-  if (!isNullOrEmpty(params?.symmetricOptions) && isNullOrEmpty(params?.password)) {
+  if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(password)) {
     const msg = `Password is required to encrypt.`
     throw new ServiceError(msg, ErrorType.BadParam, 'encryptResolver')
   }
 
-  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(
-    params?.symmetricOptions,
-    context,
-  )
-  const { publicKeys } = params?.asymmetricOptions || {}
+  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
+  const { publicKeys } = asymmetricOptions || {}
   const shouldEncryptAsym = !isNullOrEmpty(publicKeys)
-  const { password } = params
   const shouldEncryptSym = !isNullOrEmpty(password)
 
   // Encrypt symmetrically with password
   if (shouldEncryptSym) {
     const encryptedPrivateKey = await encryptSymmetrically(chainConnect, {
-      unencrypted: params?.toEncrypt,
+      unencrypted: toEncrypt,
       password,
       options: symmetricEccOptions || symmetricEd25519Options,
     })
@@ -50,9 +47,9 @@ export async function encryptResolver(
   }
   // Encrypt asymmetrically with publicKey(s)
   if (shouldEncryptAsym) {
-    const options = mapAsymmetricOptionsParam(params?.asymmetricOptions)
+    const options = mapAsymmetricOptionsParam(asymmetricOptions)
     const encryptedPrivateKey = await encryptAsymmetrically(chainConnect, {
-      unencrypted: params?.toEncrypt,
+      unencrypted: toEncrypt,
       publicKeys,
       ...options,
     })
