@@ -91,10 +91,10 @@ export type EncryptParams = {
   chainType: ChainType
   /** value to encrypt */
   toEncrypt: string
-  asymmetricOptions?: AsymmetricOptions
+  asymmetricOptions?: AsymmetricOptions[]
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
   /** password used to encrypt symmetrically */
-  password: string
+  password?: string
 }
 
 export type GenerateKeysParams = {
@@ -102,7 +102,7 @@ export type GenerateKeysParams = {
   chainType: ChainType
   /** number of keys to generate - default is 1 */
   keyCount?: number
-  asymmetricOptions?: AsymmetricOptions
+  asymmetricOptions?: AsymmetricOptions[]
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
   /** password used to encrypt symmetrically */
   password: string

@@ -16,7 +16,7 @@ require("dotenv").config();
 // address of a service you trust
 const serviceUrl = "https://api.crypto-service.io";
 // a well-known public key of the serivce you trust
-const servicePublicKey = "042e438c99bd7ded27ed921919e1d5ee1d9b1528bb8a2f6c974362ad1a9ba7a6f59a452a0e4dfbc178ab5c5c090506bd7f0a6659fd3cf0cc769d6c17216d414163";
+const servicePublicKey = "0478abef41d3827ae774917e82019e950f3dc41f2ac13e6671aab10dcae9b7b5cbdcfd6be2a7f84830fd0686ce0c855076091f91b102b6dbf9e29162c424c2595c";
 
 // // Localhost
 // const serviceUrl = "http://localhost:8080";
@@ -65,9 +65,9 @@ async function generateKeys( chainJs: Chain ) {
   const generateKeyParams = {
     chainType: chainJs.chainType,
     symmetricOptions: symmetricAesOptions,
-    asymmetricOptions: {
+    asymmetricOptions: [{
       "publicKeys" : [ ethPubKey ]
-    },
+    }],
   };
   const passwordAuthToken = await createAuthToken( apiUrl, null, servicePublicKey, { password: myPassword } )
   generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
@@ -80,7 +80,7 @@ async function generateKeys( chainJs: Chain ) {
   const newPublicKey = data[0].publicKey;
   const encryptedPrivateKey = data[0].symmetricEncryptedString;
   const newPrivateKey = chainJs.decryptWithPassword( encryptedPrivateKey, myPassword, symmetricAesOptions );
-  const asymEncryptedPrivateKey = JSON.parse(data[0].asymmetricEncryptedString)[0];
+  const asymEncryptedPrivateKey = JSON.parse(data[0].asymmetricEncryptedStrings[0])[0];
   const decryptedPrivateKey = await chainJs.decryptWithPrivateKey(asymEncryptedPrivateKey, ethPrivateKey);
   console.log("Decrypted New Public key:", newPublicKey);
   console.log("Decrypted New Private key:", newPrivateKey);
@@ -100,9 +100,9 @@ async function encryptAndDecryptString( stringToEncrypt: string ) {
   const encryptParams = {
     chainType: "ethereum",
     toEncrypt: stringToEncrypt,
-    asymmetricOptions: {
+    asymmetricOptions: [{
       "publicKeys" : [ ethPubKey ]
-    },
+    }],
     symmetricOptions: symmetricAesOptions,
   };
   encryptParams.symmetricOptions.passwordAuthToken = await createAuthToken(apiUrl, stringToEncrypt, servicePublicKey, { password: myPassword })
@@ -113,7 +113,7 @@ async function encryptAndDecryptString( stringToEncrypt: string ) {
   
   // results are encrypted with our public key, so we can decrypt it with the matching private key
   
-  const encryptedString = JSON.parse(data.asymmetricEncryptedString)[0];
+  const encryptedString = JSON.parse(data.asymmetricEncryptedStrings[0])[0];
   const decryptedString = await ethChain.decryptWithPrivateKey( encryptedString, ethPrivateKey );
   console.log("Decrypted string:", decryptedString);
 }

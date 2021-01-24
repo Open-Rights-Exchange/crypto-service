@@ -1,7 +1,7 @@
 import { AsymmetricEncryptedString, Context, EncryptParams, ErrorType, SymmetricEncryptedString } from '../../../models'
 import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType, isNullOrEmpty } from '../../../helpers'
+import { assertValidChainType, asyncForEach, isNullOrEmpty } from '../../../helpers'
 import {
   encryptAsymmetrically,
   encryptSymmetrically,
@@ -18,12 +18,13 @@ export async function encryptResolver(
   context: Context,
 ): Promise<{
   symmetricEncryptedString: SymmetricEncryptedString
-  asymmetricEncryptedString: AsymmetricEncryptedString
+  asymmetricEncryptedStrings: AsymmetricEncryptedString[]
 }> {
-  const { asymmetricOptions, chainType, password, symmetricOptions, toEncrypt } = params
+  const { asymmetricOptions: asymmetricOptionsArray, chainType, password, symmetricOptions, toEncrypt } = params
   assertValidChainType(chainType)
+  // TODO: confirm chainType matches chainType of asymm options publicKeysChainType (if provided) - otherwise assum to be same as chainType param
   const chainConnect = await getChain(chainType, context)
-  let asymmetricEncryptedString: AsymmetricEncryptedString
+  const asymmetricEncryptedStrings: AsymmetricEncryptedString[] = []
   let symmetricEncryptedString: SymmetricEncryptedString
 
   if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(password)) {
@@ -32,29 +33,28 @@ export async function encryptResolver(
   }
 
   const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
-  const { publicKeys } = asymmetricOptions || {}
-  const shouldEncryptAsym = !isNullOrEmpty(publicKeys)
-  const shouldEncryptSym = !isNullOrEmpty(password)
 
   // Encrypt symmetrically with password
-  if (shouldEncryptSym) {
-    const encryptedPrivateKey = await encryptSymmetrically(chainConnect, {
+  if (symmetricOptions) {
+    symmetricEncryptedString = await encryptSymmetrically(chainConnect, {
       unencrypted: toEncrypt,
       password,
       options: symmetricEccOptions || symmetricEd25519Options,
     })
-    symmetricEncryptedString = encryptedPrivateKey
-  }
-  // Encrypt asymmetrically with publicKey(s)
-  if (shouldEncryptAsym) {
-    const options = mapAsymmetricOptionsParam(asymmetricOptions)
-    const encryptedPrivateKey = await encryptAsymmetrically(chainConnect, {
-      unencrypted: toEncrypt,
-      publicKeys,
-      ...options,
-    })
-    asymmetricEncryptedString = encryptedPrivateKey
   }
 
-  return { asymmetricEncryptedString, symmetricEncryptedString }
+  // Encrypt asymmetrically with publicKey(s)
+  if (asymmetricOptionsArray) {
+    await asyncForEach(asymmetricOptionsArray, async (asymmetricOptions: any) => {
+      const options = mapAsymmetricOptionsParam(asymmetricOptions)
+      const encryptedValue = await encryptAsymmetrically(chainConnect, {
+        unencrypted: toEncrypt,
+        publicKeys: asymmetricOptions?.publicKeys,
+        ...options,
+      })
+      asymmetricEncryptedStrings.push(encryptedValue)
+    })
+  }
+
+  return { asymmetricEncryptedStrings, symmetricEncryptedString }
 }

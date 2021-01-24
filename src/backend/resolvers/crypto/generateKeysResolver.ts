@@ -5,7 +5,6 @@ import {
   GenerateKeysParams,
   SymmetricEncryptedString,
 } from '../../../models'
-import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
 import { assertValidChainType } from '../../../helpers'
 import { encryptResolver } from './encryptResolver'
@@ -13,7 +12,7 @@ import { encryptResolver } from './encryptResolver'
 export type GenerateKeyResult = {
   publicKey: PublicKeyCredential
   symmetricEncryptedString: SymmetricEncryptedString
-  asymmetricEncryptedString: AsymmetricEncryptedString
+  asymmetricEncryptedStrings: AsymmetricEncryptedString[]
 }
 
 /**
@@ -31,6 +30,8 @@ export async function generateKeysResolver(params: GenerateKeysParams, context: 
   // key n set of public/private keys - encrypting the private keys
   for (let index = 0; index < count; index += 1) {
     const keys = await chainFunctions.generateKeyPair()
+
+    // Encrypt Symmetrically and/or Asymmetrically
     const encryptParams: EncryptParams = {
       chainType: params?.chainType,
       asymmetricOptions: params?.asymmetricOptions,
@@ -39,12 +40,15 @@ export async function generateKeysResolver(params: GenerateKeysParams, context: 
       toEncrypt: keys?.privateKey,
     }
     // encrypt and add to array for results
-    const { asymmetricEncryptedString, symmetricEncryptedString } = await encryptResolver(encryptParams, context)
+    const { asymmetricEncryptedStrings, symmetricEncryptedString } = await encryptResolver(encryptParams, context)
+
+    // Return result (for each key generated)
     const resultItem: Partial<GenerateKeyResult> = {
       publicKey: keys?.publicKey,
     }
     if (symmetricEncryptedString) resultItem.symmetricEncryptedString = symmetricEncryptedString
-    if (asymmetricEncryptedString) resultItem.asymmetricEncryptedString = asymmetricEncryptedString
+    if (asymmetricEncryptedStrings) resultItem.asymmetricEncryptedStrings = asymmetricEncryptedStrings
+
     results.push(resultItem as GenerateKeyResult)
   }
   return results
