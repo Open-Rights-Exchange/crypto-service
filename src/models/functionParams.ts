@@ -111,6 +111,7 @@ export type GenerateKeysParams = {
 export type EncryptAsymmetricallyParams = {
   unencrypted: string
   publicKeys: PublicKey[]
+  publicKeysChainType?: ChainType
   options?: ModelsCryptoAsymmetric.EciesOptions
 }
 

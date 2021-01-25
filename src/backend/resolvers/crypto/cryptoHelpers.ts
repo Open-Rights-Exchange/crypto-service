@@ -289,15 +289,17 @@ export function assertIsValidAsymEncrypted(encrypted: any, chainConnect?: ChainC
   }
 }
 
+// Note: We dont pass in chainConnect here since we get chain type from options param
 /** Encrypts a string asymmetrically - using one or more publicKeys */
 export async function encryptAsymmetrically(
-  chainConnect: ChainConnection,
   params: EncryptAsymmetricallyParams,
+  basePublicKey: string,
 ): Promise<AsymmetricEncryptedString> {
-  const { options, publicKeys, unencrypted } = params
+  const { options, publicKeys, publicKeysChainType, unencrypted } = params
+  const chainConnect = await getChain(publicKeysChainType, null)
   let { chainFunctions } = chainConnect
-  // if we are encrypting only using the base public key, we use the 'NoChain' functions instead
-  if (!isNullOrEmpty(publicKeys) && publicKeys[0] === chainConnect.context.constants.BASE_PUBLIC_KEY) {
+  // if we are encrypting only using the base public key, we use the 'NoChain' functions
+  if (!isNullOrEmpty(publicKeys) && publicKeys[0] === basePublicKey) {
     const chainConnectNoChain = await getChain(ChainType.NoChain, null)
     chainFunctions = chainConnectNoChain.chainFunctions
   }

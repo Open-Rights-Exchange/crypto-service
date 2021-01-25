@@ -1,4 +1,11 @@
-import { AsymmetricEncryptedString, Context, EncryptParams, ErrorType, SymmetricEncryptedString } from '../../../models'
+import {
+  AsymmetricEncryptedString,
+  AsymmetricOptions,
+  Context,
+  EncryptParams,
+  ErrorType,
+  SymmetricEncryptedString,
+} from '../../../models'
 import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
 import { assertValidChainType, asyncForEach, isNullOrEmpty } from '../../../helpers'
@@ -45,13 +52,18 @@ export async function encryptResolver(
 
   // Encrypt asymmetrically with publicKey(s)
   if (asymmetricOptionsArray) {
-    await asyncForEach(asymmetricOptionsArray, async (asymmetricOptions: any) => {
+    await asyncForEach(asymmetricOptionsArray, async (asymmetricOptions: AsymmetricOptions) => {
       const options = mapAsymmetricOptionsParam(asymmetricOptions)
-      const encryptedValue = await encryptAsymmetrically(chainConnect, {
-        unencrypted: toEncrypt,
-        publicKeys: asymmetricOptions?.publicKeys,
-        ...options,
-      })
+      const encryptedValue = await encryptAsymmetrically(
+        {
+          unencrypted: toEncrypt,
+          publicKeys: asymmetricOptions?.publicKeys,
+          // allow override of chainType via options - default to current chainType
+          publicKeysChainType: asymmetricOptions?.publicKeysChainType || chainType,
+          ...options,
+        },
+        context.constants.BASE_PUBLIC_KEY,
+      )
       asymmetricEncryptedStrings.push(encryptedValue)
     })
   }
