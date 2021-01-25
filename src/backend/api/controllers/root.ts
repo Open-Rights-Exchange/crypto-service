@@ -6,6 +6,7 @@ import {
   checkBodyForOnlyOneOfValues,
   checkBodyForRequiredValues,
   checkHeaderForRequiredValues,
+  ensureIsArrayIfParamExists,
   returnResponse,
   validateApiAuthToken,
   validateEncryptedPayloadAuthToken,
@@ -60,6 +61,7 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
     globalLogger.trace('called handleDecryptWithPassword')
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
+    ensureIsArrayIfParamExists(req, ['returnAsymmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
     await validateApiAuthToken(req, context)
     const passwordAuthToken = symmetricOptions
@@ -92,6 +94,7 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
       ['asymmetricEncryptedPrivateKeysAndAuthToken', 'symmetricEncryptedPrivateKeys'],
       funcName,
     )
+    ensureIsArrayIfParamExists(req, ['returnAsymmetricOptions'], funcName)
     const {
       chainType,
       encrypted,
@@ -149,6 +152,7 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
     checkBodyForRequiredValues(req, ['chainType', 'asymmetricEncryptedPrivateKeysAndAuthToken'], funcName)
     checkBodyForOnlyOneOfValues(req, ['encrypted', 'encryptedAndAuthToken'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['symmetricOptionsForReencrypt', 'asymmetricOptionsForReencrypt'], funcName)
+    ensureIsArrayIfParamExists(req, ['asymmetricOptionsForReencrypt'], funcName)
 
     const {
       chainType,
@@ -222,6 +226,7 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType', 'toEncrypt'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
+    ensureIsArrayIfParamExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
     await validateApiAuthToken(req, context)
@@ -250,6 +255,7 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
     checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
     checkBodyForRequiredValues(req, ['chainType'], funcName)
     checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
+    ensureIsArrayIfParamExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
     await validateApiAuthToken(req, context)
@@ -283,6 +289,7 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       ['asymmetricEncryptedPrivateKeysAndAuthToken', 'symmetricEncryptedPrivateKeys'],
       funcName,
     )
+    ensureIsArrayIfParamExists(req, ['symmetricEncryptedPrivateKeys'], funcName)
     const {
       chainType,
       toSign,
@@ -306,11 +313,8 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
     )
     asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
 
-    if (
-      (asymmetricEncryptedPrivateKeysAndAuthToken && !Array.isArray(asymmetricEncryptedPrivateKeys)) ||
-      (symmetricEncryptedPrivateKeys && !Array.isArray(symmetricEncryptedPrivateKeys))
-    ) {
-      const msg = `Bad parameter(s) in request body. ...EncryptedPrivateKeys parameter(s) must be an array. If only have one value, enclose it in an array i.e. [ ].`
+    if (asymmetricEncryptedPrivateKeysAndAuthToken && !Array.isArray(asymmetricEncryptedPrivateKeys)) {
+      const msg = `Bad parameter(s) in request body. 'encrypted' param (within asymmetricEncryptedPrivateKeysAndAuthToken) must be an array. If only one value, enclose it in an array i.e. [ ].`
       throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
 

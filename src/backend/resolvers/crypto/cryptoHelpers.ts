@@ -11,6 +11,7 @@ import {
   DecryptPrivateKeysParams,
   DecryptSymmetricallyParams,
   EncryptAsymmetricallyParams,
+  EncryptParams,
   EncryptSymmetricallyParams,
   ErrorType,
   PrivateKey,
@@ -22,14 +23,16 @@ import {
 } from '../../../models'
 import { ChainConnection, getChain } from '../../chains/chainConnection'
 import {
-  ensureArray,
   asyncForEach,
-  isNullOrEmpty,
-  convertStringifiedJsonOrObjectToObject,
   convertObjectToStringifiedJson,
+  convertStringifiedJsonOrObjectToObject,
+  ensureArray,
+  getChainTypeFromChainConnect,
+  isNullOrEmpty,
   ServiceError,
 } from '../../../helpers'
 import { getAppConfig } from '../appConfig'
+import { encryptResolver } from './encryptResolver'
 
 export type EncryptReturnValueParams = {
   /** chain/curve used to encrypt */
@@ -37,25 +40,26 @@ export type EncryptReturnValueParams = {
   /** Stringified JSON of encrypted payload - value to decrypt */
   unencrypted: string
   /** (optional) options to re-encrypt result before returning it */
-  returnAsymmetricOptions?: AsymmetricOptions
+  returnAsymmetricOptions?: AsymmetricOptions[]
 }
 
 /** Optionally encrypt value before returning it using returnAsymmetricOptions */
 export async function optionallyEncryptReturnValue(params: EncryptReturnValueParams) {
   const { chainConnect, unencrypted, returnAsymmetricOptions } = params
-  let asymmetricEncryptedString: AsymmetricEncryptedString
+  const { context } = chainConnect
+  let asymmetricEncryptedStrings: AsymmetricEncryptedString[]
   let decryptedResult = unencrypted
-  if (returnAsymmetricOptions?.publicKeys) {
-    const options = mapAsymmetricOptionsParam(returnAsymmetricOptions)
-    asymmetricEncryptedString = await encryptAsymmetrically(chainConnect, {
-      unencrypted,
-      publicKeys: returnAsymmetricOptions?.publicKeys,
-      ...options,
-    })
+  if (!isNullOrEmpty(returnAsymmetricOptions)) {
+    const encryptParams: EncryptParams = {
+      chainType: getChainTypeFromChainConnect(chainConnect),
+      asymmetricOptions: returnAsymmetricOptions,
+      toEncrypt: decryptedResult,
+    }
+    ;({ asymmetricEncryptedStrings } = await encryptResolver(encryptParams, context))
     // dont return result in the clear if we have an encryptedResult
     decryptedResult = null
   }
-  return { decryptedResult, asymmetricEncryptedString }
+  return { decryptedResult, asymmetricEncryptedStrings }
 }
 
 /** Decrypt private keys and return array
@@ -64,7 +68,7 @@ export async function optionallyEncryptReturnValue(params: EncryptReturnValuePar
 export async function decryptPrivateKeys(params: DecryptPrivateKeysParams): Promise<PrivateKey[]> {
   const { symmetricOptions = {}, password, chainConnect } = params
   const { chainFunctions, context } = chainConnect
-  const chainType = getChainTypeFromChain(chainConnect)
+  const chainType = getChainTypeFromChainConnect(chainConnect)
   const privateKeys: PrivateKey[] = []
 
   const symmetricEncryptedPrivateKeys: SymmetricEncryptedString[] =
@@ -285,15 +289,17 @@ export function assertIsValidAsymEncrypted(encrypted: any, chainConnect?: ChainC
   }
 }
 
+// Note: We dont pass in chainConnect here since we get chain type from options param
 /** Encrypts a string asymmetrically - using one or more publicKeys */
 export async function encryptAsymmetrically(
-  chainConnect: ChainConnection,
   params: EncryptAsymmetricallyParams,
+  basePublicKey: string,
 ): Promise<AsymmetricEncryptedString> {
-  const { options, publicKeys, unencrypted } = params
+  const { options, publicKeys, publicKeysChainType, unencrypted } = params
+  const chainConnect = await getChain(publicKeysChainType, null)
   let { chainFunctions } = chainConnect
-  // if we are encrypting only using the base public key, we use the 'NoChain' functions instead
-  if (!isNullOrEmpty(publicKeys) && publicKeys[0] === chainConnect.context.constants.BASE_PUBLIC_KEY) {
+  // if we are encrypting only using the base public key, we use the 'NoChain' functions
+  if (!isNullOrEmpty(publicKeys) && publicKeys[0] === basePublicKey) {
     const chainConnectNoChain = await getChain(ChainType.NoChain, null)
     chainFunctions = chainConnectNoChain.chainFunctions
   }
@@ -340,11 +346,6 @@ export async function decryptAsymmetrically(
   assertIsValidAsymEncrypted(valueToDecrypt, chainConnect)
   const encryptedString = chainFunctions.toAsymEncryptedDataString(valueToDecrypt)
   return chainFunctions.decryptWithPrivateKeys(encryptedString, privateKeys)
-}
-
-export function getChainTypeFromChain(chainConnect: ChainConnection) {
-  const { chainFunctions } = chainConnect
-  return chainFunctions.chainType
 }
 
 /** Make sure that an asym encrypted object or string is wrapped in an array

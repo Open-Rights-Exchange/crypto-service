@@ -44,9 +44,11 @@ describe('Test api /encrypt endpoint', () => {
     const encryptParams = {
       chainType: 'ethereum',
       toEncrypt: 'encrypt-this-string',
-      asymmetricOptions: {
-        publicKeys: [global.ETH_PUB_KEY],
-      },
+      asymmetricOptions: [
+        {
+          publicKeys: [global.ETH_PUB_KEY],
+        },
+      ],
     }
     const authToken = await createAuthToken(now, apiUrl, encryptParams, global.BASE_PUBLIC_KEY, null)
     headers['auth-token'] = authToken
@@ -62,7 +64,7 @@ describe('Test api /encrypt endpoint', () => {
       .expect(200)
       .end(async (err, res) => {
         if (err) return done(err)
-        const encryptedString = JSON.parse(res.body.asymmetricEncryptedString)[0]
+        const encryptedString = JSON.parse(res.body.asymmetricEncryptedStrings[0])[0]
         const decryptedString = await chain.decryptWithPrivateKey(encryptedString, global.ETH_PPRIVATE_KEY)
         expect(decryptedString).toMatch('encrypt-this-string')
         done()

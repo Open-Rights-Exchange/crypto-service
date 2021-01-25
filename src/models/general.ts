@@ -1,6 +1,6 @@
 import { Analytics } from '../backend/services/segment/resolvers'
 import { Logger } from '../helpers/logger'
-import { PublicKey, SymmetricPassword } from './chain'
+import { ChainType, PublicKey, SymmetricPassword } from './chain'
 
 export interface Lookup {
   [key: string]: any
@@ -75,6 +75,8 @@ export type AuthToken = {
 export type AsymmetricOptions = {
   /** array of public keys - in order to be used for asym encryption wrapping */
   publicKeys: PublicKey[]
+  /** chain type for provided publicKeys - nochain = secp256k1 uncompressed */
+  publicKeysChainType?: ChainType
   /** optional initialization vector */
   iv?: string
   /** any data or secret to be included in encrypted result */

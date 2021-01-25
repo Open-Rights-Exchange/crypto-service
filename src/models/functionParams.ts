@@ -32,7 +32,7 @@ export type DecryptWithPasswordParams = {
   /** Stringified JSON of encrypted payload - value to decrypt */
   encrypted: SymmetricEncryptedString | SymmetricEncryptedData
   /** (optional) options to re-encrypt result before returning it */
-  returnAsymmetricOptions?: AsymmetricOptions
+  returnAsymmetricOptions?: AsymmetricOptions[]
   /** options used to originally encrypt the payload */
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
   /** password used to encrypt symmetrically */
@@ -53,7 +53,7 @@ export type DecryptWithPrivateKeysParams = {
   /** password used to encrypt symmetrically */
   password: string
   /** (optional) options to re-encrypt result before returning it */
-  returnAsymmetricOptions?: AsymmetricOptions
+  returnAsymmetricOptions?: AsymmetricOptions[]
 }
 
 export type RecoverAndReencryptResolverParams = {
@@ -66,7 +66,7 @@ export type RecoverAndReencryptResolverParams = {
   /** (optional) options used to re-encrypt results symmetrically */
   symmetricOptionsForReencrypt?: SymmetricEccOptions | SymmetricEd25519Options
   /** (optional) options used to re-encrypt results asymmetrically */
-  asymmetricOptionsForReencrypt?: AsymmetricOptions
+  asymmetricOptionsForReencrypt?: AsymmetricOptions[]
   /** password used to encrypt symmetrically */
   password: string
 }
@@ -91,10 +91,10 @@ export type EncryptParams = {
   chainType: ChainType
   /** value to encrypt */
   toEncrypt: string
-  asymmetricOptions?: AsymmetricOptions
+  asymmetricOptions?: AsymmetricOptions[]
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
   /** password used to encrypt symmetrically */
-  password: string
+  password?: string
 }
 
 export type GenerateKeysParams = {
@@ -102,7 +102,7 @@ export type GenerateKeysParams = {
   chainType: ChainType
   /** number of keys to generate - default is 1 */
   keyCount?: number
-  asymmetricOptions?: AsymmetricOptions
+  asymmetricOptions?: AsymmetricOptions[]
   symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
   /** password used to encrypt symmetrically */
   password: string
@@ -111,6 +111,7 @@ export type GenerateKeysParams = {
 export type EncryptAsymmetricallyParams = {
   unencrypted: string
   publicKeys: PublicKey[]
+  publicKeysChainType?: ChainType
   options?: ModelsCryptoAsymmetric.EciesOptions
 }
 
