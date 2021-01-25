@@ -2,20 +2,20 @@ import {
   AsymmetricEncryptedString,
   ChainType,
   Context,
+  EncryptParams,
   ErrorType,
   RecoverAndReencryptResolverParams,
   SymmetricEncryptedString,
 } from '../../../models'
-import { assertValidChainType, isNullOrEmpty, ServiceError } from '../../../helpers'
+import { assertValidChainType, getChainTypeFromChainConnect, isNullOrEmpty, ServiceError } from '../../../helpers'
 import { getChain } from '../../chains/chainConnection'
 import {
-  decryptPrivateKeys,
   decryptAsymmetrically,
-  encryptAsymmetrically,
+  decryptPrivateKeys,
   encryptSymmetrically,
-  mapAsymmetricOptionsParam,
   mapSymmetricOptionsParam,
 } from './cryptoHelpers'
+import { encryptResolver } from './encryptResolver'
 
 /**
  *  Decrypts a symmetrically encrypted payload using a password (in the authToken)
@@ -26,7 +26,7 @@ export async function recoverAndReencryptResolver(
   params: RecoverAndReencryptResolverParams,
   context: Context,
 ): Promise<{
-  asymmetricEncryptedString?: AsymmetricEncryptedString
+  asymmetricEncryptedStrings?: AsymmetricEncryptedString[]
   symmetricEncryptedString?: SymmetricEncryptedString
 }> {
   assertValidChainType(params?.chainType)
@@ -41,6 +41,7 @@ export async function recoverAndReencryptResolver(
   const chainConnect = await getChain(chainType, context)
   const chainConnectNoChain = await getChain(ChainType.NoChain, context)
   const { logger } = context
+  let asymmetricEncryptedStrings: AsymmetricEncryptedString[]
 
   if (!isNullOrEmpty(symmetricOptionsForReencrypt) && isNullOrEmpty(password)) {
     const msg = `Password is required to re-encrypt.`
@@ -61,14 +62,13 @@ export async function recoverAndReencryptResolver(
   // Reencrypt for return
 
   // Encrypt asym
-  let asymmetricEncryptedString: AsymmetricEncryptedString
   if (!isNullOrEmpty(asymmetricOptionsForReencrypt)) {
-    const options = mapAsymmetricOptionsParam(asymmetricOptionsForReencrypt)
-    asymmetricEncryptedString = await encryptAsymmetrically(chainConnect, {
-      unencrypted: decrypted,
-      publicKeys: asymmetricOptionsForReencrypt?.publicKeys,
-      ...options,
-    })
+    const encryptParams: EncryptParams = {
+      chainType: getChainTypeFromChainConnect(chainConnect),
+      asymmetricOptions: asymmetricOptionsForReencrypt,
+      toEncrypt: decrypted,
+    }
+    ;({ asymmetricEncryptedStrings } = await encryptResolver(encryptParams, context))
   }
 
   // Encrypt sym
@@ -86,5 +86,5 @@ export async function recoverAndReencryptResolver(
     })
   }
 
-  return { symmetricEncryptedString, asymmetricEncryptedString }
+  return { symmetricEncryptedString, asymmetricEncryptedStrings }
 }

@@ -21,7 +21,7 @@ import { createContext } from './context'
 // ---- Helper functions
 
 /** check the url's query params for each required param in paramNames */
-export function checkForRequiredParams(req: Request, paramNames: any[], funcName: string) {
+export function assertHasRequiredParams(req: Request, paramNames: any[], funcName: string) {
   const missing: any = []
   paramNames.forEach(p => {
     if (isNullOrEmpty(req.query[p])) {
@@ -34,7 +34,7 @@ export function checkForRequiredParams(req: Request, paramNames: any[], funcName
 }
 
 /** check the header of the request for each required param in paramNames */
-export function checkHeaderForRequiredValues(req: Request, paramNames: any[], funcName: string) {
+export function assertHeaderhasRequiredValues(req: Request, paramNames: any[], funcName: string) {
   const missing: any[] = []
   paramNames.forEach(p => {
     if (isNullOrEmpty(req.headers[p])) {
@@ -51,7 +51,7 @@ export function checkHeaderForRequiredValues(req: Request, paramNames: any[], fu
 }
 
 /** check the body of the request for each required param in paramNames */
-export function checkBodyForRequiredValues(req: Request, paramNames: any[], funcName: string) {
+export function assertBodyhasRequiredValues(req: Request, paramNames: any[], funcName: string) {
   const missing: any[] = []
   paramNames.forEach(p => {
     if (isNullOrEmpty(req.body[p])) {
@@ -67,8 +67,24 @@ export function checkBodyForRequiredValues(req: Request, paramNames: any[], func
   }
 }
 
+/** check the body of the request - ensure that all params in list are an array (if exists) */
+export function assertBodyValueIsArrayIfExists(req: Request, paramNames: any[], funcName: string) {
+  const paramsNotAnArray = paramNames.filter(p => {
+    return !isNullOrEmpty(req.body[p]) && !Array.isArray(req.body[p])
+  })
+  if (!isNullOrEmpty(paramsNotAnArray)) {
+    throw new ServiceError(
+      `Parameter(s) in request body must be an array: ${paramsNotAnArray.join(
+        ', ',
+      )}. If only one value, enclose it in an array i.e. [ ].`,
+      ErrorType.BadParam,
+      funcName,
+    )
+  }
+}
+
 /** check the body of the request - must include at least one of the params in the list */
-export function checkBodyForAtLeastOneOfValues(req: Request, paramNames: any[], funcName: string) {
+export function assertBodyHasAtLeastOneOfValues(req: Request, paramNames: any[], funcName: string) {
   const matches = paramNames.filter(p => {
     return !isNullOrEmpty(req.body[p])
   })
@@ -82,7 +98,7 @@ export function checkBodyForAtLeastOneOfValues(req: Request, paramNames: any[], 
 }
 
 /** check the body of the request - must include one and only one of params in the list */
-export function checkBodyForOnlyOneOfValues(req: Request, paramNames: any[], funcName: string) {
+export function assertBodyHasOnlyOneOfValues(req: Request, paramNames: any[], funcName: string) {
   const matches = paramNames.filter(p => {
     return !isNullOrEmpty(req.body[p])
   })

@@ -118,9 +118,11 @@ describe('Test api /generate-keys endpoint', () => {
     const generateKeyParams: any = {
       chainType: 'ethereum',
       symmetricOptions: symmetricAesOptions,
-      asymmetricOptions: {
-        publicKeys: [global.ETH_PUB_KEY],
-      },
+      asymmetricOptions: [
+        {
+          publicKeys: [global.ETH_PUB_KEY],
+        },
+      ],
       keyCount: 4,
     }
 
@@ -139,7 +141,7 @@ describe('Test api /generate-keys endpoint', () => {
         if (err) return done(err)
         const encryptedPrivateKey = res.body[0].symmetricEncryptedString
         const newPrivateKey = chain.decryptWithPassword(encryptedPrivateKey, myPassword, symmetricAesOptions)
-        const asymEncryptedPrivateKey = JSON.parse(res.body[0].asymmetricEncryptedString)[0]
+        const asymEncryptedPrivateKey = JSON.parse(res.body[0].asymmetricEncryptedStrings[0])[0]
         const decryptedPrivateKey = await chain.decryptWithPrivateKey(asymEncryptedPrivateKey, global.ETH_PPRIVATE_KEY)
         expect(newPrivateKey).toMatch(decryptedPrivateKey)
         expect(chain.isValidPublicKey(res.body[0].publicKey).toString()).toMatch('true')
