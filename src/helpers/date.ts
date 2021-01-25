@@ -26,3 +26,10 @@ export function tryParseDate(dateString: any) {
   if (Number.isNaN(dateNumber) || dateNumber == null) return null
   return new Date(dateNumber)
 }
+
+/**
+  Returns ISO date string.
+ */
+export function getDateISOString(value: string | number | Date) {
+  return new Date(value).toISOString()
+}
