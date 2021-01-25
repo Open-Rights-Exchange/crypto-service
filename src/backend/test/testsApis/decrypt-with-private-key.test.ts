@@ -127,6 +127,7 @@ describe('Test api /decrypt-with-private-key endpoint', () => {
         )
         const decryptedString = await chain.decryptWithPrivateKey(encryptedString, global.ALGO_PRIVATE_KEY)
         expect(decryptedString).toMatch(stringToEncrypt)
+        expect(res.body?.decryptedResult).toEqual(null)
         done()
       })
   })
