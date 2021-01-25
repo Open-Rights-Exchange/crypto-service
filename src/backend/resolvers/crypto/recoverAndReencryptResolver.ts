@@ -10,11 +10,9 @@ import {
 import { assertValidChainType, getChainTypeFromChainConnect, isNullOrEmpty, ServiceError } from '../../../helpers'
 import { getChain } from '../../chains/chainConnection'
 import {
-  decryptPrivateKeys,
   decryptAsymmetrically,
-  encryptAsymmetrically,
+  decryptPrivateKeys,
   encryptSymmetrically,
-  mapAsymmetricOptionsParam,
   mapSymmetricOptionsParam,
 } from './cryptoHelpers'
 import { encryptResolver } from './encryptResolver'
