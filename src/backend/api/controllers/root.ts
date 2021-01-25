@@ -2,10 +2,11 @@ import { NextFunction, Request, Response } from 'express'
 import { globalLogger } from '../../../helpers/logger'
 import { addAppIdToContextFromApiKey, createContext } from '../context'
 import {
-  checkBodyForAtLeastOneOfValues,
-  checkBodyForOnlyOneOfValues,
-  checkBodyForRequiredValues,
-  checkHeaderForRequiredValues,
+  assertBodyHasAtLeastOneOfValues,
+  assertBodyHasOnlyOneOfValues,
+  assertBodyhasRequiredValues,
+  assertBodyValueIsArrayIfExists,
+  assertHeaderhasRequiredValues,
   returnResponse,
   validateApiAuthToken,
   validateEncryptedPayloadAuthToken,
@@ -58,8 +59,9 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
   const funcName = 'api/decrypt-with-password'
   try {
     globalLogger.trace('called handleDecryptWithPassword')
-    checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
+    assertBodyValueIsArrayIfExists(req, ['returnAsymmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
     await validateApiAuthToken(req, context)
     const passwordAuthToken = symmetricOptions
@@ -85,13 +87,14 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
   let asymmetricEncryptedPrivateKeys
   try {
     globalLogger.trace('called handleDecryptWithPrivateKeys')
-    checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'encrypted'], funcName)
-    checkBodyForOnlyOneOfValues(
+    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'encrypted'], funcName)
+    assertBodyHasOnlyOneOfValues(
       req,
       ['asymmetricEncryptedPrivateKeysAndAuthToken', 'symmetricEncryptedPrivateKeys'],
       funcName,
     )
+    assertBodyValueIsArrayIfExists(req, ['returnAsymmetricOptions'], funcName)
     const {
       chainType,
       encrypted,
@@ -145,10 +148,11 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
   let password
   try {
     globalLogger.trace('called handleRecoverAndReencrypt')
-    checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'asymmetricEncryptedPrivateKeysAndAuthToken'], funcName)
-    checkBodyForOnlyOneOfValues(req, ['encrypted', 'encryptedAndAuthToken'], funcName)
-    checkBodyForAtLeastOneOfValues(req, ['symmetricOptionsForReencrypt', 'asymmetricOptionsForReencrypt'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'asymmetricEncryptedPrivateKeysAndAuthToken'], funcName)
+    assertBodyHasOnlyOneOfValues(req, ['encrypted', 'encryptedAndAuthToken'], funcName)
+    assertBodyHasAtLeastOneOfValues(req, ['symmetricOptionsForReencrypt', 'asymmetricOptionsForReencrypt'], funcName)
+    assertBodyValueIsArrayIfExists(req, ['asymmetricOptionsForReencrypt'], funcName)
 
     const {
       chainType,
@@ -219,9 +223,10 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
   const funcName = 'api/encrypt'
   try {
     globalLogger.trace('called handleEncrypt')
-    checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'toEncrypt'], funcName)
-    checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'toEncrypt'], funcName)
+    assertBodyHasAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
+    assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
     await validateApiAuthToken(req, context)
@@ -247,9 +252,10 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
   const funcName = 'api/generate-keys'
   try {
     globalLogger.trace('called handleGenerateKeys')
-    checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType'], funcName)
-    checkBodyForAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType'], funcName)
+    assertBodyHasAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
+    assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
     await validateApiAuthToken(req, context)
@@ -276,13 +282,14 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
   let asymmetricEncryptedPrivateKeys
   try {
     globalLogger.trace('called handleSign')
-    checkHeaderForRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    checkBodyForRequiredValues(req, ['chainType', 'toSign'], funcName)
-    checkBodyForAtLeastOneOfValues(
+    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'toSign'], funcName)
+    assertBodyHasAtLeastOneOfValues(
       req,
       ['asymmetricEncryptedPrivateKeysAndAuthToken', 'symmetricEncryptedPrivateKeys'],
       funcName,
     )
+    assertBodyValueIsArrayIfExists(req, ['symmetricEncryptedPrivateKeys'], funcName)
     const {
       chainType,
       toSign,
@@ -306,11 +313,8 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
     )
     asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
 
-    if (
-      (asymmetricEncryptedPrivateKeysAndAuthToken && !Array.isArray(asymmetricEncryptedPrivateKeys)) ||
-      (symmetricEncryptedPrivateKeys && !Array.isArray(symmetricEncryptedPrivateKeys))
-    ) {
-      const msg = `Bad parameter(s) in request body. ...EncryptedPrivateKeys parameter(s) must be an array. If only have one value, enclose it in an array i.e. [ ].`
+    if (asymmetricEncryptedPrivateKeysAndAuthToken && !Array.isArray(asymmetricEncryptedPrivateKeys)) {
+      const msg = `Bad parameter(s) in request body. 'encrypted' param (within asymmetricEncryptedPrivateKeysAndAuthToken) must be an array. If only one value, enclose it in an array i.e. [ ].`
       throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
 
@@ -339,8 +343,8 @@ export async function handleVerifyPublicKey(req: Request, res: Response, next: N
   const funcName = 'api/verify-public-key'
   try {
     globalLogger.trace('called handlePublicKey')
-    checkBodyForRequiredValues(req, ['nonce'], funcName)
-    checkHeaderForRequiredValues(req, ['api-key'], funcName)
+    assertBodyhasRequiredValues(req, ['nonce'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key'], funcName)
     const { nonce } = req.body
     const response = await verifyPublicKeyResolver({ nonce }, context)
     return returnResponse(req, res, HttpStatusCode.OK_200, response, context)

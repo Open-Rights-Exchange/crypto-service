@@ -53,9 +53,11 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     const prviateKeyToEncrypt = 'private-key-to-recover'
     const recoverAndReencryptParams: any = {
       chainType: 'algorand',
-      asymmetricOptionsForReencrypt: {
-        publicKeys: [global.ALGO_PUB_KEY],
-      },
+      asymmetricOptionsForReencrypt: [
+        {
+          publicKeys: [global.ALGO_PUB_KEY],
+        },
+      ],
     }
 
     // encrypt a payload using our public key - in this example, its a private key we've 'backed-up'
@@ -90,7 +92,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
       .end(async (err, res) => {
         if (err) return done(err)
         const encryptedString = chain.toAsymEncryptedDataString(
-          JSON.stringify(JSON.parse(res.body.asymmetricEncryptedString)[0]),
+          JSON.stringify(JSON.parse(res.body.asymmetricEncryptedStrings[0])[0]),
         )
         const decryptedString = await chain.decryptWithPrivateKey(encryptedString, global.ALGO_PRIVATE_KEY)
         expect(decryptedString).toMatch(prviateKeyToEncrypt)

@@ -49,6 +49,7 @@ export function createSha256Hash(value: string) {
 
 /**
  * Ensure that a value is wrapped in an array
+ * If null or undefined, result is unchanged (e.g. still null)
  */
 export function ensureArray(value: any): any[] {
   if (value && !Array.isArray(value)) {

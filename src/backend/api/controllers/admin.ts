@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { addAppIdToContextFromApiKey, createContext } from '../context'
-import { checkForRequiredParams, returnResponse } from '../helpers'
+import { assertHasRequiredParams, returnResponse } from '../helpers'
 import { Config, ErrorSeverity, HttpStatusCode } from '../../../models'
 import { logError } from '../../../helpers/errors'
 
@@ -14,7 +14,7 @@ async function v1Admin(req: Request, res: Response, next: NextFunction, config: 
   const context = createContext(req, config, now)
   try {
     await addAppIdToContextFromApiKey(req, context)
-    checkForRequiredParams(req, ['action'], funcName)
+    assertHasRequiredParams(req, ['action'], funcName)
     const { action }: any = req.query
     switch (action) {
       case 'refresh':

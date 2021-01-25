@@ -1,7 +1,14 @@
-import { AsymmetricEncryptedString, Context, EncryptParams, ErrorType, SymmetricEncryptedString } from '../../../models'
+import {
+  AsymmetricEncryptedString,
+  AsymmetricOptions,
+  Context,
+  EncryptParams,
+  ErrorType,
+  SymmetricEncryptedString,
+} from '../../../models'
 import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType, isNullOrEmpty } from '../../../helpers'
+import { assertValidChainType, asyncForEach, isNullOrEmpty } from '../../../helpers'
 import {
   encryptAsymmetrically,
   encryptSymmetrically,
@@ -18,46 +25,48 @@ export async function encryptResolver(
   context: Context,
 ): Promise<{
   symmetricEncryptedString: SymmetricEncryptedString
-  asymmetricEncryptedString: AsymmetricEncryptedString
+  asymmetricEncryptedStrings: AsymmetricEncryptedString[]
 }> {
-  assertValidChainType(params?.chainType)
-  const chainConnect = await getChain(params?.chainType, context)
-  let asymmetricEncryptedString: AsymmetricEncryptedString
+  const { asymmetricOptions: asymmetricOptionsArray, chainType, password, symmetricOptions, toEncrypt } = params
+  assertValidChainType(chainType)
+  // TODO: confirm chainType matches chainType of asymm options publicKeysChainType (if provided) - otherwise assum to be same as chainType param
+  const chainConnect = await getChain(chainType, context)
+  const asymmetricEncryptedStrings: AsymmetricEncryptedString[] = []
   let symmetricEncryptedString: SymmetricEncryptedString
 
-  if (!isNullOrEmpty(params?.symmetricOptions) && isNullOrEmpty(params?.password)) {
+  if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(password)) {
     const msg = `Password is required to encrypt.`
     throw new ServiceError(msg, ErrorType.BadParam, 'encryptResolver')
   }
 
-  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(
-    params?.symmetricOptions,
-    context,
-  )
-  const { publicKeys } = params?.asymmetricOptions || {}
-  const shouldEncryptAsym = !isNullOrEmpty(publicKeys)
-  const { password } = params
-  const shouldEncryptSym = !isNullOrEmpty(password)
+  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
 
   // Encrypt symmetrically with password
-  if (shouldEncryptSym) {
-    const encryptedPrivateKey = await encryptSymmetrically(chainConnect, {
-      unencrypted: params?.toEncrypt,
+  if (symmetricOptions) {
+    symmetricEncryptedString = await encryptSymmetrically(chainConnect, {
+      unencrypted: toEncrypt,
       password,
       options: symmetricEccOptions || symmetricEd25519Options,
     })
-    symmetricEncryptedString = encryptedPrivateKey
-  }
-  // Encrypt asymmetrically with publicKey(s)
-  if (shouldEncryptAsym) {
-    const options = mapAsymmetricOptionsParam(params?.asymmetricOptions)
-    const encryptedPrivateKey = await encryptAsymmetrically(chainConnect, {
-      unencrypted: params?.toEncrypt,
-      publicKeys,
-      ...options,
-    })
-    asymmetricEncryptedString = encryptedPrivateKey
   }
 
-  return { asymmetricEncryptedString, symmetricEncryptedString }
+  // Encrypt asymmetrically with publicKey(s)
+  if (asymmetricOptionsArray) {
+    await asyncForEach(asymmetricOptionsArray, async (asymmetricOptions: AsymmetricOptions) => {
+      const options = mapAsymmetricOptionsParam(asymmetricOptions)
+      const encryptedValue = await encryptAsymmetrically(
+        {
+          unencrypted: toEncrypt,
+          publicKeys: asymmetricOptions?.publicKeys,
+          // allow override of chainType via options - default to current chainType
+          publicKeysChainType: asymmetricOptions?.publicKeysChainType || chainType,
+          ...options,
+        },
+        context.constants.BASE_PUBLIC_KEY,
+      )
+      asymmetricEncryptedStrings.push(encryptedValue)
+    })
+  }
+
+  return { asymmetricEncryptedStrings, symmetricEncryptedString }
 }
