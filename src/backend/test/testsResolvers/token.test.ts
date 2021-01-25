@@ -118,7 +118,7 @@ describe('Test token handling and validation', () => {
           context,
         }),
       ).rejects.toThrow(
-        `Auth Token has expired on Sun Jan 03 2021 10:33:39 GMT+0500 (Pakistan Standard Time) or is not valid at the current time: Mon Jan 04 2021 10:31:39 GMT+0500 (Pakistan Standard Time).`,
+        `Auth Token has expired on 2021-01-03T05:33:39.208Z or is not valid at the current time: 2021-01-04T05:31:39.208Z.`,
       )
     })
   })
