@@ -21,13 +21,6 @@ export function addRoutesToExpressServer(server: Express, config: Config) {
       v1Admin(req, res, next, config)
     }),
   )
-  // seperate ro for each specific '.well-known' file so we don't intefere with others we don't handle explicitly (eg manifest.json)
-  router.get(
-    '/.well-known/apple-developer-domain-association.txt',
-    asyncHandler((req: Request, res: Response, next: NextFunction) => {
-      wellknown('apple-developer-domain-association.txt', req, res, next, config)
-    }),
-  )
   router.use(
     '/:action',
     asyncHandler((req: Request, res: Response, next: NextFunction) => {
