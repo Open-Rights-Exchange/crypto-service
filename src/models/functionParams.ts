@@ -15,13 +15,13 @@ import {
   PrivateKey,
   SymmetricEncryptedData,
 } from './chain'
-import { AuthToken } from './general'
+import { AuthToken, SymmetricOptionsParam } from './general'
 import { ChainConnection } from '../backend/chains/chainConnection'
 
 export type DecryptPrivateKeysParams = {
   symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[] | SymmetricEncryptedData
   asymmetricEncryptedPrivateKeys?: AsymmetricEncryptedString | AsymmetricEncryptedData[] | AsymmetricEncryptedData
-  symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
+  symmetricOptions?: SymmetricOptionsParam
   password?: string
   chainConnect: ChainConnection
 }
@@ -34,7 +34,7 @@ export type DecryptWithPasswordParams = {
   /** (optional) options to re-encrypt result before returning it */
   returnAsymmetricOptions?: AsymmetricOptions[]
   /** options used to originally encrypt the payload */
-  symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
+  symmetricOptions?: SymmetricOptionsParam
   /** password used to encrypt symmetrically */
   password: string
 }
@@ -49,7 +49,7 @@ export type DecryptWithPrivateKeysParams = {
   /** Stringified JSON of encrypted private key(s) */
   symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[]
   /** (optional) options used to encrypt the private keys */
-  symmetricOptionsForEncryptedPrivateKeys?: SymmetricEccOptions | SymmetricEd25519Options
+  symmetricOptionsForEncryptedPrivateKeys?: SymmetricOptionsParam
   /** password used to encrypt symmetrically */
   password: string
   /** (optional) options to re-encrypt result before returning it */
@@ -64,7 +64,7 @@ export type RecoverAndReencryptResolverParams = {
   /** Stringified JSON of encrypted private key(s) */
   asymmetricEncryptedPrivateKeys?: AsymmetricEncryptedString | AsymmetricEncryptedData[]
   /** (optional) options used to re-encrypt results symmetrically */
-  symmetricOptionsForReencrypt?: SymmetricEccOptions | SymmetricEd25519Options
+  symmetricOptionsForReencrypt?: SymmetricOptionsParam
   /** (optional) options used to re-encrypt results asymmetrically */
   asymmetricOptionsForReencrypt?: AsymmetricOptions[]
   /** password used to encrypt symmetrically */
@@ -81,7 +81,7 @@ export type SignParams = {
   /** Stringified JSON of encrypted payload - one or more privateKeys to sign with (encrypted symmetrically) */
   symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[]
   /** options used to originally encrypt symmetricEncryptedPrivateKeys */
-  symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
+  symmetricOptions?: SymmetricOptionsParam
   /** password used to encrypt symmetrically */
   password: string
 }
@@ -92,7 +92,7 @@ export type EncryptParams = {
   /** value to encrypt */
   toEncrypt: string
   asymmetricOptions?: AsymmetricOptions[]
-  symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
+  symmetricOptions?: SymmetricOptionsParam
   /** password used to encrypt symmetrically */
   password?: string
 }
@@ -103,9 +103,9 @@ export type GenerateKeysParams = {
   /** number of keys to generate - default is 1 */
   keyCount?: number
   asymmetricOptions?: AsymmetricOptions[]
-  symmetricOptions?: SymmetricEccOptions | SymmetricEd25519Options
+  symmetricOptions?: SymmetricOptionsParam
   /** password used to encrypt symmetrically */
-  password: string
+  password?: string
 }
 
 export type EncryptAsymmetricallyParams = {
