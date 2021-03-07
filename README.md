@@ -37,3 +37,5 @@ Open [http://localhost:8080](http://localhost:8080) to view it in the browser.
   
   ```ts-node examples/demo.ts```
 
+## Running Tests
+- API endpoint tests require a locally running MongoDB server. See ReadMe in backend/test folder

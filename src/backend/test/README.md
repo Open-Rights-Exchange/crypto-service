@@ -13,22 +13,11 @@
 
 
 ## Setup
-1. Copy test env values (from your password manager) named `env.test cryptoservice` and paste in `/backend/test/config/.env.test`
+1. Populate test env values into `/backend/test/config/.env.test`
 2. The API endpoint tests expect a Mongo service to be running on localhost:27017 - install it using [these](https://stackoverflow.com/questions/57856809/installing-mongodb-with-homebrew/57881349#57881349) instructions
 
 ## Unit tests
 * Every resolver file under web/backend/resolver has a test file under web/backend/test/testsResolver
-
-* Structure of a test file can be like this:
-  - Higher level describe block named same as the file name
-  - Each function in the source file can then have its own describe block
-  - Multiple tests inside each function-level describe block. The test description should be a sentence and easily understandable. For ex- it('generates key pair')
-
-  ```
-  describe('crypto'... // filename
-    describe('encryptWithPassword'... //function name
-       it('encrypts the credential with password') // understandable description
-  ```
 
 ## API endpoint tests
 * Every API endpoints has one test named after the endpoint in web/backend/test/testsApis 
