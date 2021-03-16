@@ -7,6 +7,9 @@ import {
   encodedBody1,
   encodedToken1wNullUrl,
   decodedAuthToken1wNullUrl,
+  VALID_AUTH_TOKEN,
+  INVALID_ENCRYPTED_AUTH_TOKEN,
+  EXPIRED_AUTH_TOKEN,
 } from '../dataMocks'
 import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
 import { AuthTokenType } from '../../../models'
@@ -106,7 +109,6 @@ describe('Test token handling and validation', () => {
     //     }),
     //   ).rejects.toThrow(new Error('Auth token has already been used.'))
     // })
-  })
 
     it('Should throw if req url doesn’t match', async () => {
       await expect(
