@@ -4,9 +4,9 @@ import {
   decodedAuthToken1,
   requestBodyEmpty,
   requestUrl,
-  VALID_AUTH_TOKEN,
-  INVALID_ENCRYPTED_AUTH_TOKEN,
-  EXPIRED_AUTH_TOKEN,
+  encodedBody1,
+  encodedToken1wNullUrl,
+  decodedAuthToken1wNullUrl,
 } from '../dataMocks'
 import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
 import { AuthTokenType } from '../../../models'
@@ -84,17 +84,29 @@ describe('Test token handling and validation', () => {
       )
     })
 
-    it('Should throw if req body doesn’t match hash', async () => {
-      await expect(
-        validateAuthTokenAndExtractContents({
-          authTokenType: AuthTokenType.ApiHeader,
-          requestUrl,
-          encryptedAuthToken: VALID_AUTH_TOKEN,
-          requestBody: 'bogus_payload',
-          context,
-        }),
-      ).rejects.toThrow('Auth Token payloadHash does not match Sha256Hash of request body.')
+    it('decodes and validates correctly with null url', async () => {
+      const token = await validateAuthTokenAndExtractContents({
+        authTokenType: AuthTokenType.ApiHeader,
+        requestUrl,
+        encryptedAuthToken: encodedToken1wNullUrl,
+        requestBody: encodedBody1,
+        context,
+      })
+      expect(token).toStrictEqual(decodedAuthToken1wNullUrl)
     })
+
+    // it('token is already used', async () => {
+    //   await expect(
+    //     validateAuthTokenAndExtractContents({
+    //       authTokenType: AuthTokenType.ApiHeader,
+    //       requestUrl,
+    //       encryptedAuthToken: encodedToken1,
+    //       requestBody: requestBodyEmpty,
+    //       context,
+    //     }),
+    //   ).rejects.toThrow(new Error('Auth token has already been used.'))
+    // })
+  })
 
     it('Should throw if req url doesn’t match', async () => {
       await expect(

@@ -85,13 +85,13 @@ export async function validateAuthTokenAndExtractContents(
   const { url, payloadHash, validFrom, validTo, secrets } = decryptedAuthToken
 
   // VERIFY: all required fields are in token
-  if (!url || !isValidDate(validFrom) || !isValidDate(validTo)) {
+  if (!isValidDate(validFrom) || !isValidDate(validTo)) {
     const msg = `Auth Token is malformed or missing a required value.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
   // VERIFY: url in token matches request url
-  if (url !== requestUrl) {
+  if (url && url !== requestUrl) {
     const msg = `Auth Token url doesn't match actual request url ${requestUrl}.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
