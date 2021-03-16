@@ -9,16 +9,18 @@ const DEFAULT_TOKEN_EXPIRE_IN_SECONDS = 120 // 2 mins
  *  An auth token includes an expiration time (validTo) and can contain secrets
  *  The whole token is encrypted (with the server's publicKey and) and then base64 encoded
  *  if dontEncryptToken = true, the token is returned as a JSON object (not encypted and encoded)
+ *  if validFrom isnt provided, it will be set to current date
+ *  if validTo isnt provided, it will be set to 120 seconds after validFrom
 */
-export async function createAuthToken(url: string, payloadBody: any, publicKey: string, secrets?: any, dontEncryptToken = false) {
+export async function createAuthToken(url: string, payloadBody: any, publicKey: string, secrets?: any, dontEncryptToken = false, validFrom?: Date, validTo?: Date ) {
   // hash the body of the request
   const payloadHash = payloadBody ? createSha256Hash(JSON.stringify(payloadBody)): null;
-  const now = new Date();
+  const tokenValidFrom = validFrom || new Date();
   const token = {
     url,
     payloadHash,
-    validFrom: now,
-    validTo: new Date(now.getTime() + 1000 * DEFAULT_TOKEN_EXPIRE_IN_SECONDS),
+    validFrom: tokenValidFrom,
+    validTo: validTo || new Date(tokenValidFrom.getTime() + 1000 * DEFAULT_TOKEN_EXPIRE_IN_SECONDS),
     secrets: secrets || {}, 
   };
   
