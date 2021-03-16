@@ -1,7 +1,5 @@
 // This example demonstrates common patterns of how a client would use the cryto service
-
 import axios from "axios";
-import { Base64 } from "js-base64";
 import {
   Chain,
   ChainFactory,
@@ -22,7 +20,7 @@ const servicePublicKey = "0478abef41d3827ae774917e82019e950f3dc41f2ac13e6671aab1
 // const serviceUrl = "http://localhost:8080";
 // const servicePublicKey = "04cea2c951504b5bfefa78480ae632da2c7889561325f9d76ca7b0a1e62f7a8cd52ce313c8b3fd3c7ffe2f588322e5be331c64b31b256a8769e92f947ae712b761";
 
-// sample key paira used for having the service asymetrically encrypt a result before returning it (and signing with)
+// sample key pairs used for having the service asymetrically encrypt a result before returning it (and signing with)
 const ethPubKey = "0xc68e0f87e57569a1a053bba68ecde6a55c19d93a3e1ab845be60b2828991b3de30d74a9fdd9602d30434376ef1e922ffdbc61b4ea31a8c8c7427b935337e82d6";
 const ethPrivateKey = "5f8b66eea19b59c7a477142fb7204d762e2d446e98334101e851fd0e1ccff318";
 const eosPubKey = "EOS7s6kUmgMjDSekrUiB9ynZEMb8qxaBNTAZMaUCyZ1n939aa6RcK";
