@@ -23,8 +23,8 @@ export const encodedBody1: any = {
 }
 
 export const decodedAuthToken1: AuthToken = {
-  url: requestUrl,
-  payloadHash: 'c4b5063de69c0b3cbe469dd9aa932be3f86105ea99401be5d74388fbb7dcdcac',
+  url: 'http://localhost:8080/sign',
+  payloadHash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a',
   validFrom: new Date('2021-01-04T05:31:39.208Z'),
   validTo: new Date('2021-01-04T05:33:39.208Z'),
   secrets: { password: 'my-secure-password' },
