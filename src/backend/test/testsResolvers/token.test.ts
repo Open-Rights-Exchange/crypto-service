@@ -7,6 +7,8 @@ import {
   encodedToken1,
   requestUrl,
   encodedBody1,
+  encodedToken1wNullUrl,
+  decodedAuthToken1wNullUrl,
 } from '../dataMocks'
 import { Mongo } from '../../services/mongo/models'
 import { findMongo } from '../../services/mongo/resolvers'
@@ -57,6 +59,17 @@ describe('Test token handling and validation', () => {
         context,
       })
       expect(token).toStrictEqual(decodedAuthToken1)
+    })
+
+    it('decodes and validates correctly with null url', async () => {
+      const token = await validateAuthTokenAndExtractContents({
+        authTokenType: AuthTokenType.ApiHeader,
+        requestUrl,
+        encryptedAuthToken: encodedToken1wNullUrl,
+        requestBody: encodedBody1,
+        context,
+      })
+      expect(token).toStrictEqual(decodedAuthToken1wNullUrl)
     })
 
     // it('token is already used', async () => {
