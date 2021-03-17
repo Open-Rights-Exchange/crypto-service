@@ -2,6 +2,7 @@ import { Base64 } from 'js-base64'
 import {
   convertStringifiedJsonOrObjectToObject,
   createSha256Hash,
+  getDateISOString,
   isNullOrEmpty,
   isValidDate,
   ServiceError,
@@ -104,9 +105,9 @@ export async function validateAuthTokenAndExtractContents(
   // TODO: confirm validToDate is not too far in future - i.e. <= AUTH_TOKEN_MAX_EXPIRATION_IN_SECONDS
 
   if (!isValidNow) {
-    const msg = `Auth Token has expired on ${new Date(validToDate)} or is not valid at the current time: ${
-      context.requestDateTime
-    }.`
+    const msg = `Auth Token has expired on ${getDateISOString(
+      validToDate,
+    )} or is not valid at the current time: ${getDateISOString(context.requestDateTime)}.`
     throw new ServiceError(msg, ErrorType.AuthTokenValidation, `validateAuthTokenAndExtractContents`)
   }
 
