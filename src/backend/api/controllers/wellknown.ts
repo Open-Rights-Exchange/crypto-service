@@ -9,7 +9,14 @@ const someWelknownFile = fs.existsSync('./some-welknown-file.txt')
   : ''
 
 // Respond with any .well-known file types required - Examples: https://en.wikipedia.org/wiki/List_of_/.well-known/_services_offered_by_webservers
-async function wellknown(filename: string, req: Request, res: Response, next: NextFunction, config: Config, state: StateStore) {
+async function wellknown(
+  filename: string,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  config: Config,
+  state: StateStore,
+) {
   switch (filename) {
     case 'some-welknown-endpoint':
       return res.send(someWelknownFile)

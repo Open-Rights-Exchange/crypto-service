@@ -3,7 +3,7 @@ import {
   encryptWithPublicKeys,
   generateKeyPair,
 } from '@open-rights-exchange/chainjs/dist/crypto/asymmetricHelpers'
-import { EciesCurveType } from '@open-rights-exchange/chainjs/dist/crypto//asymmetricModels';
+import { EciesCurveType } from '@open-rights-exchange/chainjs/dist/crypto//asymmetricModels'
 import { Asymmetric, ChainType, GenericCrypto, PrivateKey, PublicKey, Signature } from '../../../models'
 import { isNullOrEmpty, notSupported } from '../../../helpers'
 import { ChainFunctions } from '../ChainFunctions'

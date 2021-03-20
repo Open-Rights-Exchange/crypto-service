@@ -1,5 +1,5 @@
 import { Asymmetric, ChainType, Context, PublicKey, Signature, VerifyPublcKeyParams } from '../../../models'
-import { getChain } from '../../../backend/chains/chainConnection'
+import { getChain } from '../../chains/chainConnection'
 import { StateStore } from '../../../helpers/stateStore'
 
 /**
