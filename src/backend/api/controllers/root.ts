@@ -18,6 +18,7 @@ import {
   decryptWithPrivateKeysResolver,
   encryptResolver,
   generateKeysResolver,
+  getTransitPublicKeyResolver,
   recoverAndReencryptResolver,
   signResolver,
   verifyPublicKeyResolver,
@@ -33,7 +34,7 @@ async function v1Root(req: Request, res: Response, next: NextFunction, config: C
   try {
     await addAppIdToContextFromApiKey(req, context)
   } catch (error) {
-    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, null, error)
   }
   switch (action) {
     case 'decrypt-with-password':
@@ -44,6 +45,8 @@ async function v1Root(req: Request, res: Response, next: NextFunction, config: C
       return handleEncrypt(req, res, next, context)
     case 'generate-keys':
       return handleGenerateKeys(req, res, next, context)
+    case 'get-transit-key':
+      return handleGetTransitKey(req, res, next, context, state)
     case 'verify-public-key':
       return handleVerifyPublicKey(req, res, next, context)
     case 'recover-and-reencrypt':
@@ -331,6 +334,23 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       context,
     )
 
+    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+  } catch (error) {
+    logError(context, error, ErrorSeverity.Info, funcName)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
+  }
+}
+
+// api/get-transit-key
+/** Returns a single use public key for caller to use to (asymmetrically) encrypt all data sent to this server */
+export async function handleGetTransitKey(req: Request, res: Response, next: NextFunction, context: Context, state: StateStore) {
+  const funcName = 'api/get-transit-key'
+  try {
+    globalLogger.trace('called handleGetTransitKey')
+    assertBodyhasRequiredValues(req, ['nonce'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key'], funcName)
+    const { nonce } = req.body
+    const response = await getTransitPublicKeyResolver({ nonce }, context, state)
     return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
