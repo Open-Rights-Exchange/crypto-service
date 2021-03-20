@@ -3,12 +3,13 @@ import { addAppIdToContextFromApiKey, createContext } from '../context'
 import { assertHasRequiredParams, returnResponse } from '../helpers'
 import { Config, ErrorSeverity, HttpStatusCode } from '../../../models'
 import { logError } from '../../../helpers/errors'
+import { StateStore } from '../../../helpers/stateStore'
 
 // Admin Route
 // must be using the api-key for the admin app
 // expects a param to desginate action ?action=nnn
 // e.g. http://localhost:8080/api/admin?action=refresh
-async function v1Admin(req: Request, res: Response, next: NextFunction, config: Config) {
+async function v1Admin(req: Request, res: Response, next: NextFunction, config: Config, state: StateStore) {
   const funcName = 'api/admin'
   const now = new Date()
   const context = createContext(req, config, now)
@@ -21,7 +22,7 @@ async function v1Admin(req: Request, res: Response, next: NextFunction, config: 
         // reload settings and flush caches
         return await handleAdminRefresh(req, res, next, config)
       default:
-        return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, null)
+        return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, context)
     }
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)

@@ -1,7 +1,9 @@
 import {
   decryptWithPrivateKeys,
   encryptWithPublicKeys,
+  generateKeyPair,
 } from '@open-rights-exchange/chainjs/dist/crypto/asymmetricHelpers'
+import { EciesCurveType } from '@open-rights-exchange/chainjs/dist/crypto//asymmetricModels'
 import { Asymmetric, ChainType, GenericCrypto, PrivateKey, PublicKey, Signature } from '../../../models'
 import { isNullOrEmpty, notSupported } from '../../../helpers'
 import { ChainFunctions } from '../ChainFunctions'
@@ -83,7 +85,7 @@ export class ChainFunctionsNoChain extends ChainFunctions {
   }
 
   generateKeyPair(): any {
-    return notSupported('NoChain.generateKeyPair')
+    return generateKeyPair(EciesCurveType.Secp256k1, 'uncompressed')
   }
 
   getPublicKeyFromSignature(signature: any, data: string | Buffer, encoding: string): any {

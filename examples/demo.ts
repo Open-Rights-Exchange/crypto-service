@@ -6,7 +6,7 @@ import {
   ChainType,
   Crypto,
 } from "@open-rights-exchange/chainjs";
-import { createAuthToken, createEncryptedAndAuthToken } from './helpers';
+import { encryptWithTransportKey } from './helpers';
 import { Asymmetric } from "@open-rights-exchange/chainjs/dist/crypto";
 
 require("dotenv").config();
@@ -16,7 +16,7 @@ const serviceUrl = "https://api.crypto-service.io";
 // a well-known public key of the serivce you trust
 const servicePublicKey = "0478abef41d3827ae774917e82019e950f3dc41f2ac13e6671aab10dcae9b7b5cbdcfd6be2a7f84830fd0686ce0c855076091f91b102b6dbf9e29162c424c2595c";
 
-// // Localhost
+// Localhost
 // const serviceUrl = "http://localhost:8080";
 // const servicePublicKey = "04cea2c951504b5bfefa78480ae632da2c7889561325f9d76ca7b0a1e62f7a8cd52ce313c8b3fd3c7ffe2f588322e5be331c64b31b256a8769e92f947ae712b761";
 
@@ -43,6 +43,25 @@ const apiKey = "t_k_demo_508258b13b334503a76fb8b9b6af3234";
 const headers = { "api-key": apiKey, "Content-Type": "application/json" };
 
 /** 
+ * Get a public key from the service to use to encrypt data sent to the service
+ *  this 'transport public key' is valid for a short time (2 mins)
+ * The response from the service includes a signature which is the nonce param signed by the service's well-known base key
+ * The signature should be verified by the client to ensure that the responding server is the one expected
+*/
+async function getTransportKey( nonce: string) {
+  console.log("--------------- getTransportKey -------------->");
+  const apiUrl = `${serviceUrl}/get-transport-key`
+  const { data } = await axios.post(apiUrl, { nonce }, { headers } );
+  const { signature, transportPublicKey } = data || {}
+  console.log("get-transport-key:", data);
+  const signedWithWellKnownPublicKey = Asymmetric.verifySignedWithPublicKey(nonce, servicePublicKey, signature)
+  if(!signedWithWellKnownPublicKey) {
+    throw new Error(`Service could not verify control of well-known public key. Are you using the right endpoint? Well-known PublicKey expected: ${servicePublicKey}`)
+  }
+  return transportPublicKey
+}
+
+/** 
  * Retrieves the service's base public key as well as a proof that it has access to the correlated private key
  * The proof is a signature - the nonce provided signed with the private key 
 */
@@ -55,9 +74,9 @@ async function verifyPublicKey( nonce: string) {
 }
 
 /** 
- * Generate new blockchain keys - they are encrypted before being returned (with the password we included in the authToken) 
+ * Generate new blockchain keys - they are encrypted before being returned (with the password we included in symmetricOptions.transportEncryptedPassword) 
  */
-async function generateKeys( chainJs: Chain ) {
+async function generateKeys( chainJs: Chain, transportPublicKey: string ) {
   console.log("--------------- generateKeys -------------->");
   const apiUrl = `${serviceUrl}/generate-keys`
   const generateKeyParams = {
@@ -66,12 +85,10 @@ async function generateKeys( chainJs: Chain ) {
     asymmetricOptions: [{
       "publicKeys" : [ ethPubKey ]
     }],
+    transportPublicKey,
   };
-  const passwordAuthToken = await createAuthToken( apiUrl, null, servicePublicKey, { password: myPassword } )
-  generateKeyParams.symmetricOptions.passwordAuthToken = passwordAuthToken
-  const authToken = await createAuthToken( apiUrl, generateKeyParams, servicePublicKey );
-  headers["auth-token"] = authToken;
-  console.log('sign auth-token:', authToken)
+  const transportEncryptedPassword = await encryptWithTransportKey( myPassword, transportPublicKey );
+  generateKeyParams.symmetricOptions.transportEncryptedPassword = transportEncryptedPassword;
   const { data } = await axios.post(apiUrl, generateKeyParams, { headers } );
   console.log("generate-keys results:", data);
   // The new keys are encrypted with your password, decrypt and display them
@@ -88,10 +105,10 @@ async function generateKeys( chainJs: Chain ) {
 /** 
  *  Use the service to encrypt a string. Then, decrypt the returned result using the private key matching the asymmetricOptions.publicKey(s)
  *  Result from Encrypt endpoint can include more than one encrypted payload 
- *  If secrets.password is provided in authToken, then result includes symmetricEncryptedString (encrypted with the password)
+ *  Since symmetricOptions.transportEncryptedPassword is provided, result includes symmetricEncryptedString (encrypted with the password)
  *  If asymmetricOptions is provided, then result includes asymmetricEncryptedString (encrypted with one or more public keys provided)
  */
-async function encryptAndDecryptString( stringToEncrypt: string ) {
+async function encryptAndDecryptString( stringToEncrypt: string, transportPublicKey: string ) {
   console.log("--------------- encryptAndDecryptString -------------->");
   const apiUrl = `${serviceUrl}/encrypt`;
   const ethChain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }]);
@@ -102,10 +119,10 @@ async function encryptAndDecryptString( stringToEncrypt: string ) {
       "publicKeys" : [ ethPubKey ]
     }],
     symmetricOptions: symmetricAesOptions,
+    transportPublicKey,
   };
-  encryptParams.symmetricOptions.passwordAuthToken = await createAuthToken(apiUrl, stringToEncrypt, servicePublicKey, { password: myPassword })
-  const authToken = await createAuthToken( apiUrl, encryptParams, servicePublicKey, null );
-  headers["auth-token"] = authToken;
+  const transportEncryptedPassword = await encryptWithTransportKey( myPassword, transportPublicKey );
+  encryptParams.symmetricOptions.transportEncryptedPassword = transportEncryptedPassword;
   const { data } = await axios.post(apiUrl, encryptParams, { headers } );
   console.log("encrypted results:", data);
   
@@ -124,7 +141,7 @@ async function encryptAndDecryptString( stringToEncrypt: string ) {
  *  ... with the service's public key (asymmetricEncryptedPrivateKeys)
  *  If returnAsymmetricOptions is provided, then results are encrypted using the specified public key before being returned
  */
-async function decryptWithPrivateKey( stringToEncrypt: string ) {
+async function decryptWithPrivateKey( stringToEncrypt: string, transportPublicKey: string ) {
   console.log("--------------- decryptWithPrivateKey -------------->");
   const apiUrl = `${serviceUrl}/decrypt-with-private-keys`
   const algoChain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }]);
@@ -133,23 +150,22 @@ async function decryptWithPrivateKey( stringToEncrypt: string ) {
     symmetricOptionsForEncryptedPrivateKeys: symmetricEd25519Options,
     returnAsymmetricOptions: [{
       "publicKeys" : [ algoPubKey ]
-    }]
+    }],
+    transportPublicKey,
   }
   // -- Option 1: encrypt our private key symmetrically (using our password)
-  // decryptWPrivateKeyParams.symmetricEncryptedPrivateKeys = [chain.encryptWithPassword(algoPrivateKey, myPassword, symmetricAesOptions)]
+  // decryptWPrivateKeyParams.symmetricEncryptedPrivateKeys = [algoChain.encryptWithPassword(algoPrivateKey, myPassword, symmetricAesOptions)]
 
- // -- Option 2: Encrypt our private key asymmetrically
-  const encryptedPrivateKey = [Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, algoPrivateKey)]
-  decryptWPrivateKeyParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(apiUrl, encryptedPrivateKey, servicePublicKey)
+  // -- Option 2: Encrypt our private key asymmetrically
+  const encryptedPrivateKey = JSON.stringify([Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, algoPrivateKey)])
+  decryptWPrivateKeyParams.asymmetricTransportEncryptedPrivateKeys = await encryptWithTransportKey(encryptedPrivateKey, transportPublicKey)
 
   // encrypt a payload using our associated public key
   const encrypted = await algoChain.encryptWithPublicKey(stringToEncrypt, algoPubKey)
   decryptWPrivateKeyParams.encrypted = encrypted
 
-  const passwordAuthToken = await createAuthToken( apiUrl, encrypted, servicePublicKey, { password: myPassword } )
-  decryptWPrivateKeyParams.symmetricOptionsForEncryptedPrivateKeys.passwordAuthToken = passwordAuthToken
-  const authToken = await createAuthToken(apiUrl, decryptWPrivateKeyParams, servicePublicKey );
-  headers["auth-token"] = authToken;
+  const transportEncryptedPassword = await encryptWithTransportKey( myPassword, transportPublicKey );
+  decryptWPrivateKeyParams.symmetricOptionsForEncryptedPrivateKeys.transportEncryptedPassword = transportEncryptedPassword
   const { data } = await axios.post(apiUrl, decryptWPrivateKeyParams, { headers } );
   console.log('data:', data)
   // results are encrypted with our public key, so we can decrypt it with the matching private key
@@ -159,12 +175,12 @@ async function decryptWithPrivateKey( stringToEncrypt: string ) {
 }
 
 /** 
- *  Use the service to decrypt a payload using private keys that are encrypted with the service's public key
+ *  Use the service to decrypt a payload using private keys that are encrypted with the transport public key
  *  and then have it re-encrypt the payload using new symmetric and/or asymmetric options
- *  The encrypted payload can be wrapped with an authToken governing its use
- *  ...encryptedAndAuthTokenObject is an object that includes encrypted value and authToken - and is encrypted with the service's key
+ *  The encrypted payload is wrapped with a transport public key
+ *  ...encryptedTransportEncrypted is the encrypted value that is wrapped with the transport public key
  */
-async function recoverAndReencrypt( prviateKeyToEncrypt: string ) {
+async function recoverAndReencrypt( prviateKeyToEncrypt: string, transportPublicKey: string ) {
   console.log("--------------- recoverAndReencrypt -------------->");
   const apiUrl = `${serviceUrl}/recover-and-reencrypt`
   const algoChain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }]);
@@ -173,27 +189,21 @@ async function recoverAndReencrypt( prviateKeyToEncrypt: string ) {
     symmetricOptionsForReencrypt: symmetricEd25519Options,
     asymmetricOptionsForReencrypt: [{
       "publicKeys" : [ algoPubKey ]
-    }]
+    }],
+    transportPublicKey,
   }
-
   // encrypt a payload using our public key - in this example, its a private key we've 'backed-up'
   const privateKeyToRecover = await algoChain.encryptWithPublicKey(prviateKeyToEncrypt, algoPubKey)
-  // wrap the encrypted payload with an authToken that governs how the service can use the payload
-  recoverAndReencryptParams.encryptedAndAuthToken = await createEncryptedAndAuthToken(apiUrl, privateKeyToRecover, servicePublicKey)
+  // wrap the encrypted payload with the transport public key
+  recoverAndReencryptParams.encryptedTransportEncrypted = await encryptWithTransportKey(privateKeyToRecover, transportPublicKey)
   // encrypt the private keys we'll use to decrypt the privateKeyToRecover
-  const encryptedPrivateKey = Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, algoPrivateKey)
+  const encryptedPrivateKey = JSON.stringify(Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, algoPrivateKey))
 
-  // wrap the encrypted keys with an authToken
-  recoverAndReencryptParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(apiUrl, encryptedPrivateKey, servicePublicKey)
-
-  // use null for payloadBody - since we are using the password to encrypt a new, as yet unknown, payload
-  recoverAndReencryptParams.symmetricOptionsForReencrypt.passwordAuthToken = await createAuthToken(
-    apiUrl, null, servicePublicKey, { password: myPassword }
-  )
+  // wrap the encrypted keys with the transport public key
+  recoverAndReencryptParams.asymmetricTransportEncryptedPrivateKeys = await encryptWithTransportKey(encryptedPrivateKey, transportPublicKey)
+  // wrap password with the transport public key
+  recoverAndReencryptParams.symmetricOptionsForReencrypt.transportEncryptedPassword = await encryptWithTransportKey( myPassword, transportPublicKey );
   
-  // create api auth token
-  const authToken = await createAuthToken(apiUrl, recoverAndReencryptParams, servicePublicKey )
-  headers["auth-token"] = authToken;
   const { data } = await axios.post(apiUrl, recoverAndReencryptParams, { headers } );
   console.log('response from api/recover-and-reencrypt:', data)
 
@@ -209,28 +219,27 @@ async function recoverAndReencrypt( prviateKeyToEncrypt: string ) {
  *  Use the service to generate a signature from a string.
  *  The signature is compliant with the block chain specified (e.g. ethereum)
  *  */
-async function sign( chainJs: Chain, toSign: string, privateKey: string ) {
+async function sign( chainJs: Chain, toSign: string, privateKey: string, transportPublicKey: string ) {
   console.log(`--------------- sign for chain ${chainJs.chainType}-------------->`);
   const apiUrl = `${serviceUrl}/sign`
-  // encrypt our private key with our password - the service will decrypt it (and sign with it) using the same password (sent via the authToken)
+  // encrypt our private key with our password - the service will decrypt it (and sign with it) using the same password (sent via transportEncryptedPassword)
   const signParams: any = {
     chainType: chainJs.chainType,
     toSign,
+    transportPublicKey,
   }
 
   // -- Option 1: Use Symmetrically encrypted private keys
   signParams.symmetricOptions = symmetricAesOptions
   signParams.symmetricEncryptedPrivateKeys = [chainJs.encryptWithPassword(privateKey, myPassword, symmetricAesOptions)]
-  const passwordAuthToken = await createAuthToken( apiUrl, toSign, servicePublicKey, { password: myPassword } )
-  signParams.symmetricOptions.passwordAuthToken = passwordAuthToken
+
+  const transportEncryptedPassword = await encryptWithTransportKey( myPassword, transportPublicKey );
+  signParams.symmetricOptions.transportEncryptedPassword = transportEncryptedPassword;
 
   // -- Option 2: Use Asymmetrically encrypted private keys
-  // const encryptedPrivateKey = [Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, privateKey)]
-  // signParams.asymmetricEncryptedPrivateKeysAndAuthToken = await createEncryptedAndAuthToken(apiUrl, encryptedPrivateKey, servicePublicKey)
+  // const encryptedPrivateKey = JSON.stringify([Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, privateKey)])
+  // signParams.asymmetricTransportEncryptedPrivateKeys = await encryptWithTransportKey(encryptedPrivateKey, transportPublicKey)
   
-  const authToken = await createAuthToken(apiUrl, signParams, servicePublicKey );
-  headers["auth-token"] = authToken;
-  console.log('sign auth-token:', authToken)
   const { data } = await axios.post(apiUrl, signParams, { headers } );
   console.log("sign results:", JSON.stringify(data[0]));
 }
@@ -254,16 +263,17 @@ async function run() {
     const algoChain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }]);
     const ethChain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }]);
     const eosChain = new ChainFactory().create(ChainType.EosV2, [{ url: null }]);
-    // Generate new blockchain keys - they are encrypted before being returned (with the password we included in the authToken)
+    // Generate new blockchain keys - they are encrypted before being returned (with the password we include in symmetricOptions)
     await verifyPublicKey('unique-nonce')
-    await generateKeys(ethChain)
+    const transportPublicKey = await getTransportKey('unique-nonce') // hint: use unqiue guid
+    await generateKeys(ethChain, transportPublicKey)
     // Use /encrypt to encrypt on the server
-    await encryptAndDecryptString('encrypt-this-string')
-    await decryptWithPrivateKey('private-message-decrypted-by-service' )
-    await recoverAndReencrypt('private-key-to-recover' )
-    await sign(ethChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', ethPrivateKey)
-    await sign(eosChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', eosPrivateKey)
-    await sign(algoChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', algoPrivateKey)
+    await encryptAndDecryptString('encrypt-this-string', transportPublicKey)
+    await decryptWithPrivateKey('private-message-decrypted-by-service', transportPublicKey )
+    await recoverAndReencrypt('private-key-to-recover', transportPublicKey )
+    await sign(ethChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', ethPrivateKey, transportPublicKey)
+    await sign(eosChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', eosPrivateKey, transportPublicKey)
+    await sign(algoChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', algoPrivateKey, transportPublicKey)
   } catch (error) {
     console.log(error);
   }

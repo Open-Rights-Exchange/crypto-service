@@ -1,42 +1,42 @@
-import { handleVerifyPublicKey } from '../../api/controllers/root'
+// import { handleVerifyPublicKey } from '../../api/controllers/root'
 
-declare let global: any
+// declare let global: any
 
-/**
- * Api Calls
- */
+// /**
+//  * Api Calls
+//  */
 
-type GetPublicKeyInput = {
-  apiKey?: string
-  serviceKey?: string
-  // input: {
-  //   account: string
-  // }
-}
+// type GetPublicKeyInput = {
+//   apiKey?: string
+//   serviceKey?: string
+//   // input: {
+//   //   account: string
+//   // }
+// }
 
-export const verifyPublicKey = async ({ apiKey = global.TEST_APP_API_KEY }: GetPublicKeyInput) => {
-  const req: any = {
-    url: `http://localhost:8080/api/publicKey`,
-    // query: {
-    //   account: input.account,
-    // },
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-key': apiKey,
-    },
-  }
+// export const verifyPublicKey = async ({ apiKey = global.TEST_APP_API_KEY }: GetPublicKeyInput) => {
+//   const req: any = {
+//     url: `http://localhost:8080/api/publicKey`,
+//     // query: {
+//     //   account: input.account,
+//     // },
+//     method: 'GET',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'api-key': apiKey,
+//     },
+//   }
 
-  // Used to get the return value
-  const jsonMock = jest.fn().mockImplementation(params => params)
+//   // Used to get the return value
+//   const jsonMock = jest.fn().mockImplementation(params => params)
 
-  const res: any = {
-    json: jest.fn(),
-    status: jest.fn().mockImplementation(() => ({
-      json: jsonMock,
-    })),
-  }
+//   const res: any = {
+//     json: jest.fn(),
+//     status: jest.fn().mockImplementation(() => ({
+//       json: jsonMock,
+//     })),
+//   }
 
-  // Returns the result passed into jsonMock
-  return handleVerifyPublicKey(req, res, () => {}, null)
-}
+//   // Returns the result passed into jsonMock
+//   return handleVerifyPublicKey(req, res, () => {}, null)
+// }
