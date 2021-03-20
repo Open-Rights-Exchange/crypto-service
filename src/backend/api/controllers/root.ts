@@ -7,10 +7,10 @@ import {
   assertBodyhasRequiredValues,
   assertBodyValueIsArrayIfExists,
   assertHeaderhasRequiredValues,
+  assertValidTransitPublicKeyAndRetrieve,
+  extractEncryptedPayload,
   returnResponse,
-  validateApiAuthToken,
-  validateEncryptedPayloadAuthToken,
-  validatePasswordAuthToken,
+  unwrapTransitEncryptedPasswordInSymOptions,
 } from '../helpers'
 import { Config, Context, ErrorSeverity, ErrorType, HttpStatusCode } from '../../../models'
 import {
@@ -38,40 +38,46 @@ async function v1Root(req: Request, res: Response, next: NextFunction, config: C
   }
   switch (action) {
     case 'decrypt-with-password':
-      return handleDecryptWithPassword(req, res, next, context)
+      return handleDecryptWithPassword(req, res, next, context, state)
     case 'decrypt-with-private-keys':
-      return handleDecryptWithPrivateKeys(req, res, next, context)
+      return handleDecryptWithPrivateKeys(req, res, next, context, state)
     case 'encrypt':
-      return handleEncrypt(req, res, next, context)
+      return handleEncrypt(req, res, next, context, state)
     case 'generate-keys':
-      return handleGenerateKeys(req, res, next, context)
+      return handleGenerateKeys(req, res, next, context, state)
     case 'get-transit-key':
       return handleGetTransitKey(req, res, next, context, state)
     case 'verify-public-key':
-      return handleVerifyPublicKey(req, res, next, context)
+      return handleVerifyPublicKey(req, res, next, context, state)
     case 'recover-and-reencrypt':
-      return handleRecoverAndReencrypt(req, res, next, context)
+      return handleRecoverAndReencrypt(req, res, next, context, state)
     case 'sign':
-      return handleSign(req, res, next, context)
+      return handleSign(req, res, next, context, state)
     default:
       return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, context)
   }
 }
 // api/decrypt-with-password
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleDecryptWithPassword(req: Request, res: Response, next: NextFunction, context: Context) {
+export async function handleDecryptWithPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  context: Context,
+  state: StateStore,
+) {
   const funcName = 'api/decrypt-with-password'
   try {
     globalLogger.trace('called handleDecryptWithPassword')
-    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'transit-public-key'], funcName)
     assertBodyhasRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
     assertBodyValueIsArrayIfExists(req, ['returnAsymmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = symmetricOptions
-      ? await validatePasswordAuthToken(req, symmetricOptions, encrypted, context)
+
+    const transitPublicKey = await assertValidTransitPublicKeyAndRetrieve(req, context, state)
+    const password = symmetricOptions
+      ? await unwrapTransitEncryptedPasswordInSymOptions(transitPublicKey, symmetricOptions, context, state)
       : null
-    const password = passwordAuthToken?.secrets?.password
     const response = await decryptWithPasswordResolver(
       { chainType, encrypted, password, symmetricOptions, returnAsymmetricOptions },
       context,
@@ -86,42 +92,53 @@ export async function handleDecryptWithPassword(req: Request, res: Response, nex
 
 // api/decrypt-with-private-keys
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleDecryptWithPrivateKeys(req: Request, res: Response, next: NextFunction, context: Context) {
+export async function handleDecryptWithPrivateKeys(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  context: Context,
+  state: StateStore,
+) {
   const funcName = 'api/decrypt-with-private-keys'
   let asymmetricEncryptedPrivateKeys
   try {
     globalLogger.trace('called handleDecryptWithPrivateKeys')
-    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'transit-public-key'], funcName)
     assertBodyhasRequiredValues(req, ['chainType', 'encrypted'], funcName)
     assertBodyHasOnlyOneOfValues(
       req,
-      ['asymmetricEncryptedPrivateKeysAndAuthToken', 'symmetricEncryptedPrivateKeys'],
+      ['asymmetricTransitEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'],
       funcName,
     )
     assertBodyValueIsArrayIfExists(req, ['returnAsymmetricOptions'], funcName)
     const {
       chainType,
       encrypted,
-      asymmetricEncryptedPrivateKeysAndAuthToken,
+      asymmetricTransitEncryptedPrivateKeys,
       symmetricEncryptedPrivateKeys,
       symmetricOptionsForEncryptedPrivateKeys,
       returnAsymmetricOptions,
     } = req.body
 
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = symmetricEncryptedPrivateKeys
-      ? await validatePasswordAuthToken(req, symmetricOptionsForEncryptedPrivateKeys, encrypted, context)
+    const transitPublicKey = await assertValidTransitPublicKeyAndRetrieve(req, context, state)
+    const password = symmetricEncryptedPrivateKeys
+      ? await unwrapTransitEncryptedPasswordInSymOptions(
+          transitPublicKey,
+          symmetricOptionsForEncryptedPrivateKeys,
+          context,
+          state,
+        )
       : null
-    const password = passwordAuthToken?.secrets?.password
 
-    // extract asymmetricEncryptedPrivateKeys and validate its authToken
-    const encryptedKeysAuthToken = await validateEncryptedPayloadAuthToken(
-      req,
-      asymmetricEncryptedPrivateKeysAndAuthToken,
-      'asymmetricEncryptedPrivateKeysAndAuthToken',
+    // extract asymmetricEncryptedPrivateKeys using transitPublicKey
+    const encryptedKeys = await extractEncryptedPayload(
+      transitPublicKey,
+      asymmetricTransitEncryptedPrivateKeys,
+      'asymmetricTransitEncryptedPrivateKeys',
       context,
+      state,
     )
-    asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
+    asymmetricEncryptedPrivateKeys = encryptedKeys
 
     const response = await decryptWithPrivateKeysResolver(
       {
@@ -145,62 +162,67 @@ export async function handleDecryptWithPrivateKeys(req: Request, res: Response, 
 
 // api/recover-and-reencrypt
 /** Calls resolver to decrypt the payload using provided password and options */
-export async function handleRecoverAndReencrypt(req: Request, res: Response, next: NextFunction, context: Context) {
+export async function handleRecoverAndReencrypt(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  context: Context,
+  state: StateStore,
+) {
   const funcName = 'api/recover-and-reencrypt'
   let encryptedPayload
   let asymmetricEncryptedPrivateKeys
   let password
   try {
     globalLogger.trace('called handleRecoverAndReencrypt')
-    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
-    assertBodyhasRequiredValues(req, ['chainType', 'asymmetricEncryptedPrivateKeysAndAuthToken'], funcName)
-    assertBodyHasOnlyOneOfValues(req, ['encrypted', 'encryptedAndAuthToken'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'transit-public-key'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'asymmetricTransitEncryptedPrivateKeys'], funcName)
+    assertBodyHasOnlyOneOfValues(req, ['encrypted', 'encryptedTransitEncrypted'], funcName)
     assertBodyHasAtLeastOneOfValues(req, ['symmetricOptionsForReencrypt', 'asymmetricOptionsForReencrypt'], funcName)
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptionsForReencrypt'], funcName)
 
     const {
       chainType,
       encrypted,
-      encryptedAndAuthToken,
-      asymmetricEncryptedPrivateKeysAndAuthToken,
+      encryptedTransitEncrypted,
+      asymmetricTransitEncryptedPrivateKeys,
       symmetricOptionsForReencrypt,
       asymmetricOptionsForReencrypt,
     } = req.body
 
-    await validateApiAuthToken(req, context)
+    const transitPublicKey = await assertValidTransitPublicKeyAndRetrieve(req, context, state)
 
-    // extract encrypted payload from encryptedAndAuthToken (if provided) and validate authToken
-    if (encryptedAndAuthToken) {
-      const encryptedPayloadAuthToken = await validateEncryptedPayloadAuthToken(
-        req,
-        encryptedAndAuthToken,
-        'encryptedAndAuthToken',
+    // extract encrypted payload from encryptedTransitEncrypted (if provided)
+    if (encryptedTransitEncrypted) {
+      encryptedPayload = await extractEncryptedPayload(
+        transitPublicKey,
+        encryptedTransitEncrypted,
+        'encryptedTransitEncrypted',
         context,
+        state,
       )
-      encryptedPayload = encryptedPayloadAuthToken?.encrypted
     } else {
       encryptedPayload = encrypted
     }
 
-    // validate passwordAuthToken and extract password (if provided in sym options)
+    // extract password (if provided in sym options)
     if (symmetricOptionsForReencrypt) {
-      const passwordAuthToken = await validatePasswordAuthToken(
-        req,
+      password = await unwrapTransitEncryptedPasswordInSymOptions(
+        transitPublicKey,
         symmetricOptionsForReencrypt,
-        encryptedPayload,
         context,
+        state,
       )
-      password = passwordAuthToken?.secrets?.password
     }
 
-    // extract asymmetricEncryptedPrivateKeys and validate authToken
-    const encryptedKeysAuthToken = await validateEncryptedPayloadAuthToken(
-      req,
-      asymmetricEncryptedPrivateKeysAndAuthToken,
-      'asymmetricEncryptedPrivateKeysAndAuthToken',
+    // extract asymmetricEncryptedPrivateKeys
+    asymmetricEncryptedPrivateKeys = await extractEncryptedPayload(
+      transitPublicKey,
+      asymmetricTransitEncryptedPrivateKeys,
+      'asymmetricTransitEncryptedPrivateKeys',
       context,
+      state,
     )
-    asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
 
     const response = await recoverAndReencryptResolver(
       {
@@ -223,21 +245,26 @@ export async function handleRecoverAndReencrypt(req: Request, res: Response, nex
 
 // api/encrypt
 /** Calls resolver to encrypt the payload using one or more public/private key pairs for a specific blockchain */
-export async function handleEncrypt(req: Request, res: Response, next: NextFunction, context: Context) {
+export async function handleEncrypt(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  context: Context,
+  state: StateStore,
+) {
   const funcName = 'api/encrypt'
   try {
     globalLogger.trace('called handleEncrypt')
-    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'transit-public-key'], funcName)
     assertBodyhasRequiredValues(req, ['chainType', 'toEncrypt'], funcName)
     assertBodyHasAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = symmetricOptions
-      ? await validatePasswordAuthToken(req, symmetricOptions, toEncrypt, context)
+    const transitPublicKey = await assertValidTransitPublicKeyAndRetrieve(req, context, state)
+    const password = symmetricOptions
+      ? await unwrapTransitEncryptedPasswordInSymOptions(transitPublicKey, symmetricOptions, context, state)
       : null
-    const password = passwordAuthToken?.secrets?.password
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, toEncrypt },
       context,
@@ -252,21 +279,26 @@ export async function handleEncrypt(req: Request, res: Response, next: NextFunct
 
 // api/generate-keys
 /** Calls resolver to generate one or more public/private key pairs for a specific blockchain */
-export async function handleGenerateKeys(req: Request, res: Response, next: NextFunction, context: Context) {
+export async function handleGenerateKeys(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  context: Context,
+  state: StateStore,
+) {
   const funcName = 'api/generate-keys'
   try {
     globalLogger.trace('called handleGenerateKeys')
-    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'transit-public-key'], funcName)
     assertBodyhasRequiredValues(req, ['chainType'], funcName)
     assertBodyHasAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = symmetricOptions
-      ? await validatePasswordAuthToken(req, symmetricOptions, null, context)
+    const transitPublicKey = await assertValidTransitPublicKeyAndRetrieve(req, context, state)
+    const password = symmetricOptions
+      ? await unwrapTransitEncryptedPasswordInSymOptions(transitPublicKey, symmetricOptions, context, state)
       : null
-    const password = passwordAuthToken?.secrets?.password
     const response = await generateKeysResolver(
       { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
       context,
@@ -281,16 +313,15 @@ export async function handleGenerateKeys(req: Request, res: Response, next: Next
 
 // api/sign
 /** Calls resolver to sign a transaction with one or more private key pairs for a specific blockchain */
-export async function handleSign(req: Request, res: Response, next: NextFunction, context: Context) {
+export async function handleSign(req: Request, res: Response, next: NextFunction, context: Context, state: StateStore) {
   const funcName = 'api/sign'
-  let asymmetricEncryptedPrivateKeys
   try {
     globalLogger.trace('called handleSign')
-    assertHeaderhasRequiredValues(req, ['api-key', 'auth-token'], funcName)
+    assertHeaderhasRequiredValues(req, ['api-key', 'transit-public-key'], funcName)
     assertBodyhasRequiredValues(req, ['chainType', 'toSign'], funcName)
     assertBodyHasAtLeastOneOfValues(
       req,
-      ['asymmetricEncryptedPrivateKeysAndAuthToken', 'symmetricEncryptedPrivateKeys'],
+      ['asymmetricTransitEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'],
       funcName,
     )
     assertBodyValueIsArrayIfExists(req, ['symmetricEncryptedPrivateKeys'], funcName)
@@ -298,27 +329,26 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       chainType,
       toSign,
       symmetricOptions,
-      asymmetricEncryptedPrivateKeysAndAuthToken,
+      asymmetricTransitEncryptedPrivateKeys,
       symmetricEncryptedPrivateKeys,
     } = req.body
 
-    await validateApiAuthToken(req, context)
-    const passwordAuthToken = symmetricOptions
-      ? await validatePasswordAuthToken(req, symmetricOptions, toSign, context)
+    const transitPublicKey = await assertValidTransitPublicKeyAndRetrieve(req, context, state)
+    const password = symmetricOptions
+      ? await unwrapTransitEncryptedPasswordInSymOptions(transitPublicKey, symmetricOptions, context, state)
       : null
-    const password = passwordAuthToken?.secrets?.password
 
-    // extract asymmetricEncryptedPrivateKeys and validate its authToken
-    const encryptedKeysAuthToken = await validateEncryptedPayloadAuthToken(
-      req,
-      asymmetricEncryptedPrivateKeysAndAuthToken,
-      'asymmetricEncryptedPrivateKeysAndAuthToken',
+    // extract asymmetricEncryptedPrivateKeys
+    const asymmetricEncryptedPrivateKeys = await extractEncryptedPayload(
+      transitPublicKey,
+      asymmetricTransitEncryptedPrivateKeys,
+      'asymmetricTransitEncryptedPrivateKeys',
       context,
+      state,
     )
-    asymmetricEncryptedPrivateKeys = encryptedKeysAuthToken?.encrypted
 
-    if (asymmetricEncryptedPrivateKeysAndAuthToken && !Array.isArray(asymmetricEncryptedPrivateKeys)) {
-      const msg = `Bad parameter(s) in request body. 'encrypted' param (within asymmetricEncryptedPrivateKeysAndAuthToken) must be an array. If only one value, enclose it in an array i.e. [ ].`
+    if (asymmetricTransitEncryptedPrivateKeys && !Array.isArray(asymmetricEncryptedPrivateKeys)) {
+      const msg = `Bad parameter(s) in request body. 'encrypted' param (within asymmetricTransitEncryptedPrivateKeys) must be an array. If only one value, enclose it in an array i.e. [ ].`
       throw new ServiceError(msg, ErrorType.BadParam, funcName)
     }
 
@@ -343,7 +373,13 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
 
 // api/get-transit-key
 /** Returns a single use public key for caller to use to (asymmetrically) encrypt all data sent to this server */
-export async function handleGetTransitKey(req: Request, res: Response, next: NextFunction, context: Context, state: StateStore) {
+export async function handleGetTransitKey(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  context: Context,
+  state: StateStore,
+) {
   const funcName = 'api/get-transit-key'
   try {
     globalLogger.trace('called handleGetTransitKey')
@@ -360,7 +396,13 @@ export async function handleGetTransitKey(req: Request, res: Response, next: Nex
 
 // api/public-key
 /** Returns the public key for which all incoming secrets should be asymmetrically encrypted */
-export async function handleVerifyPublicKey(req: Request, res: Response, next: NextFunction, context: Context) {
+export async function handleVerifyPublicKey(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  context: Context,
+  state: StateStore,
+) {
   const funcName = 'api/verify-public-key'
   try {
     globalLogger.trace('called handlePublicKey')

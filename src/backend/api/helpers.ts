@@ -3,20 +3,18 @@ import url from 'url'
 import { isNullOrEmpty, tryBase64Decode, tryParseJSON } from '../../helpers'
 import {
   AnalyticsEvent,
-  AppId,
   AsymmetricEncryptedData,
   AsymmetricEncryptedString,
-  AuthToken,
-  AuthTokenType,
+  ChainType,
   Context,
   ErrorType,
   HttpStatusCode,
   SymmetricOptionsParam,
 } from '../../models'
 import { composeErrorResponse, ServiceError } from '../../helpers/errors'
-import { decryptWithBasePrivateKey } from '../resolvers/crypto'
-import { validateAuthTokenAndExtractContents } from '../resolvers/token'
-import { createContext } from './context'
+import { getTransitKeyFromKeyStore } from '../resolvers/crypto'
+import { StateStore } from '../../helpers/stateStore'
+import { getChain } from '../chains/chainConnection'
 
 // ---- Helper functions
 
@@ -142,89 +140,50 @@ export function returnResponse(
   return res.status(httpStatusCode).json({ processId: context?.processId, ...responseToReturn })
 }
 
-/** Validate token helper - extracts info from symmetric options */
-export async function validatePasswordAuthToken(
-  req: Request,
-  symmetricOptions: SymmetricOptionsParam,
-  /** principal value of function - e.g. for /sign, it the content toSign */
-  bodyToVerify: any,
-  context: Context,
-) {
-  if (isNullOrEmpty(symmetricOptions?.passwordAuthToken)) {
-    const msg = `Symmetric options were provided but passwordAuthToken is missing.`
-    throw new ServiceError(msg, ErrorType.BadParam, 'validatePasswordAuthToken')
-  }
-  return validateAuthTokenAndExtractContents({
-    authTokenType: AuthTokenType.Password,
-    requestUrl: getFullUrlFromRequest(req),
-    encryptedAuthToken: symmetricOptions.passwordAuthToken, // base64 encoded
-    requestBody: bodyToVerify,
-    context,
-  })
-}
-
-export type EncryptedAndAuthToken = {
-  encrypted: AsymmetricEncryptedString
-  authToken: AuthToken
-}
-
-/** Validate token helper - extracts info from request */
-export async function validateEncryptedPayloadAuthToken(
-  req: Request,
-  encryptedAndAuthToken: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
+/** Validate validateEncryptedPayload helper - confirms it was encrypted with valid transit public key and extracts from request */
+export async function extractEncryptedPayload(
+  transitPublicKey: string,
+  encryptedPayload: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
   paramName: string,
   context: Context,
-) {
-  if (isNullOrEmpty(encryptedAndAuthToken)) return null
-  const decodedAuthToken = tryBase64Decode(encryptedAndAuthToken)
-  if (isNullOrEmpty(decodedAuthToken)) {
+  state: StateStore,
+): Promise<AsymmetricEncryptedData[]> {
+  if (isNullOrEmpty(encryptedPayload)) return null
+  const decodedEncryptedPayload = tryBase64Decode(encryptedPayload)
+  if (isNullOrEmpty(decodedEncryptedPayload)) {
     throw new ServiceError(
-      `Corrupted authToken in ${paramName} value. Expected a base64-encoded string`,
+      `Corrupted encryptedPayload in ${paramName} value. Expected a base64-encoded string`,
       ErrorType.BadParam,
-      'validateEncryptedPayloadAuthToken',
+      'validateEncryptedPayload',
     )
   }
 
-  const decodedEncryptedAndAuthToken: EncryptedAndAuthToken = tryParseJSON(
-    await decryptWithBasePrivateKey({ encrypted: decodedAuthToken }, context),
-  )
-
-  if (isNullOrEmpty(decodedEncryptedAndAuthToken)) {
-    throw new ServiceError(
-      `Problem with ${paramName} value. Expected a stringified JSON object encypted using this service's public key`,
-      ErrorType.BadParam,
-      'validateEncryptedPayloadAuthToken',
-    )
-  }
-
-  if (!decodedEncryptedAndAuthToken?.authToken || !decodedEncryptedAndAuthToken?.encrypted) {
-    const msg1 = !decodedEncryptedAndAuthToken?.authToken ? `EncryptedAndAuthToken is missing authToken property.` : ''
-    const msg2 = !decodedEncryptedAndAuthToken?.encrypted ? `EncryptedAndAuthToken is missing encrypted property.` : ''
-    throw new ServiceError(`${msg1} ${msg2}`, ErrorType.BadParam, 'validateEncryptedPayloadAuthToken')
-  }
-
-  const authToken = await validateAuthTokenAndExtractContents({
-    authTokenType: AuthTokenType.EncryptedPayload,
-    requestBody: decodedEncryptedAndAuthToken?.encrypted,
-    requestUrl: getFullUrlFromRequest(req),
-    authToken: decodedEncryptedAndAuthToken?.authToken,
-    context,
+  const decryptedPayload = await unwrapTransitEncryptedPayload({
+    encryptedPayload: decodedEncryptedPayload,
+    transitPublicKey,
+    state,
   })
-  return {
-    authToken,
-    encrypted: decodedEncryptedAndAuthToken?.encrypted,
-  }
+  let decryptedPayloadObject = tryParseJSON(decryptedPayload)
+
+  // if not an array, wrap in one
+  if (!Array.isArray) decryptedPayloadObject = [decryptedPayloadObject]
+
+  return decryptedPayloadObject as AsymmetricEncryptedData[]
 }
 
-/** Validate token helper - extracts info from request object */
-export async function validateApiAuthToken(req: Request, context: Context) {
-  return validateAuthTokenAndExtractContents({
-    authTokenType: AuthTokenType.ApiHeader,
-    requestUrl: getFullUrlFromRequest(req),
-    encryptedAuthToken: req.headers['auth-token'] as string,
-    requestBody: req?.body,
-    context,
-  })
+/** Validate transit public key provided in header - must still be valid and in the state cache */
+export async function assertValidTransitPublicKeyAndRetrieve(req: Request, context: Context, state: StateStore) {
+  const transitPublicKey = req.headers['transit-public-key'] as string
+  // get publicKey from cachce
+  const keys = getTransitKeyFromKeyStore(transitPublicKey, state)
+  if (isNullOrEmpty(keys)) {
+    throw new ServiceError(
+      `Problem with 'transit-public-key' in request header. Must be a (single use) key issued by this server recently (and not expired).`,
+      ErrorType.BadParam,
+      'validateApiValidTransitPublicKey',
+    )
+  }
+  return keys?.publicKey
 }
 
 /** Compose the full url of the request */
@@ -232,4 +191,52 @@ export function getFullUrlFromRequest(req: Request) {
   // if hosted behind a proxy, check the incoming protocol first
   const protocol = req.headers['x-forwarded-proto'] || req.protocol
   return `${protocol}://${req.get('host')}${req.originalUrl}`
+}
+
+export type DecryptTransitEncryptedPayloadParams = {
+  encryptedPayload?: string
+  transitPublicKey: string
+  state: StateStore
+}
+
+/** Unwrap encryptedPayload (using private key associated with transitPublicKey) */
+export async function unwrapTransitEncryptedPayload(params: DecryptTransitEncryptedPayloadParams) {
+  const { encryptedPayload, transitPublicKey, state } = params
+
+  // decrypt if necessary
+  let decryptedPayload
+  if (encryptedPayload) {
+    // look in stateStore key cache
+    const privateKey = getTransitKeyFromKeyStore(transitPublicKey, state)?.privateKey
+    const chainConnectNoChain = await getChain(ChainType.NoChain, null)
+    decryptedPayload = await chainConnectNoChain.chainFunctions.decryptWithPrivateKey(
+      chainConnectNoChain.chainFunctions.toAsymEncryptedDataString(encryptedPayload),
+      privateKey,
+    )
+  }
+
+  return decryptedPayload
+}
+
+/** unwrap password provided in symmetric options (using private key associated with transitPublicKey) */
+export async function unwrapTransitEncryptedPasswordInSymOptions(
+  transitPublicKey: string,
+  symmetricOptions: SymmetricOptionsParam,
+  context: Context,
+  state: StateStore,
+): Promise<string> {
+  if (isNullOrEmpty(symmetricOptions?.transitEncryptedPassword)) {
+    const msg = `Symmetric options were provided but transitEncryptedPassword is missing.`
+    throw new ServiceError(msg, ErrorType.BadParam, 'extractTransitEncryptedPasswordInSymOptions')
+  }
+  const decodedTransitEncryptedPassword = tryBase64Decode(symmetricOptions?.transitEncryptedPassword)
+  if (!decodedTransitEncryptedPassword) {
+    const msg = `transitEncryptedPassword in symmetric options is malformed. Expected base64 encoded string`
+    throw new ServiceError(msg, ErrorType.BadParam, 'extractTransitEncryptedPasswordInSymOptions')
+  }
+  return unwrapTransitEncryptedPayload({
+    transitPublicKey,
+    encryptedPayload: decodedTransitEncryptedPassword, // base64 encoded
+    state,
+  })
 }
