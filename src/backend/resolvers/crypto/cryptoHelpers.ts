@@ -33,6 +33,7 @@ import {
 } from '../../../helpers'
 import { getAppConfig } from '../appConfig'
 import { encryptResolver } from './encryptResolver'
+import { StateStore } from '../../../helpers/stateStore'
 
 export type EncryptReturnValueParams = {
   /** chain/curve used to encrypt */
@@ -177,14 +178,27 @@ export async function getPrivateKeysForAsymEncryptedPayload(
 export async function retrievePrivateKeyForPublicKey(
   publicKey: PublicKey,
   context: Context,
+  state?: StateStore,
 ): Promise<{ chainType: ChainType; privateKey: PrivateKey }> {
+  let privateKey: PrivateKey
   // currently, we only have one private key
   if (publicKey === context.constants.BASE_PUBLIC_KEY) {
+    privateKey = context.constants.BASE_PRIVATE_KEY
+  } else {
+    // look in stateStore key cache
+    privateKey = getTransitKeyFromKeyStore(publicKey, state)?.privateKey
+  }
+  if (privateKey) {
     return { chainType: null, privateKey: context.constants.BASE_PRIVATE_KEY }
   }
   // No matching publicKey
   const msg = `Could not retrieve PrivateKey for PublicKey: ${publicKey}. Service does not have access to it.`
   throw new ServiceError(msg, ErrorType.KeyError, 'retrievePrivateKeyForPublicKey')
+}
+
+/** lookup a transit key from the keystore */
+export function getTransitKeyFromKeyStore(publicKey: string, state: StateStore) {
+  return state?.transitKeyStore?.find(k => k.publicKey === publicKey)
 }
 
 export type DecryptWithBasePrivateKeyParams = {
