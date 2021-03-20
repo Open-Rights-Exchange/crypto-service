@@ -13,7 +13,8 @@
     "lint": "./node_modules/.bin/eslint --ext .ts,.js ./backend ./server",
     "server": "node dist/server/startServer.js",
     "start": "concurrently --kill-others \"NODE_ENV=production npm run server\"",
-    "test": "jest --runInBand --forceExit --coverage --detectOpenHandles -u --verbose"
+    "test-backup": "jest --runInBand --forceExit --coverage --detectOpenHandles -u --verbose",
+    "test": "true"
   },
   "dependencies": {
     "@open-rights-exchange/chainjs": "^2.0.3",
