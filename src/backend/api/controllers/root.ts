@@ -23,16 +23,17 @@ import {
   verifyPublicKeyResolver,
 } from '../../resolvers/crypto'
 import { logError, ServiceError } from '../../../helpers/errors'
+import { StateStore } from '../../../helpers/stateStore'
 
 // Root-level routes
-async function v1Root(req: Request, res: Response, next: NextFunction, config: Config) {
+async function v1Root(req: Request, res: Response, next: NextFunction, config: Config, state: StateStore) {
   const now = new Date()
   const { action } = req.params
   const context = createContext(req, config, now)
   try {
     await addAppIdToContextFromApiKey(req, context)
   } catch (error) {
-    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, null, error)
+    return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
   }
   switch (action) {
     case 'decrypt-with-password':
@@ -50,7 +51,7 @@ async function v1Root(req: Request, res: Response, next: NextFunction, config: C
     case 'sign':
       return handleSign(req, res, next, context)
     default:
-      return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, null)
+      return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, context)
   }
 }
 // api/decrypt-with-password

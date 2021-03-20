@@ -38,4 +38,5 @@ export const CONSTANTS: Constants = {
   BUILD_VERSION: settings?.BUILD_VERSION,
   DEPLOY_DATE: settings?.DEPLOY_DATE,
   ENV_HASH: settings?.ENV_HASH,
+  TRANSIT_KEY_EXPIRE_IN_SECONDS: 120,
 }

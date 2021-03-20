@@ -135,11 +135,10 @@ export function returnResponse(
     errorResponse = composeErrorResponse(context, error)
     responseToReturn = { ...errorResponse, ...responseToReturn }
   }
-  // if no context provided, create one (in part, to get processId from request header)
-  if (!context) {
-    context = createContext(req, null, new Date())
+  // we wont have a context for well-known endpoint
+  if (context) {
+    analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
   }
-  analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
   return res.status(httpStatusCode).json({ processId: context?.processId, ...responseToReturn })
 }
 

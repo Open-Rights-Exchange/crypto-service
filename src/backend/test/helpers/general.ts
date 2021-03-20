@@ -5,6 +5,7 @@ import { Server } from 'http'
 import { isNullOrEmpty } from '../../../helpers'
 import { CONSTANTS } from '../config/constants'
 import { createExpressServer } from '../../../server/createServer'
+import { StateStore } from '../../../helpers/stateStore'
 
 declare let global: any
 
@@ -37,7 +38,8 @@ export const getKylinApi = (privateKey?: any) => {
 export async function createExpressServerForTest() {
   const settingTracingEnabled = false
   const config = { constants: CONSTANTS, settings: { tracingEnabled: settingTracingEnabled } }
-  const app = await createExpressServer(config)
+  const state = new StateStore()
+  const app = await createExpressServer(config, state)
   const server: Server = app.listen(global.TEST_EXPRESS_SERVER_PORT, () => {
     // console.log(`Test service listening on port ${global.TEST_EXPRESS_SERVER_PORT}`)
   })
