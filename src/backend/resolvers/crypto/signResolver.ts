@@ -5,8 +5,8 @@ import { decryptPrivateKeys } from './cryptoHelpers'
 
 /**
  *  Encrypt a string using one or more private keys
- *  If symmetricEncryptedPrivateKeys is provided, they will be decrypted symmetricOptions and password (in the authToken)
- *  If asymmetricEncryptedPrivateKeys is provided, they will be decrypted symmetricOptions and password (in the authToken)
+ *  If symmetricEncryptedPrivateKeys is provided, they will be decrypted symmetricOptions and password
+ *  If asymmetricEncryptedPrivateKeys is provided, they will be decrypted symmetricOptions and password
  *  Returns: One or more signatures - one for each privateKey provided
  */
 export async function signResolver(params: SignParams, context: Context): Promise<string[]> {
