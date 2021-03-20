@@ -16,7 +16,7 @@
     "test": "jest --runInBand --forceExit --coverage --detectOpenHandles -u --verbose"
   },
   "dependencies": {
-    "@open-rights-exchange/chainjs": "^2.0.1",
+    "@open-rights-exchange/chainjs": "^2.0.3",
     "analytics-node": "^3.5.0",
     "axios": "^0.21.1",
     "concurrently": "^4.1.2",
