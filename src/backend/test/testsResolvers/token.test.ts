@@ -11,7 +11,7 @@ import {
   INVALID_ENCRYPTED_AUTH_TOKEN,
   EXPIRED_AUTH_TOKEN,
 } from '../dataMocks'
-import { validateAuthTokenAndExtractContents } from '../../resolvers/token'
+import { unwrapTransitEncryptedPayload } from '../../api/helpers'
 import { AuthTokenType } from '../../../models'
 
 declare let global: any
@@ -39,10 +39,10 @@ describe('Test token handling and validation', () => {
     const context = createContext()
 
     it('decodes and validates correctly', async () => {
-      const token = await validateAuthTokenAndExtractContents({
-        authTokenType: AuthTokenType.ApiHeader,
+      const token = await unwrapTransitEncryptedPayload({
+        AuthTokenType: AuthTokenType.ApiHeader,
         requestUrl,
-        encryptedAuthToken: VALID_AUTH_TOKEN,
+        encryptedPayload: VALID_AUTH_TOKEN,
         requestBody: requestBodyEmpty,
         context,
       })
@@ -51,10 +51,10 @@ describe('Test token handling and validation', () => {
 
     it('Should throw if token already used', async () => {
       await expect(
-        validateAuthTokenAndExtractContents({
-          authTokenType: AuthTokenType.ApiHeader,
+        unwrapTransitEncryptedPayload({
+          AuthTokenType: AuthTokenType.ApiHeader,
           requestUrl,
-          encryptedAuthToken: VALID_AUTH_TOKEN,
+          encryptedPayload: VALID_AUTH_TOKEN,
           requestBody: requestBodyEmpty,
           context,
         }),
@@ -63,10 +63,10 @@ describe('Test token handling and validation', () => {
 
     it('Should throw if bad AuthToken', async () => {
       await expect(
-        validateAuthTokenAndExtractContents({
-          authTokenType: AuthTokenType.ApiHeader,
+        unwrapTransitEncryptedPayload({
+          AuthTokenType: AuthTokenType.ApiHeader,
           requestUrl,
-          encryptedAuthToken: 'abcdefg', // bad value
+          encryptedPayload: 'abcdefg', // bad value
           requestBody: requestBodyEmpty,
           context,
         }),
@@ -75,10 +75,10 @@ describe('Test token handling and validation', () => {
 
     it('Should throw if not encrypted with server’s base key', async () => {
       await expect(
-        validateAuthTokenAndExtractContents({
-          authTokenType: AuthTokenType.ApiHeader,
+        unwrapTransitEncryptedPayload({
+          AuthTokenType: AuthTokenType.ApiHeader,
           requestUrl,
-          encryptedAuthToken: INVALID_ENCRYPTED_AUTH_TOKEN,
+          encryptedPayload: INVALID_ENCRYPTED_AUTH_TOKEN,
           requestBody: requestBodyEmpty,
           context,
         }),
@@ -88,10 +88,10 @@ describe('Test token handling and validation', () => {
     })
 
     it('decodes and validates correctly with null url', async () => {
-      const token = await validateAuthTokenAndExtractContents({
-        authTokenType: AuthTokenType.ApiHeader,
+      const token = await unwrapTransitEncryptedPayload({
+        AuthTokenType: AuthTokenType.ApiHeader,
         requestUrl,
-        encryptedAuthToken: encodedToken1wNullUrl,
+        encryptedPayload: encodedToken1wNullUrl,
         requestBody: encodedBody1,
         context,
       })
@@ -112,10 +112,10 @@ describe('Test token handling and validation', () => {
 
     it('Should throw if req url doesn’t match', async () => {
       await expect(
-        validateAuthTokenAndExtractContents({
-          authTokenType: AuthTokenType.ApiHeader,
+        unwrapTransitEncryptedPayload({
+          AuthTokenType: AuthTokenType.ApiHeader,
           requestUrl: `${requestUrl}_invalid`,
-          encryptedAuthToken: VALID_AUTH_TOKEN,
+          encryptedPayload: VALID_AUTH_TOKEN,
           requestBody: requestBodyEmpty,
           context,
         }),
@@ -124,10 +124,10 @@ describe('Test token handling and validation', () => {
 
     it('Should throw if expired', async () => {
       await expect(
-        validateAuthTokenAndExtractContents({
-          authTokenType: AuthTokenType.ApiHeader,
+        unwrapTransitEncryptedPayload({
+          AuthTokenType: AuthTokenType.ApiHeader,
           requestUrl,
-          encryptedAuthToken: EXPIRED_AUTH_TOKEN,
+          encryptedPayload: EXPIRED_AUTH_TOKEN,
           requestBody: requestBodyEmpty,
           context,
         }),
