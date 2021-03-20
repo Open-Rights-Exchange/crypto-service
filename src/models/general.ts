@@ -1,6 +1,6 @@
 import { Analytics } from '../backend/services/segment/resolvers'
 import { Logger } from '../helpers/logger'
-import { ChainType, PublicKey, SymmetricPassword } from './chain'
+import { ChainType, PublicKey } from './chain'
 
 export interface Lookup {
   [key: string]: any
@@ -55,23 +55,6 @@ export const DEFAULT_SIGNATURE_ENCODING = 'utf8'
 export type Hash = string
 export type SaltName = string
 
-/** Decrypted Athorization token sent (encrypted) by caller
- *  Ensures that the request is coming from an authorized called
- *  and the request is only executed/authorized once
- *  Optionally includes symmetric password for encryption/decryption */
-export type AuthToken = {
-  /** full url of request (server url and api path) */
-  url: string
-  /** hash of target for authorization - for am api request, this is the stringified JSON object of request body */
-  payloadHash: Hash
-  validFrom: Date
-  validTo: Date
-  secrets?: {
-    /** Symmetric password used to decrypt a symmetrically encrypted payload (that was, for example, sent in the request) */
-    password?: SymmetricPassword
-  }
-}
-
 /** Options for asym encryption */
 export type AsymmetricOptions = {
   /** array of public keys - in order to be used for asym encryption wrapping */
@@ -107,14 +90,7 @@ export type SymmetricEd25519Options = {
 }
 
 /** Symmetric encryption options with encrypted password (used by API endpoints)
- *  passwordAuthToken is base64 encoded authToken */
+ *  transitEncryptedPassword is base64 encoded authToken */
 export type SymmetricOptionsParam =
-  | ({ passwordAuthToken: string } & SymmetricEccOptions)
-  | ({ passwordAuthToken: string } & SymmetricEd25519Options)
-
-/** Indicator of what an AuthToken is used for */
-export enum AuthTokenType {
-  ApiHeader = 'apiHeader',
-  EncryptedPayload = 'encryptedPayload',
-  Password = 'password',
-}
+  | ({ transitEncryptedPassword: string } & SymmetricEccOptions)
+  | ({ transitEncryptedPassword: string } & SymmetricEd25519Options)
