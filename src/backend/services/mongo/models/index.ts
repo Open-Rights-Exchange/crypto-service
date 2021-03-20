@@ -2,7 +2,6 @@ import { Convert, createSchema, Definition, DefinitionField, ExtractData, Extrac
 
 // MongoDB Schema files
 import { AppConfigSchema } from './appConfig';
-import { AuthTokenSchema } from './authToken';
 import { AppRegistrationApiKeySchema, AppRegistrationSchema } from './appRegistration';
 
 // export ts-mongoose 
@@ -14,13 +13,11 @@ export { Convert, createSchema, Definition, DefinitionField, ExtractData, Extrac
 export const Mongo = {
   AppRegistration: typedModel('AppRegistration', AppRegistrationSchema, 'appRegistrations'),
   AppConfig: typedModel('AppConfig', AppConfigSchema, 'appConfig'),
-  AuthToken: typedModel('AuthToken', AuthTokenSchema, 'authTokens'),
 };
 
 /** Given a Mongoose result, these types transform it into the just the data properties  
  *  These types are typically used in our mongo helper functions
  *  Ex: user = findOneMongo<UserData>() yields a typed response: user.email */
-export type AuthTokenData = ExtractData<typeof AuthTokenSchema>;
 export type AppRegistrationData = ExtractData<typeof AppRegistrationSchema>;
 export type AppConfigData = ExtractData<typeof AppConfigSchema>;
 // sub schemas
