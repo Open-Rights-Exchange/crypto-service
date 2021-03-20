@@ -18,7 +18,7 @@ import {
 import { encryptResolver } from './encryptResolver'
 
 /**
- *  Decrypts a symmetrically encrypted payload using a password (in the authToken)
+ *  Decrypts a symmetrically encrypted payload using a password
  *  If returnAsymmetricOptions is specified, the decrypted item is encrypted with this public key before being returned
  *  Returns: the decrypted string OR an asymmetrically re-encrypted payload (using returnAsymmetricOptions)
  */

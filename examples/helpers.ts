@@ -4,46 +4,18 @@ import { Crypto } from "@open-rights-exchange/chainjs";
 
 const DEFAULT_TOKEN_EXPIRE_IN_SECONDS = 120 // 2 mins
 
-/** 
- *  Create and encode the authToken needed for a request 
- *  An auth token includes an expiration time (validTo) and can contain secrets
- *  The whole token is encrypted (with the server's publicKey and) and then base64 encoded
- *  if dontEncryptToken = true, the token is returned as a JSON object (not encypted and encoded)
- *  if validFrom isnt provided, it will be set to current date
- *  if validTo isnt provided, it will be set to 120 seconds after validFrom
-*/
-export async function createAuthToken(url: string, payloadBody: any, publicKey: string, secrets?: any, dontEncryptToken = false, validFrom?: Date, validTo?: Date ) {
-  // hash the body of the request
-  const payloadHash = payloadBody ? createSha256Hash(JSON.stringify(payloadBody)): null;
-  const tokenValidFrom = validFrom || new Date();
-  const token = {
-    url,
-    payloadHash,
-    validFrom: tokenValidFrom,
-    validTo: validTo || new Date(tokenValidFrom.getTime() + 1000 * DEFAULT_TOKEN_EXPIRE_IN_SECONDS),
-    secrets: secrets || {}, 
-  };
-  
-  if(dontEncryptToken) return token
 
+/** encrypt a string with a public key 
+ *  The encrytped payload is a stringified JSON object which is base64 encoded
+*/
+export async function encryptWithTransportKey(value: string, transportPublicKey: string ) {
+  // hash the body of the request
   // encrypt with public key of service
   const encrypted = Crypto.Asymmetric.encryptWithPublicKey(
-    publicKey,
-    JSON.stringify(token),
+    transportPublicKey,
+    value,
   );
   return Base64.encode(JSON.stringify(encrypted));
-}
-
-/** 
- *  Create and encode a payload which includes an encrypted data item AND and authToken governing its use
- *  The contents of the payload are: { encrypted: EncryptedDataString, authToken: AuthToken }
- *  The contents are stringified, encrypted (with the server's publicKey), then that encrypted string is base64 encoded
-*/
-export async function createEncryptedAndAuthToken(url: string, encrypted: any, servicePublicKey: string, secrets?: any, returnRawAuthToken = false) {
-  const encryptedPayloadAuthToken = await createAuthToken(url, encrypted, servicePublicKey, secrets, true )
-  const encryptedAndAuthTokenString = JSON.stringify({encrypted, authToken: encryptedPayloadAuthToken})
-  const encryptedToken = Crypto.Asymmetric.encryptWithPublicKey(servicePublicKey, encryptedAndAuthTokenString)
-  return Base64.encode(JSON.stringify(encryptedToken));
 }
 
 /** Generates a SHA256 hash from a value
