@@ -47,7 +47,7 @@ export type Constants = {
   MONGO_TIMEOUT: number
   ROLLBAR_POST_WRITE_SERVER_KEY: string
   SEGMENT_WRITE_KEY: string
-  TRANSIT_KEY_EXPIRE_IN_SECONDS?: number
+  TRANSPORT_KEY_EXPIRE_IN_SECONDS?: number
 }
 
 export const DEFAULT_SIGNATURE_ENCODING = 'utf8'
@@ -90,7 +90,7 @@ export type SymmetricEd25519Options = {
 }
 
 /** Symmetric encryption options with encrypted password (used by API endpoints)
- *  transitEncryptedPassword is base64 encoded authToken */
+ *  transportEncryptedPassword is base64 encoded authToken */
 export type SymmetricOptionsParam =
-  | ({ transitEncryptedPassword: string } & SymmetricEccOptions)
-  | ({ transitEncryptedPassword: string } & SymmetricEd25519Options)
+  | ({ transportEncryptedPassword: string } & SymmetricEccOptions)
+  | ({ transportEncryptedPassword: string } & SymmetricEd25519Options)

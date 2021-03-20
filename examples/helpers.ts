@@ -8,11 +8,11 @@ const DEFAULT_TOKEN_EXPIRE_IN_SECONDS = 120 // 2 mins
 /** encrypt a string with a public key 
  *  The encrytped payload is a stringified JSON object which is base64 encoded
 */
-export async function encryptWithTransitKey(value: string, transitPublicKey: string ) {
+export async function encryptWithTransportKey(value: string, transportPublicKey: string ) {
   // hash the body of the request
   // encrypt with public key of service
   const encrypted = Crypto.Asymmetric.encryptWithPublicKey(
-    transitPublicKey,
+    transportPublicKey,
     value,
   );
   return Base64.encode(JSON.stringify(encrypted));

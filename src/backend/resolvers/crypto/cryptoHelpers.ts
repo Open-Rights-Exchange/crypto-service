@@ -186,7 +186,7 @@ export async function retrievePrivateKeyForPublicKey(
     privateKey = context.constants.BASE_PRIVATE_KEY
   } else {
     // look in stateStore key cache
-    privateKey = getTransitKeyFromKeyStore(publicKey, state)?.privateKey
+    privateKey = getTransportKeyFromKeyStore(publicKey, state)?.privateKey
   }
   if (privateKey) {
     return { chainType: null, privateKey: context.constants.BASE_PRIVATE_KEY }
@@ -196,9 +196,9 @@ export async function retrievePrivateKeyForPublicKey(
   throw new ServiceError(msg, ErrorType.KeyError, 'retrievePrivateKeyForPublicKey')
 }
 
-/** lookup a transit key from the keystore */
-export function getTransitKeyFromKeyStore(publicKey: string, state: StateStore) {
-  return state?.transitKeyStore?.find(k => k.publicKey === publicKey)
+/** lookup a transport key from the keystore */
+export function getTransportKeyFromKeyStore(publicKey: string, state: StateStore) {
+  return state?.transportKeyStore?.find(k => k.publicKey === publicKey)
 }
 
 export type DecryptWithBasePrivateKeyParams = {

@@ -11,7 +11,7 @@
 //   INVALID_ENCRYPTED_AUTH_TOKEN,
 //   EXPIRED_AUTH_TOKEN,
 // } from '../dataMocks'
-// import { unwrapTransitEncryptedPayload } from '../../api/helpers'
+// import { unwrapTransportEncryptedPayload } from '../../api/helpers'
 // import { AuthTokenType } from '../../../models'
 
 // declare let global: any
@@ -39,7 +39,7 @@
 //     const context = createContext()
 
 //     it('decodes and validates correctly', async () => {
-//       const token = await unwrapTransitEncryptedPayload({
+//       const token = await unwrapTransportEncryptedPayload({
 //         AuthTokenType: AuthTokenType.ApiHeader,
 //         requestUrl,
 //         encryptedPayload: VALID_AUTH_TOKEN,
@@ -51,7 +51,7 @@
 
 //     it('Should throw if token already used', async () => {
 //       await expect(
-//         unwrapTransitEncryptedPayload({
+//         unwrapTransportEncryptedPayload({
 //           AuthTokenType: AuthTokenType.ApiHeader,
 //           requestUrl,
 //           encryptedPayload: VALID_AUTH_TOKEN,
@@ -63,7 +63,7 @@
 
 //     it('Should throw if bad AuthToken', async () => {
 //       await expect(
-//         unwrapTransitEncryptedPayload({
+//         unwrapTransportEncryptedPayload({
 //           AuthTokenType: AuthTokenType.ApiHeader,
 //           requestUrl,
 //           encryptedPayload: 'abcdefg', // bad value
@@ -75,7 +75,7 @@
 
 //     it('Should throw if not encrypted with server’s base key', async () => {
 //       await expect(
-//         unwrapTransitEncryptedPayload({
+//         unwrapTransportEncryptedPayload({
 //           AuthTokenType: AuthTokenType.ApiHeader,
 //           requestUrl,
 //           encryptedPayload: INVALID_ENCRYPTED_AUTH_TOKEN,
@@ -88,7 +88,7 @@
 //     })
 
 //     it('decodes and validates correctly with null url', async () => {
-//       const token = await unwrapTransitEncryptedPayload({
+//       const token = await unwrapTransportEncryptedPayload({
 //         AuthTokenType: AuthTokenType.ApiHeader,
 //         requestUrl,
 //         encryptedPayload: encodedToken1wNullUrl,
@@ -112,7 +112,7 @@
 
 //     it('Should throw if req url doesn’t match', async () => {
 //       await expect(
-//         unwrapTransitEncryptedPayload({
+//         unwrapTransportEncryptedPayload({
 //           AuthTokenType: AuthTokenType.ApiHeader,
 //           requestUrl: `${requestUrl}_invalid`,
 //           encryptedPayload: VALID_AUTH_TOKEN,
@@ -124,7 +124,7 @@
 
 //     it('Should throw if expired', async () => {
 //       await expect(
-//         unwrapTransitEncryptedPayload({
+//         unwrapTransportEncryptedPayload({
 //           AuthTokenType: AuthTokenType.ApiHeader,
 //           requestUrl,
 //           encryptedPayload: EXPIRED_AUTH_TOKEN,

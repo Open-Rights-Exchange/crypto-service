@@ -7,22 +7,22 @@ import { StateStore } from '../../../helpers/stateStore'
  *  Nonce is any random string
  *  Returns: an object that includes a public key and a signature (which is the nonce signed with the service's private key)
  */
-export async function getTransitPublicKeyResolver(
+export async function getTransportPublicKeyResolver(
   params: VerifyPublcKeyParams,
   context: Context,
   state: StateStore,
-): Promise<{ transitPublicKey: PublicKey; signature: Signature }> {
+): Promise<{ transportPublicKey: PublicKey; signature: Signature }> {
   const { constants } = context
   const { nonce } = params
   const signature = await Asymmetric.sign(nonce, constants.BASE_PRIVATE_KEY)
   // Use generic 'nochain' functions to generateKeyPair
   const chain = await getChain(ChainType.NoChain, context)
   const keyPair = await chain.chainFunctions.generateKeyPair()
-  const expiresOn = new Date(context.requestDateTime.getTime() + 1000 * constants.TRANSIT_KEY_EXPIRE_IN_SECONDS)
+  const expiresOn = new Date(context.requestDateTime.getTime() + 1000 * constants.TRANSPORT_KEY_EXPIRE_IN_SECONDS)
   // store keyPair in memory (temporarily)
-  state.transitKeyStore.push({ publicKey: keyPair.publicKey, privateKey: keyPair.privateKey, expiresOn })
+  state.transportKeyStore.push({ publicKey: keyPair.publicKey, privateKey: keyPair.privateKey, expiresOn })
   return {
-    transitPublicKey: keyPair.publicKey,
+    transportPublicKey: keyPair.publicKey,
     signature,
   }
 }

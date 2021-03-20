@@ -1,5 +1,5 @@
 export class StateStore {
-  public transitKeyStore:  {publicKey: string, privateKey: string, expiresOn: Date}[] = []
+  public transportKeyStore: { publicKey: string; privateKey: string; expiresOn: Date }[] = []
 
   cleanupTimer: NodeJS.Timeout
 
@@ -13,15 +13,15 @@ export class StateStore {
     // schedule next cleanup
     this.cleanupTimer = setTimeout(() => {
       this.doCleanup()
-    }, 1000);
+    }, 1000)
   }
 
   clearState() {
-    this.transitKeyStore = []
+    this.transportKeyStore = []
   }
 
   removeExpiredKeys() {
     // only keep keys that expired in the future
-    this.transitKeyStore = this.transitKeyStore.filter(k => k.expiresOn.getTime() >= new Date().getTime())
+    this.transportKeyStore = this.transportKeyStore.filter(k => k.expiresOn.getTime() >= new Date().getTime())
   }
 }
