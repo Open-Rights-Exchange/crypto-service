@@ -24,4 +24,7 @@ resources:
   cpu: 1
   memory_gb: 1.5
 
+network:
+  session_affinity: true
+
 # [END app_yaml]

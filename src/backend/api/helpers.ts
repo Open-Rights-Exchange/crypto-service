@@ -12,9 +12,9 @@ import {
   SymmetricOptionsParam,
 } from '../../models'
 import { composeErrorResponse, ServiceError } from '../../helpers/errors'
-import { getTransportKeyFromKeyStore } from '../resolvers/crypto'
 import { StateStore } from '../../helpers/stateStore'
 import { getChain } from '../chains/chainConnection'
+import { deleteTransportKey, findTransportKey } from '../resolvers/transportKey'
 
 // ---- Helper functions
 
@@ -118,7 +118,7 @@ export function analyticsForApi(req: Request, data: any, context: Context) {
 }
 
 /** Return response and log analytics */
-export function returnResponse(
+export async function returnResponse(
   req: Request,
   res: Response,
   httpStatusCode: number,
@@ -133,6 +133,8 @@ export function returnResponse(
     errorResponse = composeErrorResponse(context, error)
     responseToReturn = { ...errorResponse, ...responseToReturn }
   }
+  // delete transport public key - should only be used once
+  await deleteTransportKey(req?.body?.transportPublicKey, context)
   // we wont have a context for well-known endpoint
   if (context) {
     analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
@@ -161,6 +163,7 @@ export async function extractEncryptedPayload(
   const decryptedPayload = await unwrapTransportEncryptedPayload({
     encryptedPayload: decodedEncryptedPayload,
     transportPublicKey,
+    context,
     state,
   })
   let decryptedPayloadObject = tryParseJSON(decryptedPayload)
@@ -175,7 +178,7 @@ export async function extractEncryptedPayload(
 export async function assertValidtransportPublicKeyAndRetrieve(req: Request, context: Context, state: StateStore) {
   const transportPublicKey = req.body?.transportPublicKey as string
   // get publicKey from cachce
-  const keys = getTransportKeyFromKeyStore(transportPublicKey, state)
+  const keys = transportPublicKey ? await findTransportKey(transportPublicKey, context) : null
   if (isNullOrEmpty(keys)) {
     throw new ServiceError(
       `Problem with 'transportPublicKey' in request. Must be a (single use) key issued by this server recently (and not expired).`,
@@ -196,18 +199,19 @@ export function getFullUrlFromRequest(req: Request) {
 export type DecryptTransportEncryptedPayloadParams = {
   encryptedPayload?: string
   transportPublicKey: string
+  context: Context
   state: StateStore
 }
 
 /** Unwrap encryptedPayload (using private key associated with transportPublicKey) */
 export async function unwrapTransportEncryptedPayload(params: DecryptTransportEncryptedPayloadParams) {
-  const { encryptedPayload, transportPublicKey, state } = params
+  const { encryptedPayload, transportPublicKey, context, state } = params
 
   // decrypt if necessary
   let decryptedPayload
   if (encryptedPayload) {
     // look in stateStore key cache
-    const privateKey = getTransportKeyFromKeyStore(transportPublicKey, state)?.privateKey
+    const privateKey = (await findTransportKey(transportPublicKey, context))?.privateKey
     const chainConnectNoChain = await getChain(ChainType.NoChain, null)
     decryptedPayload = await chainConnectNoChain.chainFunctions.decryptWithPrivateKey(
       chainConnectNoChain.chainFunctions.toAsymEncryptedDataString(encryptedPayload),
@@ -237,6 +241,7 @@ export async function unwrapTransportEncryptedPasswordInSymOptions(
   return unwrapTransportEncryptedPayload({
     transportPublicKey,
     encryptedPayload: decodedTransportEncryptedPassword, // base64 encoded
+    context,
     state,
   })
 }

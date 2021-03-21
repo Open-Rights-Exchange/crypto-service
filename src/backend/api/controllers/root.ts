@@ -83,7 +83,7 @@ export async function handleDecryptWithPassword(
       context,
     )
 
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
@@ -153,7 +153,7 @@ export async function handleDecryptWithPrivateKeys(
       context,
     )
 
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
@@ -240,7 +240,7 @@ export async function handleRecoverAndReencrypt(
       context,
     )
 
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
@@ -274,7 +274,7 @@ export async function handleEncrypt(
       context,
     )
 
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
@@ -308,7 +308,7 @@ export async function handleGenerateKeys(
       context,
     )
 
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
@@ -368,7 +368,7 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       context,
     )
 
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
@@ -391,7 +391,7 @@ export async function handleGetTransportKey(
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
     const { nonce } = req.body
     const response = await getTransportPublicKeyResolver({ nonce }, context, state)
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
@@ -414,7 +414,7 @@ export async function handleVerifyPublicKey(
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
     const { nonce } = req.body
     const response = await verifyPublicKeyResolver({ nonce }, context)
-    return returnResponse(req, res, HttpStatusCode.OK_200, response, context)
+    return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, context, error)
