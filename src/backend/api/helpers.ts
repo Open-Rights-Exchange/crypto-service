@@ -14,7 +14,8 @@ import {
 import { composeErrorResponse, ServiceError } from '../../helpers/errors'
 import { StateStore } from '../../helpers/stateStore'
 import { getChain } from '../chains/chainConnection'
-import { deleteTransportKey, findTransportKey } from '../resolvers/transportKey'
+import { deleteTransportKey, findTransportKeyAndDecryptPrivateKey } from '../resolvers/transportKey'
+import { decryptAsymmetrically, getPrivateKeysForAsymEncryptedPayload } from '../resolvers/crypto'
 
 // ---- Helper functions
 
@@ -133,6 +134,7 @@ export async function returnResponse(
     errorResponse = composeErrorResponse(context, error)
     responseToReturn = { ...errorResponse, ...responseToReturn }
   }
+  // TODO: remove all transportKeys represented in payload(s)
   // delete transport public key - should only be used once
   await deleteTransportKey(req?.body?.transportPublicKey, context)
   // we wont have a context for well-known endpoint
@@ -178,7 +180,7 @@ export async function extractEncryptedPayload(
 export async function assertValidtransportPublicKeyAndRetrieve(req: Request, context: Context, state: StateStore) {
   const transportPublicKey = req.body?.transportPublicKey as string
   // get publicKey from cachce
-  const keys = transportPublicKey ? await findTransportKey(transportPublicKey, context) : null
+  const keys = transportPublicKey ? await findTransportKeyAndDecryptPrivateKey(transportPublicKey, context) : null
   if (isNullOrEmpty(keys)) {
     throw new ServiceError(
       `Problem with 'transportPublicKey' in request. Must be a (single use) key issued by this server recently (and not expired).`,
@@ -205,17 +207,18 @@ export type DecryptTransportEncryptedPayloadParams = {
 
 /** Unwrap encryptedPayload (using private key associated with transportPublicKey) */
 export async function unwrapTransportEncryptedPayload(params: DecryptTransportEncryptedPayloadParams) {
-  const { encryptedPayload, transportPublicKey, context, state } = params
+  const { context, encryptedPayload, transportPublicKey } = params
+  const chainConnectNoChain = await getChain(ChainType.NoChain, context)
 
   // decrypt if necessary
   let decryptedPayload
   if (encryptedPayload) {
-    // look in stateStore key cache
-    const privateKey = (await findTransportKey(transportPublicKey, context))?.privateKey
-    const chainConnectNoChain = await getChain(ChainType.NoChain, null)
-    decryptedPayload = await chainConnectNoChain.chainFunctions.decryptWithPrivateKey(
-      chainConnectNoChain.chainFunctions.toAsymEncryptedDataString(encryptedPayload),
-      privateKey,
+    const encryptedPayloadString = chainConnectNoChain.chainFunctions.toAsymEncryptedDataString(encryptedPayload)
+    // gets private keys needed to decrypy payload - looks in transport key store
+    const privateKeys = await getPrivateKeysForAsymEncryptedPayload(ChainType.NoChain, encryptedPayloadString, context)
+    decryptedPayload = await decryptAsymmetrically(
+      chainConnectNoChain, // use NoChain so it wont expect public keys formatted for a specific chain - base public key is uncompressed
+      { encrypted: chainConnectNoChain.chainFunctions.toAsymEncryptedDataString(encryptedPayload), privateKeys },
     )
   }
 
