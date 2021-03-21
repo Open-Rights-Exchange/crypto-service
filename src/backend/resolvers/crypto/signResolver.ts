@@ -1,6 +1,6 @@
 import { Context, DEFAULT_SIGNATURE_ENCODING, ErrorType, SignParams } from '../../../models'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType, isNullOrEmpty, ServiceError } from '../../../helpers'
+import { isNullOrEmpty, ServiceError } from '../../../helpers'
 import { decryptPrivateKeys } from './cryptoHelpers'
 
 /**
@@ -18,7 +18,6 @@ export async function signResolver(params: SignParams, context: Context): Promis
     symmetricEncryptedPrivateKeys = [],
     symmetricOptions,
   } = params
-  assertValidChainType(chainType)
   const chainConnect = await getChain(chainType, context)
   const { chainFunctions } = chainConnect
   const { logger } = context

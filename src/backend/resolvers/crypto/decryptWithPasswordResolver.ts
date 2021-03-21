@@ -1,7 +1,5 @@
 import { AsymmetricEncryptedString, Context, DecryptWithPasswordParams } from '../../../models'
-import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../../helpers'
 import { decryptSymmetrically, mapSymmetricOptionsParam, optionallyEncryptReturnValue } from './cryptoHelpers'
 
 /**
@@ -16,7 +14,6 @@ export async function decryptWithPasswordResolver(
   decryptedResult?: string
   encryptedResult?: AsymmetricEncryptedString
 }> {
-  assertValidChainType(params?.chainType)
   const { password, returnAsymmetricOptions, chainType, encrypted, symmetricOptions } = params
   const chainConnect = await getChain(chainType, context)
 

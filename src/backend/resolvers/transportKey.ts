@@ -23,7 +23,7 @@ export async function saveTransportKey(transportKey: TransportKey, context: Cont
 }
 
 /** Retrieve TransportKey from the database (by publicKey) */
-export async function findTransportKey(publicKey: string, context: Context): Promise<TransportKey> {
+export async function findTransportKeyAndDecryptPrivateKey(publicKey: string, context: Context): Promise<TransportKey> {
   // check if token is already saved - if, we cant use it again
   const existingAuthToken = await findOneMongo<TransportKeyData>({
     context,

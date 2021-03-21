@@ -6,7 +6,6 @@ import {
   SymmetricEncryptedString,
 } from '../../../models'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../../helpers'
 import { encryptResolver } from './encryptResolver'
 
 export type GenerateKeyResult = {
@@ -22,7 +21,6 @@ export type GenerateKeyResult = {
 export async function generateKeysResolver(params: GenerateKeysParams, context: Context): Promise<GenerateKeyResult[]> {
   const results: GenerateKeyResult[] = []
 
-  assertValidChainType(params?.chainType)
   const chainConnect = await getChain(params?.chainType, context)
   const { chainFunctions } = chainConnect
   const count = params?.keyCount ? Math.round(params?.keyCount) : 1

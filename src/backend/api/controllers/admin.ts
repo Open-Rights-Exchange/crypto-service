@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { addAppIdToContextFromApiKey, createContext } from '../context'
+import { addAppIdAndChainTypeToContextFromApiKey, createContext } from '../context'
 import { assertHasRequiredParams, returnResponse } from '../helpers'
 import { Config, ErrorSeverity, HttpStatusCode } from '../../../models'
 import { logError } from '../../../helpers/errors'
@@ -14,7 +14,7 @@ async function v1Admin(req: Request, res: Response, next: NextFunction, config: 
   const now = new Date()
   const context = createContext(req, config, now)
   try {
-    await addAppIdToContextFromApiKey(req, context)
+    await addAppIdAndChainTypeToContextFromApiKey(req, context)
     assertHasRequiredParams(req, ['action'], funcName)
     const { action }: any = req.query
     switch (action) {
@@ -41,7 +41,7 @@ async function handleAdminRefresh(req: Request, res: Response, next: NextFunctio
   const funcName = 'api/admin?action=refresh'
   const now = new Date()
   const context = createContext(req, config, now)
-  await addAppIdToContextFromApiKey(req, context)
+  await addAppIdAndChainTypeToContextFromApiKey(req, context)
   // clearAllCaches()
   // await loadDatabaseSettings(context)
   return returnResponse(req, res, HttpStatusCode.OK_200, { messsage: 'Settings and cache reloaded.' }, context)

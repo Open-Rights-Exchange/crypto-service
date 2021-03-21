@@ -34,7 +34,7 @@ import {
 import { getAppConfig } from '../appConfig'
 import { encryptResolver } from './encryptResolver'
 import { StateStore } from '../../../helpers/stateStore'
-import { findTransportKey } from '../transportKey'
+import { findTransportKeyAndDecryptPrivateKey } from '../transportKey'
 
 export type EncryptReturnValueParams = {
   /** chain/curve used to encrypt */
@@ -139,14 +139,14 @@ export function assertValidPrivateKeys(chainConnect: ChainConnection, privateKey
  */
 export async function getPrivateKeysForAsymEncryptedPayload(
   chainType: ChainType,
-  encryptedKey: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
+  encrypted: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
   context: Context,
 ): Promise<PrivateKey[]> {
   const privateKeys: PrivateKey[] = []
   // convert encryptedKey to object
-  let encryptedObject = convertStringifiedJsonOrObjectToObject(encryptedKey)
+  let encryptedObject = convertStringifiedJsonOrObjectToObject(encrypted)
   if (isNullOrEmpty(encryptedObject)) {
-    const msg = `encryptedKey must be type AsymmetricEncryptedString (or array) - got ${JSON.stringify(encryptedKey)}`
+    const msg = `encrypted must be type AsymmetricEncryptedString (or array) - got ${JSON.stringify(encrypted)}`
     throw new ServiceError(msg, ErrorType.BadParam, 'getPrivateKeysForAsymEncryptedPayload')
   }
   // if we only have a single key, wrap it in array
@@ -168,7 +168,7 @@ export async function getPrivateKeysForAsymEncryptedPayload(
     }
   })
   if (isNullOrEmpty(privateKeys)) {
-    const encPrivKeyStr = JSON.stringify(encryptedKey)
+    const encPrivKeyStr = JSON.stringify(encryptedObject)
     const msg = `Don't have private keys to decrypt a value in asymmetricEncryptedPrivateKeys for chainType ${chainType}. Did you mean to use the service's key? Encrypted value: ${encPrivKeyStr}`
     throw new ServiceError(msg, ErrorType.KeyError, 'decryptPrivateKeys')
   }
@@ -187,10 +187,10 @@ export async function retrievePrivateKeyForPublicKey(
     privateKey = context.constants.BASE_PRIVATE_KEY
   } else {
     // look in stateStore key cache
-    privateKey = (await findTransportKey(publicKey, context))?.privateKey
+    privateKey = (await findTransportKeyAndDecryptPrivateKey(publicKey, context))?.privateKey
   }
   if (privateKey) {
-    return { chainType: null, privateKey: context.constants.BASE_PRIVATE_KEY }
+    return { chainType: null, privateKey }
   }
   // No matching publicKey
   const msg = `Could not retrieve PrivateKey for PublicKey: ${publicKey}. Service does not have access to it.`

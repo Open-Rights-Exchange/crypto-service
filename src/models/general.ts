@@ -12,6 +12,7 @@ export type Context = {
   /** appId of authenticated user or agent */
   appId?: AppId
   analytics: Analytics
+  chainType: ChainType
   constants: Constants
   logger: Logger
   processId: string
