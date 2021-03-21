@@ -1,6 +1,7 @@
 import { Asymmetric, ChainType, Context, PublicKey, Signature, VerifyPublcKeyParams } from '../../../models'
 import { getChain } from '../../chains/chainConnection'
 import { StateStore } from '../../../helpers/stateStore'
+import { saveTransportKey } from '../transportKey'
 
 /**
  *  Returns a single use public key along with a proof that this service has access to a private key that maps to a well-kwown public key
@@ -20,7 +21,9 @@ export async function getTransportPublicKeyResolver(
   const keyPair = await chain.chainFunctions.generateKeyPair()
   const expiresOn = new Date(context.requestDateTime.getTime() + 1000 * constants.TRANSPORT_KEY_EXPIRE_IN_SECONDS)
   // store keyPair in memory (temporarily)
-  state.transportKeyStore.push({ publicKey: keyPair.publicKey, privateKey: keyPair.privateKey, expiresOn })
+  // state.transportKeyStore.push({ publicKey: keyPair.publicKey, privateKey: keyPair.privateKey, expiresOn })
+  const transportKey = { publicKey: keyPair.publicKey, privateKey: keyPair.privateKey, expiresOn }
+  await saveTransportKey(transportKey, context)
   return {
     transportPublicKey: keyPair.publicKey,
     signature,

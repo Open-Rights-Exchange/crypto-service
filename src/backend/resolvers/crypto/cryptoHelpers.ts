@@ -34,6 +34,7 @@ import {
 import { getAppConfig } from '../appConfig'
 import { encryptResolver } from './encryptResolver'
 import { StateStore } from '../../../helpers/stateStore'
+import { findTransportKey } from '../transportKey'
 
 export type EncryptReturnValueParams = {
   /** chain/curve used to encrypt */
@@ -186,7 +187,7 @@ export async function retrievePrivateKeyForPublicKey(
     privateKey = context.constants.BASE_PRIVATE_KEY
   } else {
     // look in stateStore key cache
-    privateKey = getTransportKeyFromKeyStore(publicKey, state)?.privateKey
+    privateKey = (await findTransportKey(publicKey, context))?.privateKey
   }
   if (privateKey) {
     return { chainType: null, privateKey: context.constants.BASE_PRIVATE_KEY }
@@ -197,7 +198,7 @@ export async function retrievePrivateKeyForPublicKey(
 }
 
 /** lookup a transport key from the keystore */
-export function getTransportKeyFromKeyStore(publicKey: string, state: StateStore) {
+export function getTransportKeyFromKeyStore(publicKey: string, context: Context, state: StateStore) {
   return state?.transportKeyStore?.find(k => k.publicKey === publicKey)
 }
 
