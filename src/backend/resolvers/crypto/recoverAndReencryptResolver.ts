@@ -7,7 +7,7 @@ import {
   RecoverAndReencryptResolverParams,
   SymmetricEncryptedString,
 } from '../../../models'
-import { assertValidChainType, getChainTypeFromChainConnect, isNullOrEmpty, ServiceError } from '../../../helpers'
+import { getChainTypeFromChainConnect, isNullOrEmpty, ServiceError } from '../../../helpers'
 import { getChain } from '../../chains/chainConnection'
 import {
   decryptAsymmetrically,
@@ -29,7 +29,6 @@ export async function recoverAndReencryptResolver(
   asymmetricEncryptedStrings?: AsymmetricEncryptedString[]
   symmetricEncryptedString?: SymmetricEncryptedString
 }> {
-  assertValidChainType(params?.chainType)
   const {
     chainType,
     encrypted,
