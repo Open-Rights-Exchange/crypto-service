@@ -23,6 +23,7 @@ let rollbar = null // getRollbar(CONSTANTS)  Rollbar disabled for tests
 
 export const ContextTest: Context = {
   analytics: new Analytics(CONSTANTS.SEGMENT_WRITE_KEY, processId),
+  chainType: null,
   constants: CONSTANTS, // constants for test
   logger: new Logger({ processId, rollbar, tracingEnabled: false }),
   processId,

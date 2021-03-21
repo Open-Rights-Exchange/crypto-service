@@ -8,7 +8,7 @@ import {
 } from '../../../models'
 import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType, asyncForEach, isNullOrEmpty } from '../../../helpers'
+import { asyncForEach, isNullOrEmpty } from '../../../helpers'
 import {
   encryptAsymmetrically,
   encryptSymmetrically,
@@ -28,7 +28,6 @@ export async function encryptResolver(
   asymmetricEncryptedStrings: AsymmetricEncryptedString[]
 }> {
   const { asymmetricOptions: asymmetricOptionsArray, chainType, password, symmetricOptions, toEncrypt } = params
-  assertValidChainType(chainType)
   // TODO: confirm chainType matches chainType of asymm options publicKeysChainType (if provided) - otherwise assum to be same as chainType param
   const chainConnect = await getChain(chainType, context)
   const asymmetricEncryptedStrings: AsymmetricEncryptedString[] = []

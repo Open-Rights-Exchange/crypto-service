@@ -4,7 +4,6 @@ import { Crypto } from "@open-rights-exchange/chainjs";
 
 const DEFAULT_TOKEN_EXPIRE_IN_SECONDS = 120 // 2 mins
 
-
 /** encrypt a string with a public key 
  *  The encrytped payload is a stringified JSON object which is base64 encoded
 */
