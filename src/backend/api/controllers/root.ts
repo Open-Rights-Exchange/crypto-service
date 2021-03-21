@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { globalLogger } from '../../../helpers/logger'
-import { addAppIdToContextFromApiKey, createContext } from '../context'
+import { addAppIdAndChainTypeToContextFromApiKey, createContext } from '../context'
 import {
   assertBodyHasAtLeastOneOfValues,
   assertBodyHasOnlyOneOfValues,
@@ -32,7 +32,7 @@ async function v1Root(req: Request, res: Response, next: NextFunction, config: C
   const { action } = req.params
   const context = createContext(req, config, now)
   try {
-    await addAppIdToContextFromApiKey(req, context)
+    await addAppIdAndChainTypeToContextFromApiKey(req, context)
   } catch (error) {
     return returnResponse(req, res, HttpStatusCode.BAD_REQUEST_400, null, null, error)
   }
