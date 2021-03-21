@@ -22,7 +22,13 @@ async function v1Admin(req: Request, res: Response, next: NextFunction, config: 
         // reload settings and flush caches
         return await handleAdminRefresh(req, res, next, config)
       default:
-        return returnResponse(req, res, HttpStatusCode.NOT_FOUND_404, { errorMessage: 'Not a valid endpoint' }, context)
+        return await returnResponse(
+          req,
+          res,
+          HttpStatusCode.NOT_FOUND_404,
+          { errorMessage: 'Not a valid endpoint' },
+          context,
+        )
     }
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)

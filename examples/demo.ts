@@ -48,12 +48,12 @@ const headers = { "api-key": apiKey, "Content-Type": "application/json" };
  * The response from the service includes a signature which is the nonce param signed by the service's well-known base key
  * The signature should be verified by the client to ensure that the responding server is the one expected
 */
-async function getTransportKey( nonce: string) {
+async function getTransportKey() {
   console.log("--------------- getTransportKey -------------->");
   const apiUrl = `${serviceUrl}/get-transport-key`
+  const nonce = 'unique-string' // Should use GUID here instead of a fixed string
   const { data } = await axios.post(apiUrl, { nonce }, { headers } );
   const { signature, transportPublicKey } = data || {}
-  console.log("get-transport-key:", data);
   const signedWithWellKnownPublicKey = Asymmetric.verifySignedWithPublicKey(nonce, servicePublicKey, signature)
   if(!signedWithWellKnownPublicKey) {
     throw new Error(`Service could not verify control of well-known public key. Are you using the right endpoint? Well-known PublicKey expected: ${servicePublicKey}`)
@@ -76,9 +76,10 @@ async function verifyPublicKey( nonce: string) {
 /** 
  * Generate new blockchain keys - they are encrypted before being returned (with the password we included in symmetricOptions.transportEncryptedPassword) 
  */
-async function generateKeys( chainJs: Chain, transportPublicKey: string ) {
+async function generateKeys( chainJs: Chain ) {
   console.log("--------------- generateKeys -------------->");
   const apiUrl = `${serviceUrl}/generate-keys`
+  const transportPublicKey = await getTransportKey()
   const generateKeyParams = {
     chainType: chainJs.chainType,
     symmetricOptions: symmetricAesOptions,
@@ -108,9 +109,10 @@ async function generateKeys( chainJs: Chain, transportPublicKey: string ) {
  *  Since symmetricOptions.transportEncryptedPassword is provided, result includes symmetricEncryptedString (encrypted with the password)
  *  If asymmetricOptions is provided, then result includes asymmetricEncryptedString (encrypted with one or more public keys provided)
  */
-async function encryptAndDecryptString( stringToEncrypt: string, transportPublicKey: string ) {
+async function encryptAndDecryptString( stringToEncrypt: string) {
   console.log("--------------- encryptAndDecryptString -------------->");
   const apiUrl = `${serviceUrl}/encrypt`;
+  const transportPublicKey = await getTransportKey()
   const ethChain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }]);
   const encryptParams = {
     chainType: "ethereum",
@@ -141,9 +143,10 @@ async function encryptAndDecryptString( stringToEncrypt: string, transportPublic
  *  ... with the service's public key (asymmetricEncryptedPrivateKeys)
  *  If returnAsymmetricOptions is provided, then results are encrypted using the specified public key before being returned
  */
-async function decryptWithPrivateKey( stringToEncrypt: string, transportPublicKey: string ) {
+async function decryptWithPrivateKey( stringToEncrypt: string ) {
   console.log("--------------- decryptWithPrivateKey -------------->");
   const apiUrl = `${serviceUrl}/decrypt-with-private-keys`
+  const transportPublicKey = await getTransportKey()
   const algoChain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }]);
   const decryptWPrivateKeyParams: any = {
     chainType: "algorand",
@@ -180,9 +183,10 @@ async function decryptWithPrivateKey( stringToEncrypt: string, transportPublicKe
  *  The encrypted payload is wrapped with a transport public key
  *  ...encryptedTransportEncrypted is the encrypted value that is wrapped with the transport public key
  */
-async function recoverAndReencrypt( prviateKeyToEncrypt: string, transportPublicKey: string ) {
+async function recoverAndReencrypt( prviateKeyToEncrypt: string ) {
   console.log("--------------- recoverAndReencrypt -------------->");
   const apiUrl = `${serviceUrl}/recover-and-reencrypt`
+  const transportPublicKey = await getTransportKey()
   const algoChain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }]);
   const recoverAndReencryptParams: any = {
     chainType: "algorand",
@@ -219,9 +223,10 @@ async function recoverAndReencrypt( prviateKeyToEncrypt: string, transportPublic
  *  Use the service to generate a signature from a string.
  *  The signature is compliant with the block chain specified (e.g. ethereum)
  *  */
-async function sign( chainJs: Chain, toSign: string, privateKey: string, transportPublicKey: string ) {
+async function sign( chainJs: Chain, toSign: string, privateKey: string ) {
   console.log(`--------------- sign for chain ${chainJs.chainType}-------------->`);
   const apiUrl = `${serviceUrl}/sign`
+  const transportPublicKey = await getTransportKey()
   // encrypt our private key with our password - the service will decrypt it (and sign with it) using the same password (sent via transportEncryptedPassword)
   const signParams: any = {
     chainType: chainJs.chainType,
@@ -265,15 +270,14 @@ async function run() {
     const eosChain = new ChainFactory().create(ChainType.EosV2, [{ url: null }]);
     // Generate new blockchain keys - they are encrypted before being returned (with the password we include in symmetricOptions)
     await verifyPublicKey('unique-nonce')
-    const transportPublicKey = await getTransportKey('unique-nonce') // hint: use unqiue guid
-    await generateKeys(ethChain, transportPublicKey)
+    await generateKeys(ethChain)
     // Use /encrypt to encrypt on the server
-    await encryptAndDecryptString('encrypt-this-string', transportPublicKey)
-    await decryptWithPrivateKey('private-message-decrypted-by-service', transportPublicKey )
-    await recoverAndReencrypt('private-key-to-recover', transportPublicKey )
-    await sign(ethChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', ethPrivateKey, transportPublicKey)
-    await sign(eosChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', eosPrivateKey, transportPublicKey)
-    await sign(algoChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', algoPrivateKey, transportPublicKey)
+    await encryptAndDecryptString('encrypt-this-string')
+    await decryptWithPrivateKey('private-message-decrypted-by-service' )
+    await recoverAndReencrypt('private-key-to-recover' )
+    await sign(ethChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', ethPrivateKey)
+    await sign(eosChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', eosPrivateKey)
+    await sign(algoChain, '0xff703f9324c38fbb991ad56446990bc65b8d915fdf731bb0e9d8c3967bd7ef18', algoPrivateKey)
   } catch (error) {
     console.log(error);
   }

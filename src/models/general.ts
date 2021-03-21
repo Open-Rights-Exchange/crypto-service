@@ -1,6 +1,6 @@
 import { Analytics } from '../backend/services/segment/resolvers'
 import { Logger } from '../helpers/logger'
-import { ChainType, PublicKey } from './chain'
+import { AsymmetricEncryptedString, ChainType, PrivateKey, PublicKey } from './chain'
 
 export interface Lookup {
   [key: string]: any
@@ -94,3 +94,10 @@ export type SymmetricEd25519Options = {
 export type SymmetricOptionsParam =
   | ({ transportEncryptedPassword: string } & SymmetricEccOptions)
   | ({ transportEncryptedPassword: string } & SymmetricEd25519Options)
+
+/** Temporary public/private key pair used for encrypting data sent to this service */
+export type TransportKey = {
+  publicKey: PublicKey
+  privateKey?: PrivateKey
+  privateKeyEncrypted?: AsymmetricEncryptedString
+}
