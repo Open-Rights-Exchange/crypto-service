@@ -7,7 +7,6 @@ import {
   assertBodyhasRequiredValues,
   assertBodyValueIsArrayIfExists,
   assertHeaderhasRequiredValues,
-  assertValidtransportPublicKeyAndRetrieve,
   extractEncryptedPayload,
   returnResponse,
   unwrapTransportEncryptedPasswordInSymOptions,
@@ -70,13 +69,12 @@ export async function handleDecryptWithPassword(
   try {
     globalLogger.trace('called handleDecryptWithPassword')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    assertBodyhasRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions', 'transportPublicKey'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'encrypted', 'symmetricOptions'], funcName)
     assertBodyValueIsArrayIfExists(req, ['returnAsymmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
 
-    const transportPublicKey = await assertValidtransportPublicKeyAndRetrieve(req, context, state)
     const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(transportPublicKey, symmetricOptions, context, state)
+      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
       : null
     const response = await decryptWithPasswordResolver(
       { chainType, encrypted, password, symmetricOptions, returnAsymmetricOptions },
@@ -104,7 +102,7 @@ export async function handleDecryptWithPrivateKeys(
   try {
     globalLogger.trace('called handleDecryptWithPrivateKeys')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    assertBodyhasRequiredValues(req, ['chainType', 'encrypted', 'transportPublicKey'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'encrypted'], funcName)
     assertBodyHasOnlyOneOfValues(
       req,
       ['asymmetricTransportEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'],
@@ -120,19 +118,12 @@ export async function handleDecryptWithPrivateKeys(
       returnAsymmetricOptions,
     } = req.body
 
-    const transportPublicKey = await assertValidtransportPublicKeyAndRetrieve(req, context, state)
     const password = symmetricEncryptedPrivateKeys
-      ? await unwrapTransportEncryptedPasswordInSymOptions(
-          transportPublicKey,
-          symmetricOptionsForEncryptedPrivateKeys,
-          context,
-          state,
-        )
+      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptionsForEncryptedPrivateKeys, context, state)
       : null
 
     // extract asymmetricEncryptedPrivateKeys using transportPublicKey
     const encryptedKeys = await extractEncryptedPayload(
-      transportPublicKey,
       asymmetricTransportEncryptedPrivateKeys,
       'asymmetricTransportEncryptedPrivateKeys',
       context,
@@ -176,11 +167,7 @@ export async function handleRecoverAndReencrypt(
   try {
     globalLogger.trace('called handleRecoverAndReencrypt')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    assertBodyhasRequiredValues(
-      req,
-      ['chainType', 'asymmetricTransportEncryptedPrivateKeys', 'transportPublicKey'],
-      funcName,
-    )
+    assertBodyhasRequiredValues(req, ['chainType', 'asymmetricTransportEncryptedPrivateKeys'], funcName)
     assertBodyHasOnlyOneOfValues(req, ['encrypted', 'encryptedTransportEncrypted'], funcName)
     assertBodyHasAtLeastOneOfValues(req, ['symmetricOptionsForReencrypt', 'asymmetricOptionsForReencrypt'], funcName)
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptionsForReencrypt'], funcName)
@@ -194,12 +181,9 @@ export async function handleRecoverAndReencrypt(
       asymmetricOptionsForReencrypt,
     } = req.body
 
-    const transportPublicKey = await assertValidtransportPublicKeyAndRetrieve(req, context, state)
-
     // extract encrypted payload from encryptedTransportEncrypted (if provided)
     if (encryptedTransportEncrypted) {
       encryptedPayload = await extractEncryptedPayload(
-        transportPublicKey,
         encryptedTransportEncrypted,
         'encryptedTransportEncrypted',
         context,
@@ -211,17 +195,11 @@ export async function handleRecoverAndReencrypt(
 
     // extract password (if provided in sym options)
     if (symmetricOptionsForReencrypt) {
-      password = await unwrapTransportEncryptedPasswordInSymOptions(
-        transportPublicKey,
-        symmetricOptionsForReencrypt,
-        context,
-        state,
-      )
+      password = await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptionsForReencrypt, context, state)
     }
 
     // extract asymmetricEncryptedPrivateKeys
     asymmetricEncryptedPrivateKeys = await extractEncryptedPayload(
-      transportPublicKey,
       asymmetricTransportEncryptedPrivateKeys,
       'asymmetricTransportEncryptedPrivateKeys',
       context,
@@ -260,14 +238,13 @@ export async function handleEncrypt(
   try {
     globalLogger.trace('called handleEncrypt')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    assertBodyhasRequiredValues(req, ['chainType', 'toEncrypt', 'transportPublicKey'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'toEncrypt'], funcName)
     assertBodyHasAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
-    const transportPublicKey = await assertValidtransportPublicKeyAndRetrieve(req, context, state)
     const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(transportPublicKey, symmetricOptions, context, state)
+      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
       : null
     const response = await encryptResolver(
       { chainType, asymmetricOptions, symmetricOptions, password, toEncrypt },
@@ -294,14 +271,13 @@ export async function handleGenerateKeys(
   try {
     globalLogger.trace('called handleGenerateKeys')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    assertBodyhasRequiredValues(req, ['chainType', 'transportPublicKey'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType'], funcName)
     assertBodyHasAtLeastOneOfValues(req, ['asymmetricOptions', 'symmetricOptions'], funcName)
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
-    const transportPublicKey = await assertValidtransportPublicKeyAndRetrieve(req, context, state)
     const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(transportPublicKey, symmetricOptions, context, state)
+      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
       : null
     const response = await generateKeysResolver(
       { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
@@ -322,7 +298,7 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
   try {
     globalLogger.trace('called handleSign')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    assertBodyhasRequiredValues(req, ['chainType', 'toSign', 'transportPublicKey'], funcName)
+    assertBodyhasRequiredValues(req, ['chainType', 'toSign'], funcName)
     assertBodyHasAtLeastOneOfValues(
       req,
       ['asymmetricTransportEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'],
@@ -337,14 +313,12 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       symmetricEncryptedPrivateKeys,
     } = req.body
 
-    const transportPublicKey = await assertValidtransportPublicKeyAndRetrieve(req, context, state)
     const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(transportPublicKey, symmetricOptions, context, state)
+      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
       : null
 
     // extract asymmetricEncryptedPrivateKeys
     const asymmetricEncryptedPrivateKeys = await extractEncryptedPayload(
-      transportPublicKey,
       asymmetricTransportEncryptedPrivateKeys,
       'asymmetricTransportEncryptedPrivateKeys',
       context,

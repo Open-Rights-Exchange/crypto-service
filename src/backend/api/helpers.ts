@@ -134,9 +134,8 @@ export async function returnResponse(
     errorResponse = composeErrorResponse(context, error)
     responseToReturn = { ...errorResponse, ...responseToReturn }
   }
-  // TODO: remove all transportKeys represented in payload(s)
-  // delete transport public key - should only be used once
-  await deleteTransportKey(req?.body?.transportPublicKey, context)
+  // TODO: delete all transportKeys represented in payload(s)- should only be used once
+  // await deleteTransportKey(req?.body?.transportPublicKey, context)
   // we wont have a context for well-known endpoint
   if (context) {
     analyticsForApi(req, { httpStatusCode, appId, errorResponse }, context)
@@ -146,7 +145,6 @@ export async function returnResponse(
 
 /** Validate validateEncryptedPayload helper - confirms it was encrypted with valid transport public key and extracts from request */
 export async function extractEncryptedPayload(
-  transportPublicKey: string,
   encryptedPayload: AsymmetricEncryptedString | AsymmetricEncryptedData | AsymmetricEncryptedData[],
   paramName: string,
   context: Context,
@@ -164,7 +162,6 @@ export async function extractEncryptedPayload(
 
   const decryptedPayload = await unwrapTransportEncryptedPayload({
     encryptedPayload: decodedEncryptedPayload,
-    transportPublicKey,
     context,
     state,
   })
@@ -176,21 +173,6 @@ export async function extractEncryptedPayload(
   return decryptedPayloadObject as AsymmetricEncryptedData[]
 }
 
-/** Validate transport public key provided in header - must still be valid and in the state cache */
-export async function assertValidtransportPublicKeyAndRetrieve(req: Request, context: Context, state: StateStore) {
-  const transportPublicKey = req.body?.transportPublicKey as string
-  // get publicKey from cachce
-  const keys = transportPublicKey ? await findTransportKeyAndDecryptPrivateKey(transportPublicKey, context) : null
-  if (isNullOrEmpty(keys)) {
-    throw new ServiceError(
-      `Problem with 'transportPublicKey' in request. Must be a (single use) key issued by this server recently (and not expired).`,
-      ErrorType.BadParam,
-      'assertValidtransportPublicKeyAndRetrieve',
-    )
-  }
-  return keys?.publicKey
-}
-
 /** Compose the full url of the request */
 export function getFullUrlFromRequest(req: Request) {
   // if hosted behind a proxy, check the incoming protocol first
@@ -200,14 +182,13 @@ export function getFullUrlFromRequest(req: Request) {
 
 export type DecryptTransportEncryptedPayloadParams = {
   encryptedPayload?: string
-  transportPublicKey: string
   context: Context
   state: StateStore
 }
 
 /** Unwrap encryptedPayload (using private key associated with transportPublicKey) */
 export async function unwrapTransportEncryptedPayload(params: DecryptTransportEncryptedPayloadParams) {
-  const { context, encryptedPayload, transportPublicKey } = params
+  const { context, encryptedPayload } = params
   const chainConnectNoChain = await getChain(ChainType.NoChain, context)
 
   // decrypt if necessary
@@ -227,7 +208,6 @@ export async function unwrapTransportEncryptedPayload(params: DecryptTransportEn
 
 /** unwrap password provided in symmetric options (using private key associated with transportPublicKey) */
 export async function unwrapTransportEncryptedPasswordInSymOptions(
-  transportPublicKey: string,
   symmetricOptions: SymmetricOptionsParam,
   context: Context,
   state: StateStore,
@@ -242,7 +222,6 @@ export async function unwrapTransportEncryptedPasswordInSymOptions(
     throw new ServiceError(msg, ErrorType.BadParam, 'unwrapTransportEncryptedPasswordInSymOptions')
   }
   return unwrapTransportEncryptedPayload({
-    transportPublicKey,
     encryptedPayload: decodedTransportEncryptedPassword, // base64 encoded
     context,
     state,
