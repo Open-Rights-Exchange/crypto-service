@@ -73,11 +73,12 @@ export async function handleDecryptWithPassword(
     assertBodyValueIsArrayIfExists(req, ['returnAsymmetricOptions'], funcName)
     const { chainType, encrypted, returnAsymmetricOptions, symmetricOptions } = req.body
 
-    const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
-      : null
+    if (symmetricOptions) {
+      await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context)
+    }
+
     const response = await decryptWithPasswordResolver(
-      { chainType, encrypted, password, symmetricOptions, returnAsymmetricOptions },
+      { chainType, encrypted, symmetricOptions, returnAsymmetricOptions },
       context,
     )
 
@@ -118,9 +119,13 @@ export async function handleDecryptWithPrivateKeys(
       returnAsymmetricOptions,
     } = req.body
 
-    const password = symmetricEncryptedPrivateKeys
-      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptionsForEncryptedPrivateKeys, context, state)
-      : null
+    if (symmetricEncryptedPrivateKeys) {
+      await unwrapTransportEncryptedPasswordInSymOptions(symmetricEncryptedPrivateKeys, context)
+    }
+
+    if (symmetricOptionsForEncryptedPrivateKeys) {
+      await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptionsForEncryptedPrivateKeys, context)
+    }
 
     // extract asymmetricEncryptedPrivateKeys using transportPublicKey
     const encryptedKeys = await extractEncryptedPayload(
@@ -139,7 +144,6 @@ export async function handleDecryptWithPrivateKeys(
         symmetricEncryptedPrivateKeys,
         symmetricOptionsForEncryptedPrivateKeys,
         returnAsymmetricOptions,
-        password,
       },
       context,
     )
@@ -195,7 +199,7 @@ export async function handleRecoverAndReencrypt(
 
     // extract password (if provided in sym options)
     if (symmetricOptionsForReencrypt) {
-      password = await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptionsForReencrypt, context, state)
+      password = await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptionsForReencrypt, context)
     }
 
     // extract asymmetricEncryptedPrivateKeys
@@ -213,7 +217,6 @@ export async function handleRecoverAndReencrypt(
         asymmetricEncryptedPrivateKeys,
         symmetricOptionsForReencrypt,
         asymmetricOptionsForReencrypt,
-        password,
       },
       context,
     )
@@ -243,13 +246,11 @@ export async function handleEncrypt(
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, toEncrypt, symmetricOptions } = req.body
 
-    const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
-      : null
-    const response = await encryptResolver(
-      { chainType, asymmetricOptions, symmetricOptions, password, toEncrypt },
-      context,
-    )
+    if (symmetricOptions) {
+      await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context)
+    }
+
+    const response = await encryptResolver({ chainType, asymmetricOptions, symmetricOptions, toEncrypt }, context)
 
     return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
@@ -276,13 +277,11 @@ export async function handleGenerateKeys(
     assertBodyValueIsArrayIfExists(req, ['asymmetricOptions'], funcName)
     const { asymmetricOptions, chainType, keyCount, symmetricOptions } = req.body
 
-    const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
-      : null
-    const response = await generateKeysResolver(
-      { chainType, keyCount, asymmetricOptions, symmetricOptions, password },
-      context,
-    )
+    if (symmetricOptions) {
+      await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context)
+    }
+
+    const response = await generateKeysResolver({ chainType, keyCount, asymmetricOptions, symmetricOptions }, context)
 
     return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
@@ -313,9 +312,9 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
       symmetricEncryptedPrivateKeys,
     } = req.body
 
-    const password = symmetricOptions
-      ? await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context, state)
-      : null
+    if (symmetricOptions) {
+      await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptions, context)
+    }
 
     // extract asymmetricEncryptedPrivateKeys
     const asymmetricEncryptedPrivateKeys = await extractEncryptedPayload(
@@ -333,7 +332,6 @@ export async function handleSign(req: Request, res: Response, next: NextFunction
     const response = await signResolver(
       {
         chainType,
-        password,
         toSign,
         symmetricOptions,
         asymmetricEncryptedPrivateKeys,
