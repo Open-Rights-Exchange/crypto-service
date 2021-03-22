@@ -74,6 +74,8 @@ export type AsymmetricOptions = {
 export type SymmetricEccOptions = {
   /** nubmer of iterations */
   iter?: number
+  /** password used to encrypt symmetrically */
+  password: string
   /** name of salt secret - must match a saltName registered on the server */
   saltName?: string
   /** salt value - if provided, this is used instead of saltName */
@@ -82,6 +84,8 @@ export type SymmetricEccOptions = {
 
 /** Options for ED25519 sym encryption using (along with password) */
 export type SymmetricEd25519Options = {
+  /** password used to encrypt symmetrically */
+  password: string
   /** nubmer of iterations */
   N?: number
   /** name of salt secret - must match a saltName registered on the server */
