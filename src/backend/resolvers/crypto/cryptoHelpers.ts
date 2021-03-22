@@ -68,7 +68,7 @@ export async function optionallyEncryptReturnValue(params: EncryptReturnValuePar
  *  keys can be encrypted sym or asym or both
  */
 export async function decryptPrivateKeys(params: DecryptPrivateKeysParams): Promise<PrivateKey[]> {
-  const { symmetricOptions = {}, password, chainConnect } = params
+  const { symmetricOptions, chainConnect } = params
   const { chainFunctions, context } = chainConnect
   const chainType = getChainTypeFromChainConnect(chainConnect)
   const privateKeys: PrivateKey[] = []
@@ -80,13 +80,12 @@ export async function decryptPrivateKeys(params: DecryptPrivateKeysParams): Prom
 
   // decrypt symmetrically encrypted private keys
   if (!isNullOrEmpty(symmetricEncryptedPrivateKeys)) {
-    const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
+    const symOptions = await mapSymmetricOptionsParam(symmetricOptions, context)
     await Promise.all(
       symmetricEncryptedPrivateKeys.map(async encPrivKey => {
         const privateKey = await decryptSymmetrically(chainConnect, {
           encrypted: encPrivKey,
-          password,
-          options: symmetricEccOptions || symmetricEd25519Options,
+          options: symOptions,
         })
         assertValidPrivateKeys(chainConnect, [privateKey], 'decryptPrivateKeys')
         privateKeys.push(privateKey)
@@ -243,46 +242,36 @@ export function mapAsymmetricOptionsParam(asymmetricOptionsFromParams: Asymmetri
 
 /** Map incoming params to SymmetricEccOptions an/or SymmetricEd25519Options */
 export async function mapSymmetricOptionsParam(
-  symmetricOptionsFromParams: SymmetricEccOptions | SymmetricEd25519Options = {},
+  symmetricOptionsFromParams: SymmetricEccOptions | SymmetricEd25519Options,
   context: Context,
-): Promise<{
-  symmetricEccOptions?: SymmetricEccOptions
-  symmetricEd25519Options?: SymmetricEd25519Options
-  isEcc: boolean
-  isEd25519: boolean
-}> {
-  const symmetricEccOptions: SymmetricEccOptions = {}
-  const symmetricEd25519Options: SymmetricEd25519Options = {}
+): Promise<SymmetricEccOptions | SymmetricEd25519Options> {
+  if (isNullOrEmpty(symmetricOptionsFromParams)) return symmetricOptionsFromParams
+  const { password, saltName, salt } = symmetricOptionsFromParams || {}
+  if (!password) {
+    const msg = `Invalid value provided as symmetrical options - password is missing.`
+    throw new ServiceError(msg, ErrorType.KeyError, 'assertIsValidAsymEncrypted')
+  }
+  // copy over password - its required
+  const symmetricOptionsMapped: SymmetricEccOptions | SymmetricEd25519Options = { password }
+  // add salt
+  if (salt) {
+    symmetricOptionsMapped.salt = salt
+  } else if (saltName) {
+    symmetricOptionsMapped.salt = await mapSaltNameToSalt({ saltName }, context)
+  }
+
   // handle ECC
   {
-    const { iter, saltName, salt } = symmetricOptionsFromParams as SymmetricEccOptions
-    if (iter) symmetricEccOptions.iter = iter
-    if (salt) {
-      symmetricEccOptions.salt = salt
-    } else if (saltName) {
-      symmetricEccOptions.salt = await mapSaltNameToSalt({ saltName }, context)
-    }
+    const { iter } = symmetricOptionsFromParams as SymmetricEccOptions
+    if (iter) (symmetricOptionsMapped as SymmetricEccOptions).iter = iter
   }
   // handle Ed25519
   {
-    const { N, saltName, salt } = symmetricOptionsFromParams as SymmetricEd25519Options
-    if (N) symmetricEd25519Options.N = N
-    if (salt) {
-      symmetricEd25519Options.salt = salt
-    } else if (saltName) {
-      symmetricEd25519Options.salt = await mapSaltNameToSalt({ saltName }, context)
-    }
+    const { N } = symmetricOptionsFromParams as SymmetricEd25519Options
+    if (N) (symmetricOptionsMapped as SymmetricEd25519Options).N = N
   }
   // return either Ecc or Ed25519
-  if (!isNullOrEmpty(symmetricEccOptions)) {
-    return { symmetricEccOptions, isEcc: true, isEd25519: false }
-  }
-  if (!isNullOrEmpty(symmetricEd25519Options)) {
-    return { symmetricEd25519Options, isEcc: false, isEd25519: true }
-  }
-
-  // we should not get here - nothing to return
-  return { symmetricEccOptions: null, isEcc: false, isEd25519: false }
+  return symmetricOptionsMapped
 }
 
 /** Throw if value is not a valid asymmetric payload
@@ -327,7 +316,8 @@ export async function encryptSymmetrically(
   params: EncryptSymmetricallyParams,
 ): Promise<SymmetricEncryptedString> {
   const { chainFunctions } = chainConnect
-  return chainFunctions.encryptWithPassword(params?.unencrypted, params?.password, params?.options)
+  const { password, ...otherOptions } = params?.options || {}
+  return chainFunctions.encryptWithPassword(params?.unencrypted, password, otherOptions)
 }
 
 /** Decrypts a symmetrically encrypted payload - using a password and optional salt */
@@ -339,7 +329,8 @@ export async function decryptSymmetrically(
   // convert from object to string if needed
   const valueToDecrypt = convertObjectToStringifiedJson(params?.encrypted)
   const encryptedString = chainFunctions.toSymEncryptedDataString(valueToDecrypt)
-  return chainFunctions.decryptWithPassword(encryptedString, params?.password, params?.options)
+  const { password, ...otherOptions } = params?.options || {}
+  return chainFunctions.decryptWithPassword(encryptedString, password, otherOptions)
 }
 
 /** Decrypts an asymmetrically encrypted payload - using private keys and options */
