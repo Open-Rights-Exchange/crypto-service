@@ -27,25 +27,24 @@ export async function encryptResolver(
   symmetricEncryptedString: SymmetricEncryptedString
   asymmetricEncryptedStrings: AsymmetricEncryptedString[]
 }> {
-  const { asymmetricOptions: asymmetricOptionsArray, chainType, password, symmetricOptions, toEncrypt } = params
+  const { asymmetricOptions: asymmetricOptionsArray, chainType, symmetricOptions, toEncrypt } = params
   // TODO: confirm chainType matches chainType of asymm options publicKeysChainType (if provided) - otherwise assum to be same as chainType param
   const chainConnect = await getChain(chainType, context)
   const asymmetricEncryptedStrings: AsymmetricEncryptedString[] = []
   let symmetricEncryptedString: SymmetricEncryptedString
 
-  if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(password)) {
+  if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(symmetricOptions?.password)) {
     const msg = `Password is required to encrypt.`
     throw new ServiceError(msg, ErrorType.BadParam, 'encryptResolver')
   }
 
-  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
+  const symOptions = await mapSymmetricOptionsParam(symmetricOptions, context)
 
   // Encrypt symmetrically with password
   if (symmetricOptions) {
     symmetricEncryptedString = await encryptSymmetrically(chainConnect, {
       unencrypted: toEncrypt,
-      password,
-      options: symmetricEccOptions || symmetricEd25519Options,
+      options: symOptions,
     })
   }
 
