@@ -18,7 +18,8 @@ import {
 import { encryptResolver } from './encryptResolver'
 
 /**
- *  Decrypts a symmetrically encrypted payload using a password
+ *  Decrypts an asymmetrically or symmetrically encrypted payload using a password
+ *  if symmetricOptions is provided, then encrypted param is expected to be sym encrypted
  *  If returnAsymmetricOptions is specified, the decrypted item is encrypted with this public key before being returned
  *  Returns: the decrypted string OR an asymmetrically re-encrypted payload (using returnAsymmetricOptions)
  */
@@ -33,7 +34,6 @@ export async function recoverAndReencryptResolver(
     chainType,
     encrypted,
     asymmetricEncryptedPrivateKeys,
-    password,
     asymmetricOptionsForReencrypt,
     symmetricOptionsForReencrypt,
   } = params
@@ -42,7 +42,7 @@ export async function recoverAndReencryptResolver(
   const { logger } = context
   let asymmetricEncryptedStrings: AsymmetricEncryptedString[]
 
-  if (!isNullOrEmpty(symmetricOptionsForReencrypt) && isNullOrEmpty(password)) {
+  if (!isNullOrEmpty(symmetricOptionsForReencrypt) && isNullOrEmpty(symmetricOptionsForReencrypt?.password)) {
     const msg = `Password is required to re-encrypt.`
     throw new ServiceError(msg, ErrorType.BadParam, 'recoverAndReencryptResolver')
   }
@@ -73,15 +73,10 @@ export async function recoverAndReencryptResolver(
   // Encrypt sym
   let symmetricEncryptedString: SymmetricEncryptedString
   if (!isNullOrEmpty(symmetricOptionsForReencrypt)) {
-    const { symmetricEccOptions, symmetricEd25519Options, isEcc } = await mapSymmetricOptionsParam(
-      symmetricOptionsForReencrypt,
-      context,
-    )
-    const options = isEcc ? symmetricEccOptions : symmetricEd25519Options
+    const symOptions = await mapSymmetricOptionsParam(symmetricOptionsForReencrypt, context)
     symmetricEncryptedString = await encryptSymmetrically(chainConnect, {
       unencrypted: decrypted,
-      password,
-      options,
+      options: symOptions,
     })
   }
 
