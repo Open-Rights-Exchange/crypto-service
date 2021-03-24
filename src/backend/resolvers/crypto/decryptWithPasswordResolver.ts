@@ -1,11 +1,9 @@
 import { AsymmetricEncryptedString, Context, DecryptWithPasswordParams } from '../../../models'
-import { ServiceError } from '../../../helpers/errors'
 import { getChain } from '../../chains/chainConnection'
-import { assertValidChainType } from '../../../helpers'
 import { decryptSymmetrically, mapSymmetricOptionsParam, optionallyEncryptReturnValue } from './cryptoHelpers'
 
 /**
- *  Decrypts a symmetrically encrypted payload using a password (in the authToken)
+ *  Decrypts a symmetrically encrypted payload using a password
  *  If returnAsymmetricOptions is specified, the decrypted item is encrypted with this public key before being returned
  *  Returns: the decrypted string OR an asymmetrically re-encrypted payload (using returnAsymmetricOptions)
  */
@@ -16,7 +14,6 @@ export async function decryptWithPasswordResolver(
   decryptedResult?: string
   encryptedResult?: AsymmetricEncryptedString
 }> {
-  assertValidChainType(params?.chainType)
   const { password, returnAsymmetricOptions, chainType, encrypted, symmetricOptions } = params
   const chainConnect = await getChain(chainType, context)
 

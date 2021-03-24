@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
+import { StateStore } from '../../helpers/stateStore'
 import { Config } from '../../models'
 import { ContextGlobal } from './context'
 
@@ -13,7 +14,13 @@ const timed = (f: (...args: any[]) => any) => async (...args: any) => {
   return { ...result, timeElapsed }
 }
 
-export async function healthCheckHandler(req: Request, res: Response, next: NextFunction, config: Config) {
+export async function healthCheckHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  config: Config,
+  state: StateStore,
+) {
   const { constants } = config
   const { logger } = ContextGlobal
 

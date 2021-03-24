@@ -1,6 +1,6 @@
 import { Analytics } from '../backend/services/segment/resolvers'
 import { Logger } from '../helpers/logger'
-import { ChainType, PublicKey, SymmetricPassword } from './chain'
+import { AsymmetricEncryptedString, ChainType, PrivateKey, PublicKey } from './chain'
 
 export interface Lookup {
   [key: string]: any
@@ -12,6 +12,7 @@ export type Context = {
   /** appId of authenticated user or agent */
   appId?: AppId
   analytics: Analytics
+  chainType: ChainType
   constants: Constants
   logger: Logger
   processId: string
@@ -30,46 +31,30 @@ export type Config = {
 }
 
 export type Constants = {
-  ENVIRONMENT: string
+  APP_ACCESS_TOKEN_EXPIRATION_IN_SECONDS: number
   APP_NAME: string
-  MONGO_TIMEOUT: number
-  DEFAULT_PROCESS_ID: string
-  SEGMENT_WRITE_KEY: string
-  ROLLBAR_POST_WRITE_SERVER_KEY: string
   BASE_PUBLIC_KEY: string
   BASE_PRIVATE_KEY: string
-  MINUTES_FOR_FIRST_LOCK: number
-  MINUTES_FOR_SECOND_LOCK: number
-  MINUTES_FOR_MORE_LOCK: number
-  HOURS_FOR_TIMEOUT_LOCK: number
-  APP_ACCESS_TOKEN_EXPIRATION_IN_SECONDS: number
-  ENV_VERSION?: string
   BUILD_VERSION?: string
+  DEFAULT_PROCESS_ID: string
   DEPLOY_DATE?: string
+  ENVIRONMENT: string
   ENV_HASH?: string
+  ENV_VERSION?: string
+  HOURS_FOR_TIMEOUT_LOCK: number
+  MINUTES_FOR_FIRST_LOCK: number
+  MINUTES_FOR_MORE_LOCK: number
+  MINUTES_FOR_SECOND_LOCK: number
+  MONGO_TIMEOUT: number
+  ROLLBAR_POST_WRITE_SERVER_KEY: string
+  SEGMENT_WRITE_KEY: string
+  TRANSPORT_KEY_EXPIRE_IN_SECONDS?: number
 }
 
 export const DEFAULT_SIGNATURE_ENCODING = 'utf8'
 
 export type Hash = string
 export type SaltName = string
-
-/** Decrypted Athorization token sent (encrypted) by caller
- *  Ensures that the request is coming from an authorized called
- *  and the request is only executed/authorized once
- *  Optionally includes symmetric password for encryption/decryption */
-export type AuthToken = {
-  /** full url of request (server url and api path) */
-  url: string
-  /** hash of target for authorization - for am api request, this is the stringified JSON object of request body */
-  payloadHash: Hash
-  validFrom: Date
-  validTo: Date
-  secrets?: {
-    /** Symmetric password used to decrypt a symmetrically encrypted payload (that was, for example, sent in the request) */
-    password?: SymmetricPassword
-  }
-}
 
 /** Options for asym encryption */
 export type AsymmetricOptions = {
@@ -106,14 +91,14 @@ export type SymmetricEd25519Options = {
 }
 
 /** Symmetric encryption options with encrypted password (used by API endpoints)
- *  passwordAuthToken is base64 encoded authToken */
+ *  transportEncryptedPassword is base64 encoded authToken */
 export type SymmetricOptionsParam =
-  | ({ passwordAuthToken: string } & SymmetricEccOptions)
-  | ({ passwordAuthToken: string } & SymmetricEd25519Options)
+  | ({ transportEncryptedPassword: string } & SymmetricEccOptions)
+  | ({ transportEncryptedPassword: string } & SymmetricEd25519Options)
 
-/** Indicator of what an AuthToken is used for */
-export enum AuthTokenType {
-  ApiHeader = 'apiHeader',
-  EncryptedPayload = 'encryptedPayload',
-  Password = 'password',
+/** Temporary public/private key pair used for encrypting data sent to this service */
+export type TransportKey = {
+  publicKey: PublicKey
+  privateKey?: PrivateKey
+  privateKeyEncrypted?: AsymmetricEncryptedString
 }

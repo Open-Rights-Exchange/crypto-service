@@ -1,9 +1,9 @@
 import { Request } from 'express'
 import { globalLogger } from '../../helpers/logger'
-import { generateProcessId, Logger, isNullOrEmpty, objectHasProperty } from '../../helpers'
+import { generateProcessId, Logger, isNullOrEmpty, objectHasProperty, assertValidChainType } from '../../helpers'
 import { Analytics } from '../services/segment/resolvers'
 import { getRollbar } from '../services/rollbar/connectors'
-import { AppId, Config, Context, ErrorType } from '../../models'
+import { AppId, ChainType, Config, Context, ErrorType } from '../../models'
 import { getAppIdFromApiKey } from '../resolvers/appRegistration'
 import { ServiceError } from '../../helpers/errors'
 
@@ -15,7 +15,8 @@ export function createContext(req: Request, config: Config, requestDateTime: Dat
   const { constants } = config || {}
   const { logger, processId } = getProcessIdAndLogger(req, config)
   const analytics = new Analytics(constants?.SEGMENT_WRITE_KEY, processId)
-  const context: Context = { analytics, appId, constants, logger, processId, requestDateTime }
+  const chainType = ChainType.NoChain
+  const context: Context = { analytics, appId, chainType, constants, logger, processId, requestDateTime }
   if (appId) context.appId = appId
   return context
 }
@@ -39,9 +40,14 @@ const getOrCreateProcessId = (req: Request) => {
 
 /** use request headers to determine appId, serviceID, and processId
  * also creates a context object from these values */
-export async function addAppIdToContextFromApiKey(req: Request, context: Context) {
+export async function addAppIdAndChainTypeToContextFromApiKey(req: Request, context: Context) {
   const { logger } = context
-
+  // add chainType to context if provided in request body - throw if invalid
+  const chainType = req?.body?.chainType
+  if (chainType) {
+    assertValidChainType(chainType)
+    context.chainType = chainType
+  }
   const appId = await getAppIdFromApiKey(req.headers['api-key'] as string, context)
   if (isNullOrEmpty(appId)) {
     throw new ServiceError(

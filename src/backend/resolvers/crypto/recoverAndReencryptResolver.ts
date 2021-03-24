@@ -7,7 +7,7 @@ import {
   RecoverAndReencryptResolverParams,
   SymmetricEncryptedString,
 } from '../../../models'
-import { assertValidChainType, getChainTypeFromChainConnect, isNullOrEmpty, ServiceError } from '../../../helpers'
+import { getChainTypeFromChainConnect, isNullOrEmpty, ServiceError } from '../../../helpers'
 import { getChain } from '../../chains/chainConnection'
 import {
   decryptAsymmetrically,
@@ -18,7 +18,7 @@ import {
 import { encryptResolver } from './encryptResolver'
 
 /**
- *  Decrypts a symmetrically encrypted payload using a password (in the authToken)
+ *  Decrypts a symmetrically encrypted payload using a password
  *  If returnAsymmetricOptions is specified, the decrypted item is encrypted with this public key before being returned
  *  Returns: the decrypted string OR an asymmetrically re-encrypted payload (using returnAsymmetricOptions)
  */
@@ -29,7 +29,6 @@ export async function recoverAndReencryptResolver(
   asymmetricEncryptedStrings?: AsymmetricEncryptedString[]
   symmetricEncryptedString?: SymmetricEncryptedString
 }> {
-  assertValidChainType(params?.chainType)
   const {
     chainType,
     encrypted,
