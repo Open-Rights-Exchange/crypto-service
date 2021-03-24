@@ -13,7 +13,6 @@ export async function signResolver(params: SignParams, context: Context): Promis
   const {
     asymmetricEncryptedPrivateKeys = [],
     chainType,
-    password,
     toSign,
     symmetricEncryptedPrivateKeys = [],
     symmetricOptions,
@@ -23,7 +22,7 @@ export async function signResolver(params: SignParams, context: Context): Promis
   const { logger } = context
   const signatures: string[] = []
 
-  if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(password)) {
+  if (!isNullOrEmpty(symmetricOptions) && isNullOrEmpty(symmetricOptions?.password)) {
     const msg = `symmetricOptions was provided but password is missing.`
     throw new ServiceError(msg, ErrorType.BadParam, 'signResolver')
   }
@@ -32,7 +31,6 @@ export async function signResolver(params: SignParams, context: Context): Promis
     symmetricEncryptedPrivateKeys,
     asymmetricEncryptedPrivateKeys,
     symmetricOptions,
-    password,
     chainConnect,
   })
 

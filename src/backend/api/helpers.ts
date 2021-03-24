@@ -163,7 +163,6 @@ export async function extractEncryptedPayload(
   const decryptedPayload = await unwrapTransportEncryptedPayload({
     encryptedPayload: decodedEncryptedPayload,
     context,
-    state,
   })
   let decryptedPayloadObject = tryParseJSON(decryptedPayload)
 
@@ -183,7 +182,6 @@ export function getFullUrlFromRequest(req: Request) {
 export type DecryptTransportEncryptedPayloadParams = {
   encryptedPayload?: string
   context: Context
-  state: StateStore
 }
 
 /** Unwrap encryptedPayload (using private key associated with transportPublicKey) */
@@ -206,24 +204,28 @@ export async function unwrapTransportEncryptedPayload(params: DecryptTransportEn
   return decryptedPayload
 }
 
-/** unwrap password provided in symmetric options (using private key associated with transportPublicKey) */
+/** unwraps (decrypts) transportEncryptedPassword provided in symmetric options (using private key associated with transportPublicKey)
+ *  sert symmetricOptions.password property to decrypted value */
 export async function unwrapTransportEncryptedPasswordInSymOptions(
   symmetricOptions: SymmetricOptionsParam,
   context: Context,
-  state: StateStore,
-): Promise<string> {
-  if (isNullOrEmpty(symmetricOptions?.transportEncryptedPassword)) {
-    const msg = `Symmetric options were provided but transportEncryptedPassword is missing.`
+): Promise<SymmetricOptionsParam> {
+  if (!symmetricOptions?.password && !symmetricOptions?.transportEncryptedPassword) {
+    const msg = `Symmetric options were provided but missing either password or transportEncryptedPassword - one is required.`
     throw new ServiceError(msg, ErrorType.BadParam, 'unwrapTransportEncryptedPasswordInSymOptions')
   }
-  const decodedTransportEncryptedPassword = tryBase64Decode(symmetricOptions?.transportEncryptedPassword)
-  if (!decodedTransportEncryptedPassword) {
-    const msg = `transportEncryptedPassword in symmetric options is malformed. Expected base64 encoded string`
-    throw new ServiceError(msg, ErrorType.BadParam, 'unwrapTransportEncryptedPasswordInSymOptions')
+  const hasEncryptedPw = !symmetricOptions?.password && symmetricOptions?.transportEncryptedPassword
+  if (hasEncryptedPw) {
+    const decodedTransportEncryptedPassword = tryBase64Decode(symmetricOptions?.transportEncryptedPassword)
+    if (symmetricOptions?.transportEncryptedPassword && !decodedTransportEncryptedPassword) {
+      const msg = `transportEncryptedPassword in symmetric options is malformed. Expected base64 encoded string`
+      throw new ServiceError(msg, ErrorType.BadParam, 'unwrapTransportEncryptedPasswordInSymOptions')
+    }
+    const password = await unwrapTransportEncryptedPayload({
+      encryptedPayload: decodedTransportEncryptedPassword, // base64 encoded
+      context,
+    })
+    symmetricOptions.password = password
   }
-  return unwrapTransportEncryptedPayload({
-    encryptedPayload: decodedTransportEncryptedPassword, // base64 encoded
-    context,
-    state,
-  })
+  return symmetricOptions
 }
