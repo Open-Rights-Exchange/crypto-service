@@ -14,16 +14,15 @@ export async function decryptWithPasswordResolver(
   decryptedResult?: string
   encryptedResult?: AsymmetricEncryptedString
 }> {
-  const { password, returnAsymmetricOptions, chainType, encrypted, symmetricOptions } = params
+  const { returnAsymmetricOptions, chainType, encrypted, symmetricOptions } = params
   const chainConnect = await getChain(chainType, context)
 
-  const { symmetricEccOptions, symmetricEd25519Options } = await mapSymmetricOptionsParam(symmetricOptions, context)
+  const symOptions = await mapSymmetricOptionsParam(symmetricOptions, context)
 
   // Decrypt symmetrically with password
   const unencrypted = await decryptSymmetrically(chainConnect, {
     encrypted,
-    password,
-    options: symmetricEccOptions || symmetricEd25519Options,
+    options: symOptions,
   })
 
   // Optionally re-encrypt result asymmetrically before returning

@@ -34,7 +34,6 @@ export async function generateKeysResolver(params: GenerateKeysParams, context: 
       chainType: params?.chainType,
       asymmetricOptions: params?.asymmetricOptions,
       symmetricOptions: params?.symmetricOptions,
-      password: params?.password,
       toEncrypt: keys?.privateKey,
     }
     // encrypt and add to array for results
