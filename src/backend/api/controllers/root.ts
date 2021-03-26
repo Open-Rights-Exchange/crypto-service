@@ -119,9 +119,9 @@ export async function handleDecryptWithPrivateKeys(
       returnAsymmetricOptions,
     } = req.body
 
-    if (symmetricEncryptedPrivateKeys) {
-      await unwrapTransportEncryptedPasswordInSymOptions(symmetricEncryptedPrivateKeys, context)
-    }
+    // if (symmetricEncryptedPrivateKeys) {
+    //   await unwrapTransportEncryptedPasswordInSymOptions(symmetricEncryptedPrivateKeys, context)
+    // }
 
     if (symmetricOptionsForEncryptedPrivateKeys) {
       await unwrapTransportEncryptedPasswordInSymOptions(symmetricOptionsForEncryptedPrivateKeys, context)
