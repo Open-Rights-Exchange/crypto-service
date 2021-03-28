@@ -361,8 +361,8 @@ export async function handleGetTransportKey(
     globalLogger.trace('called handleGetTransportKey')
     assertBodyhasRequiredValues(req, ['nonce'], funcName)
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    const { nonce } = req.body
-    const response = await getTransportPublicKeyResolver({ nonce }, context, state)
+    const { appId, maxUseCount, nonce } = req.body
+    const response = await getTransportPublicKeyResolver({ appId, maxUseCount, nonce }, context, state)
     return await returnResponse(req, res, HttpStatusCode.OK_200, response, context)
   } catch (error) {
     logError(context, error, ErrorSeverity.Info, funcName)
