@@ -8,7 +8,7 @@
   "eslint.alwaysShowStatus": true,
   "debug.node.autoAttach": "on",
   "typescript.updateImportsOnFileMove.enabled": "always",
-  "diffEditor.ignoreTrimWhitespace": false,
+  "diffEditor.ignoreTrimWhitespace": true,
   "eslint.validate": [
       "javascript",
       "typescript",
