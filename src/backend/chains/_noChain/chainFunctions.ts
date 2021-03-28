@@ -72,8 +72,9 @@ export class ChainFunctionsNoChain extends ChainFunctions {
   decryptWithPrivateKeys(
     encrypted: Asymmetric.AsymmetricEncryptedDataString,
     privateKeys: PrivateKey[],
+    options?: any,
   ): Promise<string> {
-    return decryptWithPrivateKeys(this.decryptWithPrivateKeyCallback, encrypted, privateKeys, {})
+    return decryptWithPrivateKeys(this.decryptWithPrivateKeyCallback, encrypted, privateKeys, options)
   }
 
   encryptWithPublicKeys(
