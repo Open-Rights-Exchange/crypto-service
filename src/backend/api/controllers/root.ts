@@ -99,7 +99,7 @@ export async function handleDecryptWithPrivateKeys(
   state: StateStore,
 ) {
   const funcName = 'api/decrypt-with-private-keys'
-  let asymmetricEncryptedPrivateKeys
+
   try {
     globalLogger.trace('called handleDecryptWithPrivateKeys')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
@@ -115,6 +115,7 @@ export async function handleDecryptWithPrivateKeys(
       symmetricOptionsForEncryptedPrivateKeys,
       returnAsymmetricOptions,
     } = req.body
+    let { asymmetricEncryptedPrivateKeys } = req.body
     let { encrypted } = req.body
 
     if (symmetricEncryptedPrivateKeys) {
@@ -126,13 +127,15 @@ export async function handleDecryptWithPrivateKeys(
     }
 
     // extract asymmetricEncryptedPrivateKeys using transportPublicKey
-    const encryptedKeys = await extractEncryptedPayload(
-      asymmetricTransportEncryptedPrivateKeys,
-      'asymmetricTransportEncryptedPrivateKeys',
-      context,
-      state,
-    )
-    asymmetricEncryptedPrivateKeys = encryptedKeys
+    if (asymmetricTransportEncryptedPrivateKeys) {
+      const encryptedKeys = await extractEncryptedPayload(
+        asymmetricTransportEncryptedPrivateKeys,
+        'asymmetricTransportEncryptedPrivateKeys',
+        context,
+        state,
+      )
+      asymmetricEncryptedPrivateKeys = encryptedKeys
+    }
 
     // extract encrypted using transportPublicKey
     if (encryptedTransportEncrypted) {
