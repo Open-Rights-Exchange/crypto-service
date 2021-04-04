@@ -39,9 +39,9 @@ export type DecryptWithPasswordParams = {
 export type DecryptWithPrivateKeysParams = {
   /** chain/curve used to encrypt */
   chainType: ChainType
-  /** Stringified JSON of encrypted payload - value to decrypt */
+  /** JSON (or stringified) of encrypted payload - value to decrypt */
   encrypted: AsymmetricEncryptedString | AsymmetricEncryptedData
-  /** Stringified JSON of encrypted private key(s) */
+  /** private key(s) to decrypt with (encrypted with transport key) */
   asymmetricEncryptedPrivateKeys?: AsymmetricEncryptedString | AsymmetricEncryptedData[]
   /** Stringified JSON of encrypted private key(s) */
   symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[]
