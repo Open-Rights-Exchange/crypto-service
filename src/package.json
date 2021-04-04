@@ -1,6 +1,6 @@
 {
   "name": "crypto-service",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "private": false,
   "engines": {
     "node": "12.x.x"
@@ -17,7 +17,7 @@
     "test": "true"
   },
   "dependencies": {
-    "@open-rights-exchange/chainjs": "^2.1.1",
+    "@open-rights-exchange/chainjs": "^2.3.2",
     "analytics-node": "^3.5.0",
     "axios": "^0.21.1",
     "concurrently": "^4.1.2",

@@ -99,25 +99,24 @@ export async function handleDecryptWithPrivateKeys(
   state: StateStore,
 ) {
   const funcName = 'api/decrypt-with-private-keys'
-  let asymmetricEncryptedPrivateKeys
+
   try {
     globalLogger.trace('called handleDecryptWithPrivateKeys')
     assertHeaderhasRequiredValues(req, ['api-key'], funcName)
-    assertBodyhasRequiredValues(req, ['chainType', 'encrypted'], funcName)
-    assertBodyHasOnlyOneOfValues(
-      req,
-      ['asymmetricTransportEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'],
-      funcName,
-    )
+    assertBodyhasRequiredValues(req, ['chainType'], funcName)
+    assertBodyHasOnlyOneOfValues(req, ['encrypted', 'encryptedTransportEncrypted'], funcName)
+    assertBodyHasOnlyOneOfValues(req, ['asymmetricEncryptedPrivateKeys', 'symmetricEncryptedPrivateKeys'], funcName)
     assertBodyValueIsArrayIfExists(req, ['returnAsymmetricOptions'], funcName)
     const {
       chainType,
-      encrypted,
+      encryptedTransportEncrypted,
       asymmetricTransportEncryptedPrivateKeys,
       symmetricEncryptedPrivateKeys,
       symmetricOptionsForEncryptedPrivateKeys,
       returnAsymmetricOptions,
     } = req.body
+    let { asymmetricEncryptedPrivateKeys } = req.body
+    let { encrypted } = req.body
 
     if (symmetricEncryptedPrivateKeys) {
       await unwrapTransportEncryptedPasswordInSymOptions(symmetricEncryptedPrivateKeys, context)
@@ -128,13 +127,25 @@ export async function handleDecryptWithPrivateKeys(
     }
 
     // extract asymmetricEncryptedPrivateKeys using transportPublicKey
-    const encryptedKeys = await extractEncryptedPayload(
-      asymmetricTransportEncryptedPrivateKeys,
-      'asymmetricTransportEncryptedPrivateKeys',
-      context,
-      state,
-    )
-    asymmetricEncryptedPrivateKeys = encryptedKeys
+    if (asymmetricTransportEncryptedPrivateKeys) {
+      const encryptedKeys = await extractEncryptedPayload(
+        asymmetricTransportEncryptedPrivateKeys,
+        'asymmetricTransportEncryptedPrivateKeys',
+        context,
+        state,
+      )
+      asymmetricEncryptedPrivateKeys = encryptedKeys
+    }
+
+    // extract encrypted using transportPublicKey
+    if (encryptedTransportEncrypted) {
+      encrypted = await extractEncryptedPayload(
+        encryptedTransportEncrypted,
+        'encryptedTransportEncrypted',
+        context,
+        state,
+      )
+    }
 
     const response = await decryptWithPrivateKeysResolver(
       {
