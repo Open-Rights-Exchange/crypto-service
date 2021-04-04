@@ -17,7 +17,7 @@
     "test": "true"
   },
   "dependencies": {
-    "@open-rights-exchange/chainjs": "^2.3.1",
+    "@open-rights-exchange/chainjs": "^2.3.2",
     "analytics-node": "^3.5.0",
     "axios": "^0.21.1",
     "concurrently": "^4.1.2",
