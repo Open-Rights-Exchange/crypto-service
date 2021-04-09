@@ -3,7 +3,15 @@
 import supertest from 'supertest'
 import { Server } from 'http'
 import { ChainFactory, ChainType } from '@open-rights-exchange/chainjs'
-import { openDB, closeDB, clearDB, initializeDB, createExpressServerForTest, getTransportKey, encryptWithTransportKey } from '../helpers'
+import {
+  openDB,
+  closeDB,
+  clearDB,
+  initializeDB,
+  createExpressServerForTest,
+  getTransportKey,
+  encryptWithTransportKey,
+} from '../helpers'
 import { setupGlobalConstants } from '../config/constants'
 
 declare let global: any
@@ -62,6 +70,7 @@ describe('Test api /encrypt endpoint', () => {
       .expect(200)
       .end(async (err, res) => {
         if (err) return done(err)
+        console.log(res.body)
         const encryptedString = JSON.parse(res.body.asymmetricEncryptedStrings[0])[0]
         const decryptedString = await chain.decryptWithPrivateKey(encryptedString, global.ETH_PPRIVATE_KEY)
         expect(decryptedString).toMatch('encrypt-this-string')
@@ -70,11 +79,11 @@ describe('Test api /encrypt endpoint', () => {
   })
 
   it('should return 200 & return symmetric encrypted string', async done => {
-      const transportPublicKey = await getTransportKey()
+    const transportPublicKey = await getTransportKey()
     const encryptParams = {
       chainType: 'ethereum',
       toEncrypt: 'encrypt-this-string',
-      symmetricOptions: {...global.SYMMETRIC_AES_OPTIONS},
+      symmetricOptions: { ...global.SYMMETRIC_AES_OPTIONS },
     }
     const transportEncryptedPassword = await encryptWithTransportKey(global.MY_PASSWORD, transportPublicKey)
     encryptParams.symmetricOptions.transportEncryptedPassword = transportEncryptedPassword
@@ -161,7 +170,9 @@ describe('Test api /encrypt endpoint', () => {
       .expect(200)
       .end(async (err, res) => {
         expect(res.body?.errorCode).toMatch('api_bad_parameter')
-        expect(res.body?.errorMessage).toContain('Symmetric options were provided but missing either password or transportEncryptedPassword')
+        expect(res.body?.errorMessage).toContain(
+          'Symmetric options were provided but missing either password or transportEncryptedPassword',
+        )
         done()
       })
   })
