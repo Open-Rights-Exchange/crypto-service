@@ -13,7 +13,6 @@ import {
   encryptWithTransportKey,
 } from '../helpers'
 import { setupGlobalConstants } from '../config/constants'
-import { response } from 'express'
 
 declare let global: any
 
@@ -60,8 +59,43 @@ describe('Test api /sign endpoint', () => {
     const chain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }])
     signParams.chainType = chain.chainType
 
-    const encryptedPrivateKey = JSON.stringify([Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY)])
-    signParams.asymmetricTransportEncryptedPrivateKeys = await encryptWithTransportKey(encryptedPrivateKey, transportPublicKey)
+    const encryptedPrivateKey = JSON.stringify([
+      Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
+    ])
+    signParams.asymmetricTransportEncryptedPrivateKeys = await encryptWithTransportKey(
+      encryptedPrivateKey,
+      transportPublicKey,
+    )
+
+    supertest(server)
+      .post('/sign')
+      .set(headers)
+      .send({ ...signParams })
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(async (err, res) => {
+        if (err) return done(err)
+        expect(res.body[0]).toMatch(
+          '7fe17a4408cad898b2943152e39b2640b9a0e20e2c903169dd879cbea39b9762e6c208e2573108f670ae99e4114e37713a59c16ff371d5f11b6c65ed82633002',
+        )
+        done()
+      })
+  })
+
+  it('asymmetricEncryptedPrivateKeys: should return 200 & return signed string for ALGORANDV1', async done => {
+    const transportPublicKey = await getTransportKey()
+    const signParams: any = {
+      toSign,
+      transportPublicKey,
+    }
+
+    const chain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }])
+    signParams.chainType = chain.chainType
+
+    const encryptedPrivateKey = JSON.stringify([
+      Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
+    ])
+    signParams.asymmetricEncryptedPrivateKeys = [encryptedPrivateKey]
 
     supertest(server)
       .post('/sign')
@@ -82,7 +116,7 @@ describe('Test api /sign endpoint', () => {
     const transportPublicKey = await getTransportKey()
     const signParams: any = {
       toSign,
-      symmetricOptions: {...global.SYMMETRIC_AES_OPTIONS},
+      symmetricOptions: { ...global.SYMMETRIC_AES_OPTIONS },
       transportPublicKey,
     }
 
@@ -113,7 +147,7 @@ describe('Test api /sign endpoint', () => {
     const transportPublicKey = await getTransportKey()
     const signParams: any = {
       toSign,
-      symmetricOptions: {...global.SYMMETRIC_AES_OPTIONS},
+      symmetricOptions: { ...global.SYMMETRIC_AES_OPTIONS },
     }
     const chain = new ChainFactory().create(ChainType.EosV2, [{ url: null }])
     signParams.chainType = chain.chainType
@@ -141,7 +175,7 @@ describe('Test api /sign endpoint', () => {
     const transportPublicKey = await getTransportKey()
     const signParams: any = {
       toSign,
-      symmetricOptions: {...global.SYMMETRIC_AES_OPTIONS},
+      symmetricOptions: { ...global.SYMMETRIC_AES_OPTIONS },
     }
     const chain = new ChainFactory().create(ChainType.EthereumV1, [{ url: null }])
     signParams.chainType = chain.chainType
@@ -166,34 +200,33 @@ describe('Test api /sign endpoint', () => {
       })
   })
 
-    it('should throw an error for missing password', async done => {
-      const transportPublicKey = await getTransportKey()
-      const signParams: any = {
-        toSign,
-        symmetricOptions: {...global.SYMMETRIC_AES_OPTIONS},
-        transportPublicKey,
-      }
-  
-      const chain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }])
-      signParams.chainType = chain.chainType
-      signParams.symmetricEncryptedPrivateKeys = [
-        chain.encryptWithPassword(global.ALGO_PRIVATE_KEY, global.MY_PASSWORD, global.SYMMETRIC_AES_OPTIONS),
-      ]
-      
+  it('should throw an error for missing password', async done => {
+    const transportPublicKey = await getTransportKey()
+    const signParams: any = {
+      toSign,
+      symmetricOptions: { ...global.SYMMETRIC_AES_OPTIONS },
+      transportPublicKey,
+    }
 
-      supertest(server)
-        .post('/sign')
-        .set(headers)
-        .send({ ...signParams })
-        .expect('Content-Type', /json/)
-        .expect(400)
-        .end(async (err, res) => {
-          if (err) return done(err)
-          expect(res.body?.errorCode).toMatch('api_bad_parameter')
-          expect(res.body?.errorMessage).toContain(
-            'Symmetric options were provided but missing either password or transportEncryptedPassword',
-          )
-          done()
-        })
-    })
+    const chain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }])
+    signParams.chainType = chain.chainType
+    signParams.symmetricEncryptedPrivateKeys = [
+      chain.encryptWithPassword(global.ALGO_PRIVATE_KEY, global.MY_PASSWORD, global.SYMMETRIC_AES_OPTIONS),
+    ]
+
+    supertest(server)
+      .post('/sign')
+      .set(headers)
+      .send({ ...signParams })
+      .expect('Content-Type', /json/)
+      .expect(400)
+      .end(async (err, res) => {
+        if (err) return done(err)
+        expect(res.body?.errorCode).toMatch('api_bad_parameter')
+        expect(res.body?.errorMessage).toContain(
+          'Symmetric options were provided but missing either password or transportEncryptedPassword',
+        )
+        done()
+      })
+  })
 })
