@@ -58,7 +58,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
           publicKeys: [global.ALGO_PUB_KEY],
         },
       ],
-      symmetricOptionsForReencrypt: {...global.SYMMETRIC_ED25519_OPTIONS},
+      symmetricOptionsForReencrypt: { ...global.SYMMETRIC_ED25519_OPTIONS },
     }
     const transportPublicKey = await getTransportKey()
     // encrypt a payload using our public key - in this example, its a private key we've 'backed-up'
@@ -106,7 +106,7 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
     const prviateKeyToEncrypt = 'private-key-to-recover'
     const recoverAndReencryptParams: any = {
       chainType: 'algorand',
-      symmetricOptionsForReencrypt: {...global.SYMMETRIC_ED25519_OPTIONS},
+      symmetricOptionsForReencrypt: { ...global.SYMMETRIC_ED25519_OPTIONS },
     }
     const transportPublicKey = await getTransportKey()
 
@@ -151,12 +151,101 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
       })
   })
 
+  it('should return 200 & return encrypted private -> assymetricEncryptedPrivateKeys only', async done => {
+    const chain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }])
+    const prviateKeyToEncrypt = 'private-key-to-recover'
+    const recoverAndReencryptParams: any = {
+      chainType: 'algorand',
+      symmetricOptionsForReencrypt: { ...global.SYMMETRIC_ED25519_OPTIONS },
+    }
+    const transportPublicKey = await getTransportKey()
+
+    // encrypt a payload using our public key - in this example, its a private key we've 'backed-up'
+    const privateKeyToRecover = await chain.encryptWithPublicKey(prviateKeyToEncrypt, global.ALGO_PUB_KEY)
+    // wrap the encrypted payload with the transport public key
+    recoverAndReencryptParams.encryptedTransportEncrypted = await encryptWithTransportKey(
+      privateKeyToRecover,
+      transportPublicKey,
+    )
+    // encrypt the private keys we'll use to decrypt the privateKeyToRecover
+    const encryptedPrivateKey = JSON.stringify(
+      Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
+    )
+
+    // wrap the encrypted keys with the transport public key
+    recoverAndReencryptParams.asymmetricEncryptedPrivateKeys = [encryptedPrivateKey]
+    // wrap password with the transport public key
+    recoverAndReencryptParams.symmetricOptionsForReencrypt.transportEncryptedPassword = await encryptWithTransportKey(
+      global.MY_PASSWORD,
+      transportPublicKey,
+    )
+
+    supertest(server)
+      .post('/recover-and-reencrypt')
+      .set(headers)
+      .send({ ...recoverAndReencryptParams })
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(async (err, res) => {
+        if (err) return done(err)
+        const decryptedString = chain.decryptWithPassword(
+          res.body.symmetricEncryptedString,
+          global.MY_PASSWORD,
+          global.SYMMETRIC_ED25519_OPTIONS,
+        )
+        expect(decryptedString).toMatch(prviateKeyToEncrypt)
+        done()
+      })
+  })
+
+  it('should throw error for missing asymmetricEncryptedPrivateKeys and asymmetricTransportEncryptedPrivateKeys', async done => {
+    const chain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }])
+    const prviateKeyToEncrypt = 'private-key-to-recover'
+    const recoverAndReencryptParams: any = {
+      chainType: 'algorand',
+      symmetricOptionsForReencrypt: { ...global.SYMMETRIC_ED25519_OPTIONS },
+    }
+    const transportPublicKey = await getTransportKey()
+
+    // encrypt a payload using our public key - in this example, its a private key we've 'backed-up'
+    const privateKeyToRecover = await chain.encryptWithPublicKey(prviateKeyToEncrypt, global.ALGO_PUB_KEY)
+    // wrap the encrypted payload with the transport public key
+    recoverAndReencryptParams.encryptedTransportEncrypted = await encryptWithTransportKey(
+      privateKeyToRecover,
+      transportPublicKey,
+    )
+    // encrypt the private keys we'll use to decrypt the privateKeyToRecover
+    const encryptedPrivateKey = JSON.stringify(
+      Crypto.Asymmetric.encryptWithPublicKey(global.BASE_PUBLIC_KEY, global.ALGO_PRIVATE_KEY),
+    )
+    // wrap password with the transport public key
+    recoverAndReencryptParams.symmetricOptionsForReencrypt.transportEncryptedPassword = await encryptWithTransportKey(
+      global.MY_PASSWORD,
+      transportPublicKey,
+    )
+
+    supertest(server)
+      .post('/recover-and-reencrypt')
+      .set(headers)
+      .send({ ...recoverAndReencryptParams })
+      .expect('Content-Type', /json/)
+      .expect(400)
+      .end(async (err, res) => {
+        if (err) return done(err)
+        expect(res.body?.errorCode).toMatch('api_bad_parameter')
+        expect(res.body?.errorMessage).toContain(
+          'Missing at least one of these parameters in request body: asymmetricTransportEncryptedPrivateKeys, asymmetricEncryptedPrivateKeys',
+        )
+        done()
+      })
+  })
+
   it('should throw password missing error', async done => {
     const chain = new ChainFactory().create(ChainType.AlgorandV1, [{ url: null }])
     const prviateKeyToEncrypt = 'private-key-to-recover'
     const recoverAndReencryptParams: any = {
       chainType: 'algorand',
-      symmetricOptionsForReencrypt: {...global.SYMMETRIC_ED25519_OPTIONS},
+      symmetricOptionsForReencrypt: { ...global.SYMMETRIC_ED25519_OPTIONS },
     }
     const transportPublicKey = await getTransportKey()
 
@@ -177,7 +266,6 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
       encryptedPrivateKey,
       transportPublicKey,
     )
-    
 
     supertest(server)
       .post('/recover-and-reencrypt')
@@ -188,7 +276,9 @@ describe('Test api /recover-and-reencrypt endpoint', () => {
       .end(async (err, res) => {
         if (err) return done(err)
         expect(res.body?.errorCode).toMatch('api_bad_parameter')
-        expect(res.body?.errorMessage).toContain('Symmetric options were provided but missing either password or transportEncryptedPassword')
+        expect(res.body?.errorMessage).toContain(
+          'Symmetric options were provided but missing either password or transportEncryptedPassword',
+        )
         done()
       })
   })
