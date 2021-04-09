@@ -28,7 +28,10 @@ export async function findTransportKeyAndDecryptPrivateKey(publicKey: string, co
   const existingAuthToken = await findOneMongo<TransportKeyData>({
     context,
     mongoObject: Mongo.TransportKey,
-    filter: { publicKey },
+    filter: {
+      appId: context?.appId,
+      publicKey,
+    },
   })
   if (!existingAuthToken) return null
   // decrypt private key using base key
@@ -37,6 +40,8 @@ export async function findTransportKeyAndDecryptPrivateKey(publicKey: string, co
     context,
   )
   const transportKey: TransportKey = {
+    appId: existingAuthToken.appId,
+    maxUseCount: existingAuthToken.maxUseCount,
     publicKey: existingAuthToken.publicKey,
     privateKeyEncrypted: toAsymEncryptedDataString(existingAuthToken.privateKeyEncrypted),
     privateKey,

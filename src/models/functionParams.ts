@@ -16,6 +16,7 @@ import {
   SymmetricEncryptedData,
 } from './chain'
 import { ChainConnection } from '../backend/chains/chainConnection'
+import { AppId } from './general'
 
 export type DecryptPrivateKeysParams = {
   symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[] | SymmetricEncryptedData
@@ -38,9 +39,9 @@ export type DecryptWithPasswordParams = {
 export type DecryptWithPrivateKeysParams = {
   /** chain/curve used to encrypt */
   chainType: ChainType
-  /** Stringified JSON of encrypted payload - value to decrypt */
+  /** JSON (or stringified) of encrypted payload - value to decrypt */
   encrypted: AsymmetricEncryptedString | AsymmetricEncryptedData
-  /** Stringified JSON of encrypted private key(s) */
+  /** private key(s) to decrypt with (encrypted with transport key) */
   asymmetricEncryptedPrivateKeys?: AsymmetricEncryptedString | AsymmetricEncryptedData[]
   /** Stringified JSON of encrypted private key(s) */
   symmetricEncryptedPrivateKeys?: SymmetricEncryptedString | SymmetricEncryptedData[]
@@ -120,6 +121,15 @@ export type DecryptAsymmetricallyParams = {
     | AsymmetricEncryptedData
     | AsymmetricEncryptedData[]
   privateKeys: PrivateKey[]
+}
+
+export type GetTransportPublicKeyParams = {
+  // app for which this key will be used (defaults to current app)
+  appId?: AppId
+  // max number of times this key can be used before its deleted (default is 1)
+  maxUseCount?: number
+  /** string to sign using service's public key */
+  nonce: string
 }
 
 export type VerifyPublcKeyParams = {

@@ -45,7 +45,9 @@ export class ChainFunctionsNoChain extends ChainFunctions {
     options?: any,
   ): Promise<Asymmetric.AsymmetricEncryptedDataString> {
     return Promise.resolve(
-      this.toAsymEncryptedDataString(JSON.stringify(Asymmetric.encryptWithPublicKey(publicKey, unencrypted, options))),
+      Asymmetric.toAsymEncryptedDataString(
+        JSON.stringify(Asymmetric.encryptWithPublicKey(publicKey, unencrypted, options)),
+      ),
     )
   }
 
@@ -65,15 +67,18 @@ export class ChainFunctionsNoChain extends ChainFunctions {
     options?: any,
   ): Promise<Asymmetric.AsymmetricEncryptedDataString> {
     return Promise.resolve(
-      this.toAsymEncryptedDataString(JSON.stringify(Asymmetric.encryptWithPublicKey(publicKey, unencrypted, options))),
+      Asymmetric.toAsymEncryptedDataString(
+        JSON.stringify(Asymmetric.encryptWithPublicKey(publicKey, unencrypted, options)),
+      ),
     )
   }
 
   decryptWithPrivateKeys(
     encrypted: Asymmetric.AsymmetricEncryptedDataString,
     privateKeys: PrivateKey[],
+    options?: any,
   ): Promise<string> {
-    return decryptWithPrivateKeys(this.decryptWithPrivateKeyCallback, encrypted, privateKeys, {})
+    return decryptWithPrivateKeys(this.decryptWithPrivateKeyCallback, encrypted, privateKeys, options)
   }
 
   encryptWithPublicKeys(

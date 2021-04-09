@@ -102,6 +102,8 @@ export type SymmetricOptionsParam =
 
 /** Temporary public/private key pair used for encrypting data sent to this service */
 export type TransportKey = {
+  appId: AppId
+  maxUseCount: number
   publicKey: PublicKey
   privateKey?: PrivateKey
   privateKeyEncrypted?: AsymmetricEncryptedString
