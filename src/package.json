@@ -22,7 +22,7 @@
     "axios": "^0.21.1",
     "concurrently": "^4.1.2",
     "cors": "^2.8.4",
-    "dotenv": "^8.2.0",
+    "dotenv": "^8.6.0",
     "flatted": "^2.0.2",
     "helmet": "^4.4.1",
     "js-base64": "^3.6.0",
