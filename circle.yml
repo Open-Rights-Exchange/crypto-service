@@ -16,7 +16,7 @@ workflows:
           requires:
             - build
           context:
-            - gcloud<< pipeline.git.branch >>
+            - gcloud-<< pipeline.git.branch >>
           filters:
             branches:
               only:
@@ -94,7 +94,7 @@ jobs:
             ENV_VERSION=`cat env_version.json | jq -r '.envVersion'`
             # pull this from GCP
             gcloud secrets versions access ${SECRET_VERSION} \
-              --secret="$SECRET_NAME_OREID_SERVICE" \
+              --secret="$SECRET_NAME_CRYPTO_SERVICE" \
               --format='get(payload.data)' | tr '_-' '/+' | base64 -d > .env
             echo "Pulled down secret into .env"
             # disable fail on error to output meaningful message
