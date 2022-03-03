@@ -22,6 +22,7 @@ workflows:
               only:
                 - master
                 - staging
+                - dev
 orbs: 
   node: circleci/node@5.0.0
   jq: circleci/jq@2.2.0
@@ -70,6 +71,7 @@ jobs:
           at: ~/crypto-service
       - node/install:
           node-version: '12.12.0'
+      - jq/install
       # install gcloud and login to it
       - run:
           working_directory: ~/
