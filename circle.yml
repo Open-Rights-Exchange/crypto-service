@@ -6,85 +6,104 @@
 # than the prescribed lifecycle of 1.0. In general, we recommend using this generated
 # configuration as a reference rather than using it in production, though in most
 # cases it should duplicate the execution of your original 1.0 config.
-version: 2
+version: 2.1
+
+workflows:
+  build_deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          context:
+            - gcloud<< pipeline.git.branch >>
+          filters:
+            branches:
+              only:
+                - master
+                - staging
+orbs: 
+  node: circleci/node@5.0.0
+  jq: circleci/jq@2.2.0
+
 jobs:
   build:
-    working_directory: ~/API-market/crypto-service
+    working_directory: ~/crypto-service/src
     parallelism: 1
-    shell: /bin/bash --login
+    shell: /bin/bash --login -e
     environment:
       MONGO_URL: mongodb://localhost:27017/data
-      CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
-      CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
-      PYTHONPATH: ${PYTHONPATH}:${HOME}/google_appengine
       GCLOUD_PROJECT: cryptoservice
       SERVICE_VERSION: 1
     # In CircleCI 2.0 you can now specify your own image, or use one of our pre-configured images.
     # To see the list of pre-built images that CircleCI provides for most common languages see
     # https://circleci.com/docs/2.0/circleci-images/
     docker:
-      - image: circleci/build-image:ubuntu-14.04-XXL-upstart-1189-5614f37
+      - image: cimg/base:stable-18.04
       - image: circleci/mongo:4.2.8
     steps:
       # Machine Setup
-      - checkout
-      # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
-      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
-      - run:
-          working_directory: ~/API-market/crypto-service
-          command: nvm install 12.12.0 && nvm alias default 12.12.0
-      # Dependencies
-      #   This would typically go in either a build or a build-and-test job when using workflows
-      # Restore the dependency cache
-      - restore_cache:
-          keys:
-            # This branch if available
-            - v1-dep-{{ .Branch }}-
-            # Default branch if not
-            - v1-dep-master-
-            # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-            - v1-dep-
+      - checkout:
+          path: ".."
+      - node/install:
+          node-version: '12.12.0'
+      # install npm dependencies and run build script
+      - node/install-packages:
+          override-ci-command: npm install
+      # Linter
+      - run: npm run lint
+      # Unit Tests
+      - run: npm test
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - crypto-service
 
+  deploy:
+    working_directory: ~/crypto-service/src
+    parallelism: 1
+    shell: /bin/bash --login -e
+    docker:
+      - image: google/cloud-sdk:363.0.0
+    steps:
+      - attach_workspace:
+          at: ~/crypto-service
+      - node/install:
+          node-version: '12.12.0'
       # install gcloud and login to it
       - run:
-          working_directory: ~/API-market/crypto-service/src
+          working_directory: ~/
           command: |
-            if [ "$CIRCLE_BRANCH" == "master" ] || [ "$CIRCLE_BRANCH" == "staging" ]
-              then
-                  curl -o $HOME/google_appengine_1.9.30.zip https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.30.zip
-                  unzip -q -d $HOME $HOME/google_appengine_1.9.30.zip
-                  echo $GCLOUD_SERVICE_KEY | base64 --decode > ${HOME}/gcloud-service-key.json
-                  echo Y | gcloud components update app
-                  gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-                  gcloud config set project $GCLOUD_PROJECT
-            fi
-
-      # copy .env file from circleci injected environmental variables
+            echo $GCLOUD_SERVICE_ACCT_KEY | base64 --decode > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+            gcloud config set project $GOOGLE_PROJECT_ID
+            gcloud config set app/cloud_build_timeout 2100
       - run:
-          working_directory: ~/API-market/crypto-service/src
           command: |
-            if [ "$CIRCLE_BRANCH" == "master" ]
-             then
-                  cp -rf ../scripts/config/prod.app.yaml ./app.yaml
-                  echo $ENV_PROD | base64 --decode >> ./.env
-                  echo $ENV_TEST_PROD | base64 --decode >> ./backend/test/config/.env.test
+            # use new variable to map master -> prod
+            DEPLOY_ENV=$CIRCLE_BRANCH
+            if [ "$CIRCLE_BRANCH" == "master" ]; then
+              DEPLOY_ENV=prod
             fi
-            if [ "$CIRCLE_BRANCH" == "staging" ]
-             then
-                  cp -rf ../scripts/config/staging.app.yaml ./app.yaml
-                  echo $ENV_STAGING | base64 --decode >> ./.env
-                  echo $ENV_TEST_STAGING | base64 --decode >> ./backend/test/config/.env.test
+            
+            cp -rf ./scripts/config/${DEPLOY_ENV}.app.yaml ./app.yaml
+            # process env_version.json
+            SECRET_VERSION=`cat env_version.json | jq -r ".${DEPLOY_ENV}.version"`
+            ENV_VERSION=`cat env_version.json | jq -r '.envVersion'`
+            # pull this from GCP
+            gcloud secrets versions access ${SECRET_VERSION} \
+              --secret="$SECRET_NAME_OREID_SERVICE" \
+              --format='get(payload.data)' | tr '_-' '/+' | base64 -d > .env
+            echo "Pulled down secret into .env"
+            # disable fail on error to output meaningful message
+            set +e
+            # grep ENV_VERSION is in env. This will fail if the incorrect version is not in the .env file
+            CHECK_ENV=`grep $ENV_VERSION .env`
+            if [ "$?" == "1" ]; then
+              echo ".env SCHEMA does not match: ${ENV_VERSION} not found in version: ${SECRET_VERSION}";
             fi
-            if [ "$CIRCLE_BRANCH" != "master" ] && [ "$CIRCLE_BRANCH" != "staging" ]
-             then
-                  cp -rf ../scripts/config/staging.app.yaml ./app.yaml
-                  echo $ENV_STAGING | base64 --decode >> ./.env
-                  echo $ENV_TEST_STAGING | base64 --decode >> ./backend/test/config/.env.test
-            fi
-
-      # create deploy_version file
+      # create deploy_version file 
       - run:
-          working_directory: ~/API-market/crypto-service/src
           command: |
             ENV_HASH=$(sha1sum ./.env | awk '{print $1}') 
             echo ENV_HASH = "\"$ENV_HASH\"" >> ./deploy-version
@@ -93,60 +112,14 @@ jobs:
 
             CURRENTDATE=`date +"%A, %b %d, %Y %I:%M %p"`
             echo DEPLOY_DATE = "\"$CURRENTDATE\"" >> ./deploy-version
-
-      # install npm dependencies and run build script
-      - run:
-          working_directory: ~/API-market/crypto-service/src
-          command: |
-            npm install
-            npm run build
-            # copy the folders we will deploy to a dist folder
-
-                  # install npm dependencies and run build script
-      
-      # Linter
-      - run:
-          working_directory: ~/API-market/crypto-service/src
-          command: npm run lint
-
-      # Unit Tests
-      - run:
-         working_directory: ~/API-market/crypto-service/src
-         command: npm test
+      # build
+      - run: npm run build
 
       # deploy to Google Cloud
       - run:
-          working_directory: ~/API-market/crypto-service/src
+          working_directory: ~/API-market/oreid-service/web
+          no_output_timeout: 15m  # timeout the build if the deploy hangs for longer than 15 minutes
           command: |
-            if [ "$CIRCLE_BRANCH" == "master" ] || [ "$CIRCLE_BRANCH" == "staging" ]
-              then
-                  rm -rf ./node_modules
-                  # deploy to AppEngine
-                  #- ../scripts/deploy.sh --version=$SERVICE_VERSION
-                  ../scripts/deploy.sh
-            fi
-
-      # Save dependency cache
-      - save_cache:
-          key: v1-dep-{{ .Branch }}-{{ epoch }}
-          paths:
-            # This is a broad list of cache paths to include many possible development environments
-            # You can probably delete some of these entries
-            - vendor/bundle
-            - ~/virtualenvs
-            - ~/.m2
-            - ~/.ivy2
-            - ~/.bundle
-            - ~/.go_workspace
-            - ~/.gradle
-            - ~/.cache/bower
-
-      # Teardown
-      # Save test results
-      - store_test_results:
-          path: /tmp/circleci-test-results
-      # Save artifacts
-      - store_artifacts:
-          path: /tmp/circleci-artifacts
-      - store_artifacts:
-          path: /tmp/circleci-test-results
+            rm -rf ./node_modules
+            # deploy to AppEngine
+            ./scripts/deploy.sh

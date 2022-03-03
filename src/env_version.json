@@ -1,0 +1,9 @@
+{
+  "envVersion": "2020-01-24_09:00",
+  "staging": {
+    "version": "1"
+  },
+  "prod": {
+    "version": "1"
+  }
+}
