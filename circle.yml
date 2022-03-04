@@ -29,7 +29,7 @@ orbs:
 
 jobs:
   build:
-    working_directory: ~/crypto-service/src
+    working_directory: ~/API-market/crypto-service/src
     parallelism: 1
     shell: /bin/bash --login -e
     environment:
@@ -56,19 +56,19 @@ jobs:
       # Unit Tests
       - run: npm test
       - persist_to_workspace:
-          root: ~/
+          root: ~/API-market
           paths:
             - crypto-service
 
   deploy:
-    working_directory: ~/crypto-service/src
+    working_directory: ~/API-market/crypto-service/src
     parallelism: 1
     shell: /bin/bash --login -e
     docker:
       - image: google/cloud-sdk:363.0.0
     steps:
       - attach_workspace:
-          at: ~/crypto-service
+          at: ~/API-market
       - node/install:
           node-version: '12.12.0'
       - jq/install
@@ -87,9 +87,8 @@ jobs:
             if [ "$CIRCLE_BRANCH" == "master" ]; then
               DEPLOY_ENV=prod
             fi
-            echo DEPLOY_ENV=${DEPLOY_ENV}
-            ls -lsa ..
-            cp -rf ../scripts/config/${DEPLOY_ENV}.app.yaml ./app.yaml
+            
+            cp -rf ../scripts/config/${DEPLOY_ENV}.app.yaml ./app
             # process env_version.json
             SECRET_VERSION=`cat env_version.json | jq -r ".${DEPLOY_ENV}.version"`
             ENV_VERSION=`cat env_version.json | jq -r '.envVersion'`
