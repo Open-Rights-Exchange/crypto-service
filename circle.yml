@@ -87,7 +87,8 @@ jobs:
             if [ "$CIRCLE_BRANCH" == "master" ]; then
               DEPLOY_ENV=prod
             fi
-            
+            echo DEPLOY_ENV=${DEPLOY_ENV}
+            ls -lsa ..
             cp -rf ../scripts/config/${DEPLOY_ENV}.app.yaml ./app.yaml
             # process env_version.json
             SECRET_VERSION=`cat env_version.json | jq -r ".${DEPLOY_ENV}.version"`
