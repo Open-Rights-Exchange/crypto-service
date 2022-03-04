@@ -103,6 +103,7 @@ jobs:
             CHECK_ENV=`grep $ENV_VERSION .env`
             if [ "$?" == "1" ]; then
               echo ".env SCHEMA does not match: ${ENV_VERSION} not found in version: ${SECRET_VERSION}";
+              exit 1;
             fi
       # create deploy_version file 
       - run:

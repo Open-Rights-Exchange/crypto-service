@@ -1,5 +1,8 @@
 {
   "envVersion": "2020-01-24_09:00",
+  "dev": {
+    "version": "1"
+  },
   "staging": {
     "version": "1"
   },
