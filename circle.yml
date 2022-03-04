@@ -88,7 +88,7 @@ jobs:
               DEPLOY_ENV=prod
             fi
             
-            cp -rf ./scripts/config/${DEPLOY_ENV}.app.yaml ./app.yaml
+            cp -rf ../scripts/config/${DEPLOY_ENV}.app.yaml ./app.yaml
             # process env_version.json
             SECRET_VERSION=`cat env_version.json | jq -r ".${DEPLOY_ENV}.version"`
             ENV_VERSION=`cat env_version.json | jq -r '.envVersion'`
@@ -119,9 +119,8 @@ jobs:
 
       # deploy to Google Cloud
       - run:
-          working_directory: ~/API-market/oreid-service/web
           no_output_timeout: 15m  # timeout the build if the deploy hangs for longer than 15 minutes
           command: |
             rm -rf ./node_modules
             # deploy to AppEngine
-            ./scripts/deploy.sh
+            ../scripts/deploy.sh
