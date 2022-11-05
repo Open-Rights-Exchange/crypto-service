@@ -17,6 +17,10 @@ dispatch:
 - url: "staging.api.crypto-service.io/*"
   service: crypto-service-staging
 
+  # dev - service
+- url: "dev.api.crypto-service.io/*"
+  service: crypto-service-dev
+
   # web
 - url: "wwww.crypto-service.io/*"
   service: default
