@@ -11,8 +11,8 @@ This app provides basic crypto and blockchain-related functions including:
 This service is mostly stateless - it holds no user data or keys - but it does hold developer (app) registrations in order to issue api keys
 ## Starting service
 
-- Create .env file in project's root directory - copy example.env to .env and replace values
-- Generate a public/private Key pair for server's use (see example.env BASE_PUBLIC_KEY, BASE_PRIVATE_KEY)
+- Create .env file in project's root directory - copy .env.example to .env and replace values
+- Generate a public/private Key pair for server's use (see .env.example BASE_PUBLIC_KEY, BASE_PRIVATE_KEY)
 - Important: Run Node 12.0 or higher on your local machine
 
 - ### `npm run dev`
